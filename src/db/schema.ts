@@ -1,5 +1,15 @@
 import { sqliteTable, text, integer, real } from 'drizzle-orm/sqlite-core'
 
+// ─── Columnas de sincronización con Supabase (Fase 2) ───────────
+// Aditivas; presentes solo en las tablas que se sincronizan con la nube.
+// Factory: genera builders frescos por tabla (evita reusar instancias en Drizzle).
+const syncCols = () => ({
+  syncStatus: text('sync_status').default('pendiente'), // 'pendiente'|'sincronizado'|'error'
+  syncedAt:   text('synced_at'),   // timestamp de la última sync exitosa
+  remoteId:   text('remote_id'),   // UUID asignado por Supabase
+  deletedAt:  text('deleted_at'),  // soft delete para sync
+})
+
 // Schema base — se expandirá en cada paso de módulo
 export const configuracion = sqliteTable('configuracion', {
   id:    integer('id').primaryKey(),
@@ -8,6 +18,7 @@ export const configuracion = sqliteTable('configuracion', {
 })
 
 export const clientes = sqliteTable('clientes', {
+  ...syncCols(),
   id:            integer('id').primaryKey({ autoIncrement: true }),
   nombre:        text('nombre').notNull(),
   telefono:      text('telefono'),
@@ -45,6 +56,7 @@ export const permisos = sqliteTable('permisos', {
 })
 
 export const empleados = sqliteTable('empleados', {
+  ...syncCols(),
   id:            integer('id').primaryKey({ autoIncrement: true }),
   nombre:        text('nombre').notNull(),
   rolId:         integer('rol_id').notNull(),
@@ -82,6 +94,7 @@ export const asignacionTurnos = sqliteTable('asignacion_turnos', {
 })
 
 export const fichajes = sqliteTable('fichajes', {
+  ...syncCols(),
   id:              integer('id').primaryKey({ autoIncrement: true }),
   empleadoId:      integer('empleado_id').notNull(),
   fecha:           text('fecha').notNull(),
@@ -93,6 +106,7 @@ export const fichajes = sqliteTable('fichajes', {
 })
 
 export const horasExtras = sqliteTable('horas_extras', {
+  ...syncCols(),
   id:             integer('id').primaryKey({ autoIncrement: true }),
   empleadoId:     integer('empleado_id').notNull(),
   fecha:          text('fecha').notNull(),
@@ -106,6 +120,7 @@ export const horasExtras = sqliteTable('horas_extras', {
 })
 
 export const ausencias = sqliteTable('ausencias', {
+  ...syncCols(),
   id:              integer('id').primaryKey({ autoIncrement: true }),
   empleadoId:      integer('empleado_id').notNull(),
   tipo:            text('tipo').notNull(),
@@ -126,6 +141,7 @@ export const categorias = sqliteTable('categorias', {
 })
 
 export const productos = sqliteTable('productos', {
+  ...syncCols(),
   id:            integer('id').primaryKey({ autoIncrement: true }),
   nombre:        text('nombre').notNull(),
   tipo:          text('tipo').notNull(), // 'simple' | 'conjunto'
@@ -153,6 +169,7 @@ export const conjuntoComponentes = sqliteTable('conjunto_componentes', {
 })
 
 export const movimientosStock = sqliteTable('movimientos_stock', {
+  ...syncCols(),
   id:           integer('id').primaryKey({ autoIncrement: true }),
   productoId:   integer('producto_id').notNull(),
   tipo:         text('tipo').notNull(), // 'entrada'|'salida'|'ajuste'
@@ -168,6 +185,7 @@ export const movimientosStock = sqliteTable('movimientos_stock', {
 // ─── Proveedores y compras ─────────────────────────────────────
 
 export const proveedores = sqliteTable('proveedores', {
+  ...syncCols(),
   id:            integer('id').primaryKey({ autoIncrement: true }),
   nombre:        text('nombre').notNull(),
   rubro:         text('rubro'),
@@ -182,6 +200,7 @@ export const proveedores = sqliteTable('proveedores', {
 })
 
 export const ordenesCompra = sqliteTable('ordenes_compra', {
+  ...syncCols(),
   id:             integer('id').primaryKey({ autoIncrement: true }),
   proveedorId:    integer('proveedor_id').notNull(),
   estado:         text('estado').notNull().default('borrador'), // 'borrador'|'enviada'|'recibida'
@@ -230,6 +249,7 @@ export const listasPreciosSnapshot = sqliteTable('listas_precios_snapshot', {
 // ─── Presupuestos ──────────────────────────────────────────────
 
 export const presupuestos = sqliteTable('presupuestos', {
+  ...syncCols(),
   id:            integer('id').primaryKey({ autoIncrement: true }),
   numero:        integer('numero').notNull(),
   clienteId:     integer('cliente_id').notNull(),
@@ -250,6 +270,7 @@ export const presupuestos = sqliteTable('presupuestos', {
 })
 
 export const itemsPresupuesto = sqliteTable('items_presupuesto', {
+  ...syncCols(),
   id:             integer('id').primaryKey({ autoIncrement: true }),
   presupuestoId:  integer('presupuesto_id').notNull(),
   productoId:     integer('producto_id').notNull(),
@@ -280,6 +301,7 @@ export const plantillasOT = sqliteTable('plantillas_ot', {
 })
 
 export const ordenesTrabajo = sqliteTable('ordenes_trabajo', {
+  ...syncCols(),
   id:                integer('id').primaryKey({ autoIncrement: true }),
   numero:            integer('numero').notNull(),
   clienteId:         integer('cliente_id').notNull(),
@@ -376,6 +398,7 @@ export const itemsVentaPOS = sqliteTable('items_venta_pos', {
 })
 
 export const cobrosCaja = sqliteTable('cobros_caja', {
+  ...syncCols(),
   id:         integer('id').primaryKey({ autoIncrement: true }),
   fecha:      text('fecha').notNull(),
   monto:      real('monto').notNull(),
@@ -390,6 +413,7 @@ export const cobrosCaja = sqliteTable('cobros_caja', {
 // ─── Caja diaria ───────────────────────────────────────────────
 
 export const gastosOperativos = sqliteTable('gastos_operativos', {
+  ...syncCols(),
   id:           integer('id').primaryKey({ autoIncrement: true }),
   fecha:        text('fecha').notNull(),
   monto:        real('monto').notNull(),
@@ -401,6 +425,7 @@ export const gastosOperativos = sqliteTable('gastos_operativos', {
 })
 
 export const cierresCaja = sqliteTable('cierres_caja', {
+  ...syncCols(),
   id:                 integer('id').primaryKey({ autoIncrement: true }),
   fecha:              text('fecha').notNull().unique(),
   totalEfectivo:      real('total_efectivo').default(0),
@@ -415,6 +440,7 @@ export const cierresCaja = sqliteTable('cierres_caja', {
 })
 
 export const cierresMes = sqliteTable('cierres_mes', {
+  ...syncCols(),
   id:                 integer('id').primaryKey({ autoIncrement: true }),
   anio:               integer('anio').notNull(),
   mes:                integer('mes').notNull(), // 1-12

@@ -153,7 +153,7 @@ export const useInventarioStore = create<InventarioStore>((set, get) => ({
     const now = new Date().toISOString()
     await db.execute(
       `UPDATE productos SET nombre=?, tipo=?, descripcion=?, categoria_id=?, precio=?, precio_costo=?, moneda_costo=?,
-        codigo_sku=?, codigo_barras=?, stock=?, stock_minimo=?, imagen=?, trazabilidad=?, activo=?, actualizado_en=? WHERE id=?`,
+        codigo_sku=?, codigo_barras=?, stock=?, stock_minimo=?, imagen=?, trazabilidad=?, activo=?, actualizado_en=?, sync_status='pendiente' WHERE id=?`,
       [data.nombre, data.tipo, data.descripcion, data.categoriaId, data.precio, data.precioCosto, data.monedaCosto,
        data.codigoSku, data.codigoBarras, data.stock, data.stockMinimo, data.imagen, data.trazabilidad, data.activo ? 1 : 0, now, id]
     )

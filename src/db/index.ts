@@ -611,6 +611,33 @@ async function initSchema() {
       creado_en  TEXT NOT NULL
     )
   `)
+
+  // ─── Migración segura — columnas de sync (Fase 2) ─────────────
+  // Agrega sync_status / synced_at / remote_id / deleted_at a las tablas que se
+  // sincronizan con Supabase, solo si no existen (idempotente sobre DBs existentes).
+  const tablasSync = [
+    'clientes', 'empleados', 'productos', 'ordenes_trabajo',
+    'presupuestos', 'items_presupuesto', 'cobros_caja',
+    'gastos_operativos', 'cierres_caja', 'cierres_mes',
+    'fichajes', 'horas_extras', 'ausencias',
+    'movimientos_stock', 'proveedores', 'ordenes_compra',
+  ]
+  for (const tabla of tablasSync) {
+    const cols = await database.select<{ name: string }[]>(`PRAGMA table_info(${tabla})`)
+    const nombres = cols.map(c => c.name)
+    if (!nombres.includes('sync_status')) {
+      await database.execute(`ALTER TABLE ${tabla} ADD COLUMN sync_status TEXT DEFAULT 'pendiente'`)
+    }
+    if (!nombres.includes('synced_at')) {
+      await database.execute(`ALTER TABLE ${tabla} ADD COLUMN synced_at TEXT`)
+    }
+    if (!nombres.includes('remote_id')) {
+      await database.execute(`ALTER TABLE ${tabla} ADD COLUMN remote_id TEXT`)
+    }
+    if (!nombres.includes('deleted_at')) {
+      await database.execute(`ALTER TABLE ${tabla} ADD COLUMN deleted_at TEXT`)
+    }
+  }
 }
 
 async function seedDemoData() {

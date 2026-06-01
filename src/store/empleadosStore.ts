@@ -164,12 +164,12 @@ export const useEmpleadosStore = create<EmpleadosStore>((set, get) => ({
     const now = new Date().toISOString()
     if (data.password && data.password.trim() !== '') {
       await db.execute(
-        `UPDATE empleados SET nombre = ?, rol_id = ?, password = ?, activo = ?, tipo_horario = ?, actualizado_en = ? WHERE id = ?`,
+        `UPDATE empleados SET nombre = ?, rol_id = ?, password = ?, activo = ?, tipo_horario = ?, actualizado_en = ?, sync_status = 'pendiente' WHERE id = ?`,
         [data.nombre, data.rolId, btoa(data.password), data.activo ? 1 : 0, data.tipoHorario, now, id]
       )
     } else {
       await db.execute(
-        `UPDATE empleados SET nombre = ?, rol_id = ?, activo = ?, tipo_horario = ?, actualizado_en = ? WHERE id = ?`,
+        `UPDATE empleados SET nombre = ?, rol_id = ?, activo = ?, tipo_horario = ?, actualizado_en = ?, sync_status = 'pendiente' WHERE id = ?`,
         [data.nombre, data.rolId, data.activo ? 1 : 0, data.tipoHorario, now, id]
       )
     }
