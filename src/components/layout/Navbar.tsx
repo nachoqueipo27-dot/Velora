@@ -3,11 +3,11 @@ import { useThemeStore } from '../../store/themeStore'
 import { useNegocioStore } from '../../store/negocioStore'
 import { cn } from '../../lib/utils'
 import { VeloraLogo } from '../ui/VeloraLogo'
-import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Sun, Moon } from 'lucide-react'
+import { ArrowLeft, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Sun, Moon } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
 export const Navbar = () => {
-  const { activeModule, isDropdownOpen, modulosVisibles, setModule, nextModule, prevModule, toggleDropdown, closeDropdown } = useNavigationStore()
+  const { activeModule, isDropdownOpen, modulosVisibles, history, setModule, nextModule, prevModule, goBack, toggleDropdown, closeDropdown } = useNavigationStore()
   const { theme, toggleTheme } = useThemeStore()
   const { negocioActivo } = useNegocioStore()
   const modulos = modulosVisibles
@@ -66,6 +66,20 @@ export const Navbar = () => {
       {/* Fila 1 */}
       <div className="flex items-center justify-between px-6 pt-3 pb-1">
         <div className="flex items-center gap-2">
+          <button
+            onClick={goBack}
+            disabled={history.length === 0}
+            aria-label="Volver a la pantalla anterior"
+            title="Atrás"
+            className={cn(
+              'p-1.5 rounded-input transition-all duration-150',
+              history.length === 0
+                ? 'text-[#3A3A3A] light:text-[#D0D0D0] cursor-not-allowed'
+                : 'text-[#808080] hover:text-white hover:bg-white/10 light:text-[#707070] light:hover:text-black light:hover:bg-black/5',
+            )}
+          >
+            <ArrowLeft size={16} />
+          </button>
           <VeloraLogo size={24} variant="auto" />
           <span className="text-sm font-semibold tracking-widest uppercase text-white light:text-black">
             Velora

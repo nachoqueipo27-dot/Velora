@@ -1,6 +1,8 @@
 import { useOnboardingStore } from '../../store/onboardingStore'
+import { useNegocioStore } from '../../store/negocioStore'
 import { cn } from '../../lib/utils'
 import { VeloraLogo } from '../../components/ui/VeloraLogo'
+import { BotonAtras } from '../../components/ui/BotonAtras'
 import { Paso1 } from './Paso1'
 import { Paso2 } from './Paso2'
 import { Paso3 } from './Paso3'
@@ -11,6 +13,7 @@ const TOTAL_PASOS = 4
 
 export const Onboarding = () => {
   const { paso, setPaso } = useOnboardingStore()
+  const { limpiarNegocio } = useNegocioStore()
 
   const goNext = () => setPaso(Math.min(paso + 1, TOTAL_PASOS + 1))
   const goBack = () => setPaso(Math.max(paso - 1, 1))
@@ -34,6 +37,7 @@ export const Onboarding = () => {
       'bg-[#0A0A0A] text-white',
       'light:bg-[#FAFAFA] light:text-[#0A0A0A]',
     )}>
+      <BotonAtras label="Cambiar negocio" onClick={limpiarNegocio} />
       <div className="w-full max-w-lg flex flex-col gap-6">
         {/* Brand */}
         <div className="flex flex-col items-center gap-3">

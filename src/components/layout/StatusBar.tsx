@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { useSessionStore } from '../../store/sessionStore'
+import { useAuthGlobalStore } from '../../store/authGlobalStore'
 import { useNavigationStore, MODULES } from '../../store/navigationStore'
 import { useNegocioStore } from '../../store/negocioStore'
 import { useSyncStore } from '../../store/syncStore'
@@ -10,7 +11,8 @@ import { VeloraLogo } from '../ui/VeloraLogo'
 import { Save, LogOut, Building2, RefreshCw, CloudOff, Cloud } from 'lucide-react'
 
 export const StatusBar = () => {
-  const { usuario, cerrarSesion } = useSessionStore()
+  const { usuario } = useSessionStore()
+  const { logout: logoutGlobal } = useAuthGlobalStore()
   const { activeModule } = useNavigationStore()
   const { negocioActivo, limpiarNegocio } = useNegocioStore()
   const { estado, pendientes, sincronizar, actualizarPendientes, iniciarHeartbeatPeriodico } = useSyncStore()
@@ -67,7 +69,7 @@ export const StatusBar = () => {
         )}
 
         <button
-          onClick={() => cerrarSesion()}
+          onClick={() => logoutGlobal()}
           className={cn(
             'p-1 rounded-input transition-all duration-150',
             'text-[#808080] hover:text-[#C0392B] hover:bg-[#C0392B]/10',
@@ -83,7 +85,7 @@ export const StatusBar = () => {
       <div className="flex items-center gap-3">
         {negocioActivo && (
           <button
-            onClick={() => { cerrarSesion(); limpiarNegocio() }}
+            onClick={() => limpiarNegocio()}
             title="Cambiar de negocio"
             className={cn(
               'flex items-center gap-1.5 text-[11px] transition-all duration-150',

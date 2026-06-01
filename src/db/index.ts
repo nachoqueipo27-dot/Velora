@@ -629,7 +629,9 @@ async function initSchema(database: Db) {
 
   // ─── Migración segura — columnas de sync (Fase 2) ─────────────
   // Agrega sync_status / synced_at / remote_id / deleted_at a las tablas que se
-  // sincronizan con Supabase, solo si no existen (idempotente sobre DBs existentes).
+  // sincronizan con Supabase. SQLite no soporta ADD COLUMN IF NOT EXISTS, así que
+  // el patrón idempotente y a prueba de races es intentar el ALTER y capturar el
+  // error de "duplicate column name" por columna individual.
   const tablasSync = [
     'clientes', 'empleados', 'productos', 'ordenes_trabajo',
     'presupuestos', 'items_presupuesto', 'cobros_caja',
@@ -637,20 +639,19 @@ async function initSchema(database: Db) {
     'fichajes', 'horas_extras', 'ausencias',
     'movimientos_stock', 'proveedores', 'ordenes_compra',
   ]
+  const columnasSync: { nombre: string; def: string }[] = [
+    { nombre: 'sync_status', def: `TEXT DEFAULT 'pendiente'` },
+    { nombre: 'synced_at',   def: `TEXT` },
+    { nombre: 'remote_id',   def: `TEXT` },
+    { nombre: 'deleted_at',  def: `TEXT` },
+  ]
   for (const tabla of tablasSync) {
-    const cols = await database.select<{ name: string }[]>(`PRAGMA table_info(${tabla})`)
-    const nombres = cols.map(c => c.name)
-    if (!nombres.includes('sync_status')) {
-      await database.execute(`ALTER TABLE ${tabla} ADD COLUMN sync_status TEXT DEFAULT 'pendiente'`)
-    }
-    if (!nombres.includes('synced_at')) {
-      await database.execute(`ALTER TABLE ${tabla} ADD COLUMN synced_at TEXT`)
-    }
-    if (!nombres.includes('remote_id')) {
-      await database.execute(`ALTER TABLE ${tabla} ADD COLUMN remote_id TEXT`)
-    }
-    if (!nombres.includes('deleted_at')) {
-      await database.execute(`ALTER TABLE ${tabla} ADD COLUMN deleted_at TEXT`)
+    for (const col of columnasSync) {
+      try {
+        await database.execute(`ALTER TABLE ${tabla} ADD COLUMN ${col.nombre} ${col.def}`)
+      } catch {
+        // La columna ya existe — ignorar (SQLite no tiene ADD COLUMN IF NOT EXISTS).
+      }
     }
   }
 }

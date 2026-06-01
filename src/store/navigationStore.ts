@@ -36,13 +36,17 @@ export const MODULES: { id: ModuleId; label: string }[] = [
 // Módulos siempre visibles, independientes de funcionesHabilitadas.
 const SIEMPRE_VISIBLES: ModuleId[] = ['dashboard', 'configuracion', 'uso']
 
+const MAX_HISTORIAL = 50
+
 interface NavigationStore {
   activeModule: ModuleId
   isDropdownOpen: boolean
   modulosVisibles: ModuleId[]
+  history: ModuleId[]            // stack de módulos visitados (para "atrás")
   setModule: (id: ModuleId) => void
   nextModule: () => void
   prevModule: () => void
+  goBack: () => void
   toggleDropdown: () => void
   closeDropdown: () => void
   actualizarModulosVisibles: (funcionesHabilitadas: string[]) => void
@@ -52,17 +56,34 @@ export const useNavigationStore = create<NavigationStore>((set, get) => ({
   activeModule: 'dashboard',
   isDropdownOpen: false,
   modulosVisibles: MODULES.map(m => m.id),
+  history: [],
 
-  setModule: (id) => set({ activeModule: id, isDropdownOpen: false }),
+  // Navega a un módulo apilando el actual en el historial (si cambia).
+  setModule: (id) => set(s =>
+    id === s.activeModule
+      ? { isDropdownOpen: false }
+      : { activeModule: id, isDropdownOpen: false, history: [...s.history, s.activeModule].slice(-MAX_HISTORIAL) }
+  ),
   nextModule: () => {
-    const { activeModule, modulosVisibles } = get()
+    const { activeModule, modulosVisibles, history } = get()
     const idx = modulosVisibles.findIndex(m => m === activeModule)
-    set({ activeModule: modulosVisibles[(idx + 1) % modulosVisibles.length] })
+    const next = modulosVisibles[(idx + 1) % modulosVisibles.length]
+    if (next === activeModule) return
+    set({ activeModule: next, history: [...history, activeModule].slice(-MAX_HISTORIAL) })
   },
   prevModule: () => {
-    const { activeModule, modulosVisibles } = get()
+    const { activeModule, modulosVisibles, history } = get()
     const idx = modulosVisibles.findIndex(m => m === activeModule)
-    set({ activeModule: modulosVisibles[(idx - 1 + modulosVisibles.length) % modulosVisibles.length] })
+    const prev = modulosVisibles[(idx - 1 + modulosVisibles.length) % modulosVisibles.length]
+    if (prev === activeModule) return
+    set({ activeModule: prev, history: [...history, activeModule].slice(-MAX_HISTORIAL) })
+  },
+  // Vuelve al último módulo visitado (no re-apila).
+  goBack: () => {
+    const { history } = get()
+    if (history.length === 0) return
+    const anterior = history[history.length - 1]
+    set({ activeModule: anterior, history: history.slice(0, -1), isDropdownOpen: false })
   },
   toggleDropdown: () => set(s => ({ isDropdownOpen: !s.isDropdownOpen })),
   closeDropdown: () => set({ isDropdownOpen: false }),
