@@ -1,7 +1,9 @@
 import Database from '@tauri-apps/plugin-sql'
 
 // Una conexión SQLite por local activo (multi-tenant).
-const dbMap = new Map<string, Db>()
+// Guardamos la PROMESA (no la conexión resuelta) para que llamadas concurrentes
+// compartan la misma inicialización y no corran initSchema/seedDemoData dos veces.
+const dbMap = new Map<string, Promise<Db>>()
 
 // Key del local activo — la setea negocioStore al elegir empresa+local.
 let activeDbKey = 'default'
@@ -14,16 +16,23 @@ export function getActiveDbKey(): string {
   return activeDbKey
 }
 
-export async function getDb() {
+export function getDb(): Promise<Db> {
   const key = activeDbKey
   if (!dbMap.has(key)) {
     const dbName = key === 'default'
       ? 'sqlite:velora.db'
       : `sqlite:velora_${key}.db`
-    const database = await Database.load(dbName)
-    dbMap.set(key, database)
-    await initSchema(database)
-    await seedDemoData(database)
+
+    // Guardamos la PROMESA inmediatamente, antes de awaitar nada, para que
+    // cualquier llamada concurrente reciba esta misma promesa y espere su resultado.
+    const promesa = (async () => {
+      const database = await Database.load(dbName)
+      await initSchema(database)
+      await seedDemoData(database)
+      return database
+    })()
+
+    dbMap.set(key, promesa)
   }
   return dbMap.get(key)!
 }
@@ -649,8 +658,15 @@ async function initSchema(database: Db) {
     for (const col of columnasSync) {
       try {
         await database.execute(`ALTER TABLE ${tabla} ADD COLUMN ${col.nombre} ${col.def}`)
-      } catch {
-        // La columna ya existe — ignorar (SQLite no tiene ADD COLUMN IF NOT EXISTS).
+      } catch (e) {
+        const msg = String(e).toLowerCase()
+        if (msg.includes('duplicate column name')) {
+          // Caso esperado: la columna ya existe (SQLite no tiene ADD COLUMN IF NOT EXISTS).
+          continue
+        }
+        // Cualquier otro error (tabla inexistente, DB bloqueada): loguear sin romper.
+        // Una columna de sync faltante no es fatal para el arranque de la app.
+        console.warn(`[initSchema] ALTER TABLE ${tabla} ADD COLUMN ${col.nombre}:`, e)
       }
     }
   }

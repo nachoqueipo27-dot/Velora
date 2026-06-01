@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { cn } from '../../lib/utils'
 import { getDb } from '../../db'
 import { useSyncStore } from '../../store/syncStore'
+import { toast } from '../../store/toastStore'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
 import { Cloud, CloudOff, RefreshCw, Check } from 'lucide-react'
@@ -89,7 +90,16 @@ export const Sincronizacion = () => {
         <div className="flex gap-2">
           <Button size="sm" onClick={guardarRemote} disabled={!remoteId.trim()}>{okRemote ? <><Check size={14} className="mr-1.5" />Guardado</> : 'Guardar Remote ID'}</Button>
           {remoteId.trim() === '' && (
-            <Button size="sm" variant="secondary" onClick={() => setRemoteId(UUID_DEMO)}>Usar UUID demo</Button>
+            <Button size="sm" variant="secondary" onClick={async () => {
+              setRemoteId(UUID_DEMO)
+              // Persistir de inmediato: no requiere click adicional en "Guardar Remote ID".
+              try {
+                await setConfig('sync_local_remote_id', UUID_DEMO)
+                toast.success('Remote ID demo guardado')
+              } catch (e) {
+                console.warn('Error guardando UUID demo:', e)
+              }
+            }}>Usar UUID demo</Button>
           )}
         </div>
       </div>
