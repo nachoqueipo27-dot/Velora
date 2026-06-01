@@ -7,6 +7,7 @@ import { Layout } from './components/layout/Layout'
 import { Onboarding } from './modules/onboarding/Onboarding'
 import { Login } from './modules/login/Login'
 import SeleccionNegocio from './modules/seleccion-negocio'
+import { DevPanel } from './components/dev/DevPanel'
 
 function App() {
   const { theme } = useThemeStore()
@@ -23,10 +24,21 @@ function App() {
   // 2. Sin onboarding del local → Onboarding
   // 3. Sin usuario logueado → Login
   // 4. Todo ok → app
-  if (!negocioActivo) return <SeleccionNegocio />
-  if (!completado)    return <Onboarding />
-  if (!usuario)       return <Login />
-  return <Layout />
+  const pantalla = !negocioActivo
+    ? <SeleccionNegocio />
+    : !completado
+      ? <Onboarding />
+      : !usuario
+        ? <Login />
+        : <Layout />
+
+  return (
+    <>
+      {pantalla}
+      {/* Panel DEV (CTRL+K) — disponible en TODAS las pantallas, solo en desarrollo */}
+      {import.meta.env.DEV && <DevPanel />}
+    </>
+  )
 }
 
 export default App
