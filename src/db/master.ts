@@ -38,6 +38,26 @@ async function initMasterSchema() {
     )
   `)
 
+  // Usuarios globales (admin master del sistema) — se sincroniza con la auth global.
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS usuarios_master (
+      id         INTEGER PRIMARY KEY AUTOINCREMENT,
+      nombre     TEXT NOT NULL,
+      password   TEXT NOT NULL,
+      rol        TEXT NOT NULL DEFAULT 'admin_master',
+      creado_en  TEXT NOT NULL
+    )
+  `)
+  // Seed admin master (independiente del seed de empresas/locales).
+  const countU = await db.select<{ count: number }[]>('SELECT COUNT(*) as count FROM usuarios_master')
+  if (countU[0].count === 0) {
+    await db.execute(
+      `INSERT INTO usuarios_master (nombre, password, rol, creado_en)
+       VALUES (?, ?, 'admin_master', ?)`,
+      ['Admin', btoa('admin123'), new Date().toISOString()]
+    )
+  }
+
   // Seed demo si no hay datos
   const count = await db.select<{ count: number }[]>(
     'SELECT COUNT(*) as count FROM empresas'
@@ -122,4 +142,18 @@ export async function actualizarUltimaSync(localId: number) {
     'UPDATE locales SET ultima_sync = ? WHERE id = ?',
     [new Date().toISOString(), localId]
   )
+}
+
+export async function loginGlobal(
+  nombre: string,
+  password: string
+): Promise<{ id: number; nombre: string; rol: string } | null> {
+  const db = await getMasterDb()
+  const rows = await db.select<{ id: number; nombre: string; rol: string; password: string }[]>(
+    'SELECT * FROM usuarios_master WHERE nombre = ?',
+    [nombre]
+  )
+  if (rows.length === 0) return null
+  if (rows[0].password !== btoa(password)) return null
+  return { id: rows[0].id, nombre: rows[0].nombre, rol: rows[0].rol }
 }

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { cn } from '../../lib/utils'
 import { useNegocioStore } from '../../store/negocioStore'
+import { useAuthGlobalStore } from '../../store/authGlobalStore'
 import { useSessionStore } from '../../store/sessionStore'
 import { useOnboardingStore } from '../../store/onboardingStore'
 import { useNavigationStore } from '../../store/navigationStore'
@@ -21,6 +22,7 @@ export const DevPanel = () => {
   const [log, setLog] = useState<string[]>([])
 
   const { negocioActivo, limpiarNegocio } = useNegocioStore()
+  const { usuario: usuarioGlobal } = useAuthGlobalStore()
   const { usuario, cerrarSesion } = useSessionStore()
   const { resetOnboarding, completado } = useOnboardingStore()
   const { activeModule, setModule } = useNavigationStore()
@@ -350,6 +352,7 @@ export const DevPanel = () => {
       icon: <Navigation size={12} />,
       titulo: 'Navegación',
       acciones: [
+        { label: 'Ir a LoginGlobal', fn: async () => { useAuthGlobalStore.getState().logout(); window.location.reload() } },
         { label: 'Ir a SeleccionNegocio', fn: irASeleccion },
         { label: 'Ir a Onboarding', fn: irAOnboarding },
         { label: 'Ir a Login', fn: irALogin },
@@ -412,6 +415,7 @@ export const DevPanel = () => {
           <div className="rounded-card border border-[#2A2A2A] light:border-[#E4E4E4] p-3 space-y-1">
             <p className="text-[10px] font-semibold text-[#606060] uppercase tracking-wider mb-2">Estado actual</p>
             {[
+              ['Auth global', usuarioGlobal ? `${usuarioGlobal.nombre} (${usuarioGlobal.rol})` : '—'],
               ['Negocio', negocioActivo ? `${negocioActivo.empresaNombre} / ${negocioActivo.localNombre}` : '—'],
               ['DB activa', negocioActivo ? `velora_e${negocioActivo.empresaId}_l${negocioActivo.localId}.db` : 'velora.db (default)'],
               ['Usuario', usuario ? `${usuario.nombre} — ${usuario.rol}` : '—'],

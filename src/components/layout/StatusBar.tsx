@@ -83,7 +83,7 @@ export const StatusBar = () => {
       <div className="flex items-center gap-3">
         {negocioActivo && (
           <button
-            onClick={limpiarNegocio}
+            onClick={() => { cerrarSesion(); limpiarNegocio() }}
             title="Cambiar de negocio"
             className={cn(
               'flex items-center gap-1.5 text-[11px] transition-all duration-150',
