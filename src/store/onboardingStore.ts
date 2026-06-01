@@ -2,6 +2,19 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { OnboardingData } from '../types'
 
+// El onboarding es POR LOCAL. Como la app recarga al cambiar de negocio,
+// leemos el local activo persistido al iniciar para derivar la key de persistencia.
+function onboardingKey(): string {
+  try {
+    const raw = localStorage.getItem('velora-negocio-activo')
+    if (raw) {
+      const localId = JSON.parse(raw)?.state?.negocioActivo?.localId
+      if (localId != null) return `velora-onboarding-l${localId}`
+    }
+  } catch { /* ignora parse */ }
+  return 'velora-onboarding-default'
+}
+
 interface OnboardingStore {
   completado: boolean
   paso: number
@@ -23,6 +36,6 @@ export const useOnboardingStore = create<OnboardingStore>()(
       completarOnboarding: () => set({ completado: true }),
       resetOnboarding: () => set({ completado: false, paso: 1, data: {} }),
     }),
-    { name: 'velora-onboarding' }
+    { name: onboardingKey() }
   )
 )

@@ -1,19 +1,34 @@
 import Database from '@tauri-apps/plugin-sql'
 
-let db: Awaited<ReturnType<typeof Database.load>> | null = null
+// Una conexión SQLite por local activo (multi-tenant).
+const dbMap = new Map<string, Db>()
 
-export async function getDb() {
-  if (!db) {
-    db = await Database.load('sqlite:velora.db')
-    await initSchema()
-    await seedDemoData()
-  }
-  return db
+// Key del local activo — la setea negocioStore al elegir empresa+local.
+let activeDbKey = 'default'
+
+export function setActiveDb(key: string) {
+  activeDbKey = key
 }
 
-async function initSchema() {
-  const database = db!
+export function getActiveDbKey(): string {
+  return activeDbKey
+}
 
+export async function getDb() {
+  const key = activeDbKey
+  if (!dbMap.has(key)) {
+    const dbName = key === 'default'
+      ? 'sqlite:velora.db'
+      : `sqlite:velora_${key}.db`
+    const database = await Database.load(dbName)
+    dbMap.set(key, database)
+    await initSchema(database)
+    await seedDemoData(database)
+  }
+  return dbMap.get(key)!
+}
+
+async function initSchema(database: Db) {
   await database.execute(`
     CREATE TABLE IF NOT EXISTS configuracion (
       id    INTEGER PRIMARY KEY,
@@ -640,8 +655,7 @@ async function initSchema() {
   }
 }
 
-async function seedDemoData() {
-  const database = db!
+async function seedDemoData(database: Db) {
   await seedClientesDemo(database)
   await seedEmpleadosDemo(database)
   await seedProductosDemo(database)

@@ -1,14 +1,16 @@
 import { useSessionStore } from '../../store/sessionStore'
 import { useNavigationStore, MODULES } from '../../store/navigationStore'
+import { useNegocioStore } from '../../store/negocioStore'
 import { cn } from '../../lib/utils'
 import { realizarBackup } from '../../lib/backup'
 import { toast } from '../../store/toastStore'
 import { VeloraLogo } from '../ui/VeloraLogo'
-import { Save, LogOut } from 'lucide-react'
+import { Save, LogOut, Building2 } from 'lucide-react'
 
 export const StatusBar = () => {
   const { usuario, cerrarSesion } = useSessionStore()
   const { activeModule } = useNavigationStore()
+  const { negocioActivo, limpiarNegocio } = useNegocioStore()
 
   const activeIndex = MODULES.findIndex(m => m.id === activeModule) + 1
   const iniciales = usuario?.nombre
@@ -68,8 +70,23 @@ export const StatusBar = () => {
         </button>
       </div>
 
-      {/* Derecha — backup y posición */}
+      {/* Derecha — negocio, backup y posición */}
       <div className="flex items-center gap-3">
+        {negocioActivo && (
+          <button
+            onClick={limpiarNegocio}
+            title="Cambiar de negocio"
+            className={cn(
+              'flex items-center gap-1.5 text-[11px] transition-all duration-150',
+              'text-[#808080] hover:text-white',
+              'light:text-[#707070] light:hover:text-black',
+            )}
+          >
+            <Building2 size={12} />
+            <span className="truncate max-w-[140px]">{negocioActivo.empresaNombre}</span>
+          </button>
+        )}
+
         <button
           onClick={handleBackup}
           className={cn(

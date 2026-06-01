@@ -1,5 +1,6 @@
 import { useNavigationStore, MODULES } from '../../store/navigationStore'
 import { useThemeStore } from '../../store/themeStore'
+import { useNegocioStore } from '../../store/negocioStore'
 import { cn } from '../../lib/utils'
 import { VeloraLogo } from '../ui/VeloraLogo'
 import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Sun, Moon } from 'lucide-react'
@@ -8,6 +9,7 @@ import { useEffect, useRef, useState } from 'react'
 export const Navbar = () => {
   const { activeModule, isDropdownOpen, modulosVisibles, setModule, nextModule, prevModule, toggleDropdown, closeDropdown } = useNavigationStore()
   const { theme, toggleTheme } = useThemeStore()
+  const { negocioActivo } = useNegocioStore()
   const modulos = modulosVisibles
     .map(id => MODULES.find(m => m.id === id))
     .filter((m): m is typeof MODULES[number] => !!m)
@@ -68,6 +70,11 @@ export const Navbar = () => {
           <span className="text-sm font-semibold tracking-widest uppercase text-white light:text-black">
             Velora
           </span>
+          {negocioActivo && (
+            <span className="ml-1 pl-2 border-l border-[#2A2A2A] light:border-[#E4E4E4] text-[10px] text-[#808080] light:text-[#707070] tracking-wide truncate max-w-[140px]">
+              {negocioActivo.localNombre}
+            </span>
+          )}
         </div>
         <button
           onClick={toggleTheme}
