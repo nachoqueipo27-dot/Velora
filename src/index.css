@@ -1,0 +1,155 @@
+@import '@fontsource/plus-jakarta-sans/400.css';
+@import '@fontsource/plus-jakarta-sans/500.css';
+@import '@fontsource/plus-jakarta-sans/600.css';
+@import '@fontsource/plus-jakarta-sans/700.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Scrollbar personalizada */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #2A2A2A;
+  border-radius: 3px;
+}
+.light ::-webkit-scrollbar-thumb {
+  background: #E4E4E4;
+}
+
+/* ─── Accesibilidad global (UI/UX Pro Max) ─────────────────────── */
+
+/* Cursor pointer en todos los controles clicables (el default de <button> no lo es) */
+button:not(:disabled),
+[role="button"]:not([aria-disabled="true"]),
+summary,
+label[for] {
+  cursor: pointer;
+}
+
+/* Foco visible para navegación por teclado — no aparece en click de mouse */
+*:focus-visible {
+  outline: 2px solid;
+  outline-offset: 2px;
+}
+.dark *:focus-visible  { outline-color: rgba(255, 255, 255, 0.5); }
+.light *:focus-visible { outline-color: rgba(0, 0, 0, 0.3); }
+/* Inputs/areas con su propio anillo: evitamos doble indicador */
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: none;
+}
+
+/* Selección de texto acorde al tema */
+::selection {
+  background: rgba(255, 255, 255, 0.15);
+}
+.light ::selection {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+/* Transición suave al cambiar de tema (en el contenedor raíz) */
+.dark, .light {
+  transition: background-color 300ms ease, border-color 300ms ease, color 300ms ease;
+}
+
+/* Respetar preferencia de movimiento reducido del sistema */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@layer utilities {
+  .animate-slide-out-left {
+    animation: slideOutLeft 250ms ease-in-out forwards;
+  }
+  .animate-slide-out-right {
+    animation: slideOutRight 250ms ease-in-out forwards;
+  }
+  .animate-slide-in {
+    animation: slideIn 250ms ease-in-out forwards;
+  }
+  .animate-fade-slide-down {
+    animation: fadeSlideDown 200ms ease forwards;
+  }
+  .animate-modal-in {
+    animation: modalIn 200ms ease-out forwards;
+  }
+  .animate-overlay-in {
+    animation: overlayIn 150ms ease forwards;
+  }
+  .animate-shimmer {
+    background: linear-gradient(90deg, #1C1C1C 25%, #262626 50%, #1C1C1C 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.4s ease-in-out infinite;
+  }
+  .light .animate-shimmer {
+    background: linear-gradient(90deg, #F0F0F0 25%, #FAFAFA 50%, #F0F0F0 75%);
+    background-size: 200% 100%;
+  }
+  .animate-flash-green {
+    animation: flashGreen 700ms ease-out;
+  }
+  .animate-toast-in {
+    animation: toastIn 250ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+}
+
+@keyframes slideOutLeft {
+  from { opacity: 1; transform: translateX(0); }
+  to   { opacity: 0; transform: translateX(-20px); }
+}
+@keyframes slideOutRight {
+  from { opacity: 1; transform: translateX(0); }
+  to   { opacity: 0; transform: translateX(20px); }
+}
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(10px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes fadeSlideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes modalIn {
+  from { opacity: 0; transform: scale(0.96); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes overlayIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes shimmer {
+  from { background-position: 200% 0; }
+  to   { background-position: -200% 0; }
+}
+@keyframes flashGreen {
+  0%   { background-color: rgba(76, 175, 125, 0.35); }
+  100% { background-color: transparent; }
+}
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(100%); }
+  to   { opacity: 1; transform: translateY(0); }
+}
