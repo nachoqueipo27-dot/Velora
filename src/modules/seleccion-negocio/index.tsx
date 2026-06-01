@@ -39,6 +39,25 @@ const SeleccionNegocio = () => {
             : <SeleccionEmpresa onSelect={setEmpresa} />}
         </div>
       </div>
+
+      {import.meta.env.DEV && (
+        <button
+          onClick={async () => {
+            localStorage.clear()
+            const dbs = await window.indexedDB.databases?.() ?? []
+            for (const db of dbs) {
+              if (db.name) window.indexedDB.deleteDatabase(db.name)
+            }
+            window.location.reload()
+          }}
+          className="fixed bottom-20 right-4 px-3 py-1.5 text-[11px]
+                     bg-[#C0392B]/20 text-[#C0392B] rounded-input
+                     hover:bg-[#C0392B]/30 transition-all duration-150
+                     border border-[#C0392B]/30"
+        >
+          DEV: Reset completo
+        </button>
+      )}
     </div>
   )
 }

@@ -204,6 +204,8 @@ export const useCajaStore = create<CajaStore>((set, get) => ({
       )
       set({ diaYaCerrado: true })
       await registrarActividad({ modulo: 'Caja Diaria', accion: 'Cerró la caja del día', detalle: `${hoy} · neto ${Math.round(r.saldoNeto)}` })
+      // Sync automático al cerrar caja (no bloqueante, falla en silencio).
+      void import('./syncStore').then(m => m.useSyncStore.getState().sincronizar()).catch(() => {})
       return true
     } catch (e) {
       console.error('cerrarCaja', e)

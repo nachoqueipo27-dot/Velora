@@ -17,15 +17,16 @@ import { EditorTicket } from './EditorTicket'
 import { EditorPDF } from './EditorPDF'
 import { HistorialActividad } from './HistorialActividad'
 import { Backup } from './Backup'
+import { Sincronizacion } from './Sincronizacion'
 import {
   Building2, Users, ToggleLeft, Tags, Wallet, Tag, LayoutTemplate, Barcode,
-  Ban, DollarSign, Bell, Receipt, FileText, History, DatabaseBackup, Lock,
+  Ban, DollarSign, Bell, Receipt, FileText, History, DatabaseBackup, Lock, RefreshCw,
 } from 'lucide-react'
 
 type Seccion =
   | 'negocio' | 'usuarios' | 'funciones' | 'categorias' | 'cat-gastos' | 'etiquetas'
   | 'plantillas' | 'codigos' | 'motivos' | 'multimoneda' | 'alertas'
-  | 'ticket' | 'pdf' | 'historial' | 'backup'
+  | 'ticket' | 'pdf' | 'historial' | 'backup' | 'sync'
 
 const GRUPOS: { titulo: string; items: { id: Seccion; label: string; icon: React.ReactNode }[] }[] = [
   { titulo: 'Negocio', items: [
@@ -49,6 +50,7 @@ const GRUPOS: { titulo: string; items: { id: Seccion; label: string; icon: React
   ]},
   { titulo: 'Sistema', items: [
     { id: 'historial', label: 'Historial de actividad', icon: <History size={15} /> },
+    { id: 'sync',      label: 'Sincronización',         icon: <RefreshCw size={15} /> },
     { id: 'backup',    label: 'Backup',                 icon: <DatabaseBackup size={15} /> },
   ]},
 ]
@@ -89,6 +91,7 @@ const Configuracion = () => {
       case 'ticket':     return <EditorTicket />
       case 'pdf':        return <EditorPDF />
       case 'historial':  return <HistorialActividad />
+      case 'sync':       return <Sincronizacion />
       case 'backup':     return <Backup />
     }
   }

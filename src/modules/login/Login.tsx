@@ -74,6 +74,21 @@ export const Login = () => {
           Demo: <span className="text-[#A0A0A0]">Administrador</span> / <span className="text-[#A0A0A0]">admin123</span>
         </p>
       </div>
+
+      {import.meta.env.DEV && (
+        <button
+          onClick={() => {
+            localStorage.clear()
+            window.location.reload()
+          }}
+          className="fixed bottom-4 right-4 px-3 py-1.5 text-[11px]
+                     bg-[#C0392B]/20 text-[#C0392B] rounded-input
+                     hover:bg-[#C0392B]/30 transition-all duration-150
+                     border border-[#C0392B]/30"
+        >
+          DEV: Reset estado
+        </button>
+      )}
     </div>
   )
 }
