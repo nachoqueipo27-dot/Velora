@@ -2,6 +2,7 @@ import { invoke } from '@tauri-apps/api/core'
 import { getPendientes, marcarSincronizado, marcarError } from './queries'
 import { actualizarUltimaSync } from '../../db/master'
 import { useNegocioStore } from '../../store/negocioStore'
+import { useConectividadStore } from '../../store/conectividadStore'
 import { getDb } from '../../db'
 import type { TablaSyncable, ResultadoSync } from './types'
 
@@ -75,6 +76,14 @@ export async function resolverLocalRemoteId(): Promise<string | null> {
 export async function sincronizarTodo(
   onProgreso?: (tabla: string, procesados: number, total: number) => void
 ): Promise<ResultadoSync[]> {
+  // Verificar conectividad real antes de intentar el sync.
+  const hayConexion = await useConectividadStore.getState().verificar()
+  if (!hayConexion) {
+    throw new Error(
+      'Sin conexión con Supabase. Los cambios quedan guardados y se sincronizarán automáticamente cuando vuelva la conexión.'
+    )
+  }
+
   const localRemoteId = await resolverLocalRemoteId()
   if (!localRemoteId) {
     throw new Error('No hay Remote ID del local. Completalo en Configuración → Sincronización.')

@@ -6,6 +6,7 @@ import { useSessionStore } from '../../store/sessionStore'
 import { useOnboardingStore } from '../../store/onboardingStore'
 import { useNavigationStore } from '../../store/navigationStore'
 import { useSyncStore } from '../../store/syncStore'
+import { useConectividadStore } from '../../store/conectividadStore'
 import { useThemeStore } from '../../store/themeStore'
 import { useToastStore } from '../../store/toastStore'
 import { getDb } from '../../db'
@@ -27,6 +28,7 @@ export const DevPanel = () => {
   const { resetOnboarding, completado } = useOnboardingStore()
   const { activeModule, setModule } = useNavigationStore()
   const { pendientes, sincronizar, heartbeat } = useSyncStore()
+  const { estado: estadoConexion, ultimoCheck, verificar: pingManual } = useConectividadStore()
   const { theme } = useThemeStore()
   const { agregar: toast } = useToastStore()
 
@@ -365,6 +367,11 @@ export const DevPanel = () => {
       acciones: [
         { label: 'Sincronizar ahora', fn: syncAhora },
         { label: 'Enviar heartbeat manual', fn: heartbeatManual },
+        { label: 'Ping manual a Supabase', fn: async () => {
+          const ok = await pingManual()
+          addLog(`Ping Supabase: ${ok ? 'OK ✓' : 'FALLÓ ✗'}`)
+          toast(ok ? 'Supabase responde correctamente' : 'Sin conexión con Supabase', ok ? 'success' : 'error')
+        } },
         { label: 'Marcar todo como pendiente', fn: marcarTodoPendiente },
         { label: 'Ver pendientes por tabla', fn: verPendientes },
       ],
@@ -422,6 +429,8 @@ export const DevPanel = () => {
               ['Onboarding', completado ? 'Completado' : 'Pendiente'],
               ['Módulo', activeModule],
               ['Sync pendientes', String(pendientes)],
+              ['Conectividad', estadoConexion],
+              ['Último ping', ultimoCheck ? `hace ${Math.round((Date.now() - new Date(ultimoCheck).getTime()) / 1000)}s` : '—'],
               ['Tema', theme],
             ].map(([label, value]) => (
               <div key={label} className="flex items-center justify-between">

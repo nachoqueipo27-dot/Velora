@@ -1,15 +1,68 @@
 import { useNavigationStore, MODULES } from '../../store/navigationStore'
 import { useThemeStore } from '../../store/themeStore'
 import { useNegocioStore } from '../../store/negocioStore'
+import { useConectividadStore } from '../../store/conectividadStore'
+import { useSyncStore } from '../../store/syncStore'
+import { useConectividad } from '../../hooks/useConectividad'
 import { cn } from '../../lib/utils'
 import { VeloraLogo } from '../ui/VeloraLogo'
-import { ArrowLeft, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Sun, Moon } from 'lucide-react'
+import { ArrowLeft, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Sun, Moon, Wifi, WifiOff, RefreshCw } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
+
+// Indicador pasivo de conectividad con Supabase. Lee los stores directamente.
+const StatusIndicador = () => {
+  const { estado: estadoConexion } = useConectividadStore()
+  const { pendientes } = useSyncStore()
+
+  const configs = {
+    conectado:    { icono: <Wifi size={11} />,      label: 'Online',   color: '#4CAF7D', pulsa: true },
+    sin_sync:     { icono: <RefreshCw size={11} />,  label: 'Sin sync', color: '#D4921A', pulsa: false },
+    desconectado: { icono: <WifiOff size={11} />,    label: 'Offline',  color: '#C0392B', pulsa: false },
+  } as const
+
+  const c = configs[estadoConexion]
+
+  return (
+    <div
+      className="flex items-center gap-1.5 px-2 py-1 rounded-input border text-[11px] font-medium transition-all duration-300 select-none"
+      style={{ color: c.color, backgroundColor: `${c.color}15`, borderColor: `${c.color}30` }}
+      title={
+        estadoConexion === 'sin_sync'
+          ? `${pendientes} cambio${pendientes !== 1 ? 's' : ''} pendiente${pendientes !== 1 ? 's' : ''} de sync`
+          : estadoConexion === 'desconectado'
+            ? 'Sin conexión con Supabase'
+            : 'Conectado a Supabase'
+      }
+    >
+      {/* Punto de estado con animación */}
+      <span className="relative flex h-2 w-2 shrink-0">
+        {c.pulsa && (
+          <span
+            className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-60"
+            style={{ backgroundColor: c.color }}
+          />
+        )}
+        <span className="relative inline-flex rounded-full h-2 w-2" style={{ backgroundColor: c.color }} />
+      </span>
+
+      {c.icono}
+      <span>{c.label}</span>
+
+      {estadoConexion === 'sin_sync' && pendientes > 0 && (
+        <span className="text-[10px] opacity-70">({pendientes})</span>
+      )}
+    </div>
+  )
+}
 
 export const Navbar = () => {
   const { activeModule, isDropdownOpen, modulosVisibles, history, setModule, nextModule, prevModule, goBack, toggleDropdown, closeDropdown } = useNavigationStore()
   const { theme, toggleTheme } = useThemeStore()
   const { negocioActivo } = useNegocioStore()
+
+  // Inicia el timer adaptativo de conectividad (el navbar siempre está montado en el Layout).
+  useConectividad()
+
   const modulos = modulosVisibles
     .map(id => MODULES.find(m => m.id === id))
     .filter((m): m is typeof MODULES[number] => !!m)
@@ -90,17 +143,20 @@ export const Navbar = () => {
             </span>
           )}
         </div>
-        <button
-          onClick={toggleTheme}
-          aria-label={theme === 'dark' ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro'}
-          className={cn(
-            'p-1.5 rounded-input transition-all duration-150',
-            'text-[#808080] hover:text-white hover:bg-white/10',
-            'light:text-[#707070] light:hover:text-black light:hover:bg-black/5',
-          )}
-        >
-          {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
-        </button>
+        <div className="flex items-center gap-3">
+          <StatusIndicador />
+          <button
+            onClick={toggleTheme}
+            aria-label={theme === 'dark' ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro'}
+            className={cn(
+              'p-1.5 rounded-input transition-all duration-150',
+              'text-[#808080] hover:text-white hover:bg-white/10',
+              'light:text-[#707070] light:hover:text-black light:hover:bg-black/5',
+            )}
+          >
+            {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+          </button>
+        </div>
       </div>
 
       {/* Fila 2 — navegación */}

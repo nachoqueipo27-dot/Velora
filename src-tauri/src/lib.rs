@@ -82,6 +82,31 @@ async fn sync_heartbeat(payload: serde_json::Value) -> Result<bool, String> {
     Ok(response.status().is_success())
 }
 
+// Ping liviano a Supabase desde Rust (evita CORS del WebView). Timeout 5s.
+// Devuelve true si Supabase responde con cualquier status HTTP (< 600).
+#[tauri::command]
+async fn ping_supabase() -> bool {
+    let url = match option_env!("SUPABASE_URL") {
+        Some(u) if !u.is_empty() => format!("{}/rest/v1/", u),
+        _ => return false,
+    };
+
+    let service_key = option_env!("SUPABASE_SERVICE_KEY").unwrap_or("");
+
+    let client = match reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(5))
+        .build()
+    {
+        Ok(c) => c,
+        Err(_) => return false,
+    };
+
+    match client.get(&url).header("apikey", service_key).send().await {
+        Ok(resp) => resp.status().as_u16() < 600,
+        Err(_) => false,
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -91,7 +116,7 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_http::init())
-        .invoke_handler(tauri::generate_handler![greet, sync_tabla, sync_heartbeat])
+        .invoke_handler(tauri::generate_handler![greet, sync_tabla, sync_heartbeat, ping_supabase])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
