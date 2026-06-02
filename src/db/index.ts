@@ -749,6 +749,17 @@ async function seedConfiguracionDemo(database: Db) {
       [1000, now, now]
     )
   }
+
+  // Remote ID demo para sync: toda DB nueva queda lista para sincronizar desde el 1er arranque.
+  const remoteIdExiste = await database.select<{ count: number }[]>(
+    `SELECT COUNT(*) as count FROM configuracion WHERE clave = 'sync_local_remote_id'`
+  )
+  if (remoteIdExiste[0].count === 0) {
+    await database.execute(
+      `INSERT INTO configuracion (clave, valor) VALUES ('sync_local_remote_id', ?)`,
+      ['b0000000-0000-0000-0000-000000000001']
+    )
+  }
 }
 
 type Db = Awaited<ReturnType<typeof Database.load>>
