@@ -354,7 +354,7 @@ export const DevPanel = () => {
       icon: <Navigation size={12} />,
       titulo: 'Navegación',
       acciones: [
-        { label: 'Ir a LoginGlobal', fn: async () => { useAuthGlobalStore.getState().logout(); window.location.reload() } },
+        { label: 'Ir a LoginGlobal', fn: async () => { addLog('Ir a LoginGlobal — Demo: DNI 42997462 / Dark1996$'); useAuthGlobalStore.getState().logout(); window.location.reload() } },
         { label: 'Ir a SeleccionNegocio', fn: irASeleccion },
         { label: 'Ir a Onboarding', fn: irAOnboarding },
         { label: 'Ir a Login', fn: irALogin },
@@ -423,6 +423,7 @@ export const DevPanel = () => {
             <p className="text-[10px] font-semibold text-[#606060] uppercase tracking-wider mb-2">Estado actual</p>
             {[
               ['Auth global', usuarioGlobal ? `${usuarioGlobal.nombre} (${usuarioGlobal.rol})` : '—'],
+              ['DNI', usuarioGlobal?.dni ?? '—'],
               ['Negocio', negocioActivo ? `${negocioActivo.empresaNombre} / ${negocioActivo.localNombre}` : '—'],
               ['DB activa', negocioActivo ? `velora_e${negocioActivo.empresaId}_l${negocioActivo.localId}.db` : 'velora.db (default)'],
               ['Usuario', usuario ? `${usuario.nombre} — ${usuario.rol}` : '—'],

@@ -1,17 +1,20 @@
 import { useOnboardingStore } from '../../store/onboardingStore'
 import { useSessionStore } from '../../store/sessionStore'
+import { useNegocioStore } from '../../store/negocioStore'
 import { getDb } from '../../db'
+import { getMasterDb, guardarUsuarioLocal, asignarUsuarioALocal } from '../../db/master'
 import { Button } from '../../components/ui/Button'
 import { cn } from '../../lib/utils'
 import { FUNCIONES_DISPONIBLES } from './types'
 
-// Inserta el usuario admin del onboarding en la DB del local activo (empleados),
-// con rol Admin. Idempotente: no duplica si ya existe el rol o el empleado.
-async function guardarAdminEnDB(nombre: string, password: string) {
+// Guarda el admin del onboarding: empleado en la DB del local (acceso operativo) +
+// usuario en master.db por DNI (login futuro) + asignación al local activo. Idempotente.
+async function guardarAdminEnDB(nombre: string, dni: string, password: string) {
   try {
     const db = await getDb()
     const now = new Date().toISOString()
 
+    // 1. Empleado en la DB del local (rol Admin).
     const roles = await db.select<{ id: number }[]>(`SELECT id FROM roles WHERE nombre = 'Admin' LIMIT 1`)
     let rolId: number
     if (roles.length === 0) {
@@ -21,7 +24,6 @@ async function guardarAdminEnDB(nombre: string, password: string) {
     } else {
       rolId = roles[0].id
     }
-
     const admins = await db.select<{ count: number }[]>(
       `SELECT COUNT(*) as count FROM empleados WHERE nombre = ? LIMIT 1`,
       [nombre]
@@ -32,8 +34,19 @@ async function guardarAdminEnDB(nombre: string, password: string) {
          VALUES (?, ?, ?, 1, 'fijo', ?, ?)`,
         [nombre, rolId, btoa(password), now, now]
       )
-      console.log('[onboarding] Usuario admin guardado en DB:', nombre)
     }
+
+    // 2. Usuario en master.db por DNI (para login local futuro) + asignación al local.
+    await guardarUsuarioLocal({ nombre, dni, rol: 'admin' }, password)
+    const negocio = useNegocioStore.getState().negocioActivo
+    if (negocio) {
+      const masterDb = await getMasterDb()
+      const rows = await masterDb.select<{ id: number }[]>(`SELECT id FROM usuarios_master WHERE dni = ?`, [dni])
+      if (rows.length > 0) {
+        await asignarUsuarioALocal(rows[0].id, negocio.empresaId, negocio.localId)
+      }
+    }
+    console.log('[onboarding] Admin guardado (local + master) DNI:', dni)
   } catch (e) {
     console.error('[onboarding] Error guardando admin en DB:', e)
   }
@@ -71,9 +84,9 @@ export const ResumenFinal = ({ onBack }: ResumenFinalProps) => {
   const modulosActivos = FUNCIONES_DISPONIBLES.filter(f => habilitadas.includes(f.id)).length
 
   const handleConfirm = async () => {
-    // Guardar el admin del onboarding en la DB del local antes de completar.
-    if (data.adminNombre && data.adminPassword) {
-      await guardarAdminEnDB(data.adminNombre, data.adminPassword)
+    // Guardar el admin del onboarding (local + master) antes de completar.
+    if (data.adminNombre && data.adminDni && data.adminPassword) {
+      await guardarAdminEnDB(data.adminNombre, data.adminDni, data.adminPassword)
     }
     setUsuario({
       id: 1,
@@ -105,6 +118,7 @@ export const ResumenFinal = ({ onBack }: ResumenFinalProps) => {
 
         <Section title="Administrador">
           <Row label="Nombre" value={data.adminNombre ?? ''} />
+          <Row label="DNI" value={data.adminDni ?? ''} />
           <Row label="Contraseña" value={data.adminPassword ? '••••••••' : ''} />
         </Section>
 

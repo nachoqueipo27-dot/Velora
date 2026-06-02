@@ -26,7 +26,7 @@ function App() {
   // Mientras hay login global hay sesión (rol Admin); si el global cierra, se limpia.
   useEffect(() => {
     if (usuarioGlobal && !usuarioLocal) {
-      setUsuario({ id: usuarioGlobal.id, nombre: usuarioGlobal.nombre, rol: 'Admin', avatar: null })
+      setUsuario({ id: 1, nombre: usuarioGlobal.nombre, rol: 'Admin', avatar: null })
     } else if (!usuarioGlobal && usuarioLocal) {
       cerrarSesion()
     }

@@ -10,9 +10,11 @@ export const Paso2 = ({ onNext, onBack }: PasoProps) => {
   const [touched, setTouched] = useState(false)
 
   const nombre = data.adminNombre ?? ''
+  const dni = data.adminDni ?? ''
   const password = data.adminPassword ?? ''
+  const dniValido = /^\d{7,}$/.test(dni.trim())
   const mismatch = touched && confirm !== '' && password !== confirm
-  const valido = nombre.trim() !== '' && password !== '' && password === confirm
+  const valido = nombre.trim() !== '' && dniValido && password !== '' && password === confirm
 
   return (
     <div className="flex flex-col gap-5">
@@ -31,6 +33,14 @@ export const Paso2 = ({ onNext, onBack }: PasoProps) => {
           placeholder="Ej. María González"
           value={nombre}
           onChange={e => updateData({ adminNombre: e.target.value })}
+        />
+        <Input
+          label="DNI *"
+          placeholder="Solo números (mín. 7 dígitos)"
+          inputMode="numeric"
+          value={dni}
+          onChange={e => updateData({ adminDni: e.target.value.replace(/\D/g, '') })}
+          error={dni !== '' && !dniValido ? 'DNI inválido (mínimo 7 dígitos)' : undefined}
         />
         <Input
           label="Contraseña *"

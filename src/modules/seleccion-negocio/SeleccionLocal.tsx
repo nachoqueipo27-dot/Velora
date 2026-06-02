@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { getLocalesByEmpresa, type EmpresaRow, type LocalRow } from '../../db/master'
+import { getLocalesByEmpresa, getAsignacionesPorDni, type EmpresaRow, type LocalRow } from '../../db/master'
+import { useAuthGlobalStore } from '../../store/authGlobalStore'
 import { NegocioCard } from './components/NegocioCard'
 import { ModalNuevoNegocio } from './ModalNuevoNegocio'
 import { Store, Plus, ArrowLeft } from 'lucide-react'
@@ -23,10 +24,21 @@ const subtituloLocal = (l: LocalRow): string => {
 }
 
 export const SeleccionLocal = ({ empresa, onSelect, onBack }: SeleccionLocalProps) => {
+  const { usuario } = useAuthGlobalStore()
   const [locales, setLocales] = useState<LocalRow[] | null>(null)
   const [modal, setModal] = useState(false)
 
-  const cargar = async () => setLocales(await getLocalesByEmpresa(empresa.id))
+  // Admin General ve todos los locales; usuario local solo los asignados.
+  const cargar = async () => {
+    const todos = await getLocalesByEmpresa(empresa.id)
+    if (usuario?.esAdminGeneral || !usuario?.dni) {
+      setLocales(todos)
+      return
+    }
+    const asignaciones = await getAsignacionesPorDni(usuario.dni)
+    const localIds = new Set(asignaciones.map(a => a.localId))
+    setLocales(todos.filter(l => localIds.has(l.id)))
+  }
   useEffect(() => { cargar() }, [empresa.id])
 
   return (

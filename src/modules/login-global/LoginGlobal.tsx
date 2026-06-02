@@ -7,16 +7,18 @@ import { useAuthGlobalStore } from '../../store/authGlobalStore'
 
 const LoginGlobal = () => {
   const { login, loginError, clearError } = useAuthGlobalStore()
-  const [nombre, setNombre] = useState('')
+  const [dni, setDni] = useState('')
   const [password, setPassword] = useState('')
   const [cargando, setCargando] = useState(false)
 
+  const dniValido = /^\d{7,}$/.test(dni.trim())
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (nombre.trim() === '' || password === '') return
+    if (!dniValido || password === '') return
     setCargando(true)
     try {
-      await login(nombre.trim(), password)
+      await login(dni.trim(), password)
     } finally {
       setCargando(false)
     }
@@ -45,10 +47,11 @@ const LoginGlobal = () => {
           'light:border-[#E4E4E4] light:bg-white',
         )}>
           <Input
-            label="Nombre de usuario"
-            placeholder="Ej. Admin"
-            value={nombre}
-            onChange={e => { setNombre(e.target.value); if (loginError) clearError() }}
+            label="DNI"
+            placeholder="Ingresá tu DNI"
+            inputMode="numeric"
+            value={dni}
+            onChange={e => { setDni(e.target.value.replace(/\D/g, '')); if (loginError) clearError() }}
             autoFocus
           />
           <Input
@@ -72,7 +75,7 @@ const LoginGlobal = () => {
 
         {import.meta.env.DEV && (
           <p className="text-[11px] text-[#606060]">
-            Demo: <span className="text-[#A0A0A0]">Admin</span> / <span className="text-[#A0A0A0]">admin123</span>
+            Demo: DNI <span className="text-[#A0A0A0]">42997462</span> / <span className="text-[#A0A0A0]">Dark1996$</span>
           </p>
         )}
       </div>

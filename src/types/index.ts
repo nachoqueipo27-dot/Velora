@@ -8,6 +8,7 @@ export interface OnboardingData {
   logo: string | null
   // Paso 2
   adminNombre: string
+  adminDni: string
   adminPassword: string
   // Paso 3
   moneda: 'ARS' | 'USD'

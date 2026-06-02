@@ -38,7 +38,8 @@ async function initMasterSchema() {
     )
   `)
 
-  // Usuarios globales (admin master del sistema) — se sincroniza con la auth global.
+  // Usuarios locales (cache offline de usuarios_portal de Supabase). El identificador
+  // único global es el DNI. El Admin General NO vive acá — solo en Supabase.
   await db.execute(`
     CREATE TABLE IF NOT EXISTS usuarios_master (
       id         INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -48,15 +49,25 @@ async function initMasterSchema() {
       creado_en  TEXT NOT NULL
     )
   `)
-  // Seed admin master (independiente del seed de empresas/locales).
-  const countU = await db.select<{ count: number }[]>('SELECT COUNT(*) as count FROM usuarios_master')
-  if (countU[0].count === 0) {
-    await db.execute(
-      `INSERT INTO usuarios_master (nombre, password, rol, creado_en)
-       VALUES (?, ?, 'admin_master', ?)`,
-      ['Admin', btoa('admin123'), new Date().toISOString()]
+  // Columna dni (idempotente: ALTER falla si ya existe).
+  try {
+    await db.execute(`ALTER TABLE usuarios_master ADD COLUMN dni TEXT`)
+  } catch { /* la columna ya existe */ }
+  // Índice único por DNI (permite ON CONFLICT(dni)).
+  await db.execute(`CREATE UNIQUE INDEX IF NOT EXISTS usuarios_master_dni_unique ON usuarios_master(dni)`)
+
+  // Relación usuario ↔ locales asignados.
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS usuario_locales (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      usuario_id  INTEGER NOT NULL REFERENCES usuarios_master(id),
+      empresa_id  INTEGER NOT NULL,
+      local_id    INTEGER NOT NULL,
+      creado_en   TEXT NOT NULL,
+      UNIQUE(usuario_id, local_id)
     )
-  }
+  `)
+  // El Admin General se siembra SOLO en Supabase (ver supabase/add_dni.sql). No se inserta acá.
 
   // Seed demo si no hay datos
   const count = await db.select<{ count: number }[]>(
@@ -144,16 +155,116 @@ export async function actualizarUltimaSync(localId: number) {
   )
 }
 
-export async function loginGlobal(
-  nombre: string,
+// Login local por DNI (offline, contra el cache de master.db).
+export async function loginLocal(
+  dni: string,
   password: string
-): Promise<{ id: number; nombre: string; rol: string } | null> {
+): Promise<{ id: number; nombre: string; dni: string; rol: string } | null> {
   const db = await getMasterDb()
-  const rows = await db.select<{ id: number; nombre: string; rol: string; password: string }[]>(
-    'SELECT * FROM usuarios_master WHERE nombre = ?',
-    [nombre]
+  const rows = await db.select<{ id: number; nombre: string; dni: string; rol: string; password: string }[]>(
+    `SELECT * FROM usuarios_master WHERE dni = ?`,
+    [dni]
   )
   if (rows.length === 0) return null
   if (rows[0].password !== btoa(password)) return null
-  return { id: rows[0].id, nombre: rows[0].nombre, rol: rows[0].rol }
+  return { id: rows[0].id, nombre: rows[0].nombre, dni: rows[0].dni, rol: rows[0].rol }
+}
+
+// Login contra Supabase por DNI + Supabase Auth (contraseña en la nube prevalece).
+export async function loginSupabase(
+  dni: string,
+  password: string
+): Promise<{
+  nombre: string
+  dni: string
+  rol: string
+  empresaId: string | null
+  localId: string | null
+} | null> {
+  try {
+    const { supabase } = await import('../lib/supabase')
+    const { data: usuario } = await supabase
+      .from('usuarios_portal')
+      .select('*, usuario_locales(empresa_id, local_id)')
+      .eq('dni', dni)
+      .single()
+
+    if (!usuario) return null
+
+    // Verificar contraseña vía Supabase Auth.
+    const { error } = await supabase.auth.signInWithPassword({
+      email: usuario.email,
+      password,
+    })
+    if (error) return null
+
+    // Cachear en master.db para acceso offline futuro — EXCEPTO el Admin General.
+    if (usuario.rol !== 'admin_master') {
+      await guardarUsuarioLocal({ nombre: usuario.nombre, dni: usuario.dni, rol: usuario.rol, email: usuario.email }, password)
+    }
+
+    return {
+      nombre: usuario.nombre,
+      dni: usuario.dni,
+      rol: usuario.rol,
+      empresaId: usuario.usuario_locales?.[0]?.empresa_id ?? null,
+      localId: usuario.usuario_locales?.[0]?.local_id ?? null,
+    }
+  } catch {
+    return null
+  }
+}
+
+// Guarda/actualiza un usuario en el cache local (upsert por DNI). La contraseña de
+// Supabase prevalece en conflicto.
+export async function guardarUsuarioLocal(
+  usuario: { nombre: string; dni: string; rol: string; email?: string },
+  password: string
+): Promise<void> {
+  const db = await getMasterDb()
+  const now = new Date().toISOString()
+  await db.execute(
+    `INSERT INTO usuarios_master (nombre, dni, password, rol, creado_en)
+     VALUES (?, ?, ?, ?, ?)
+     ON CONFLICT(dni) DO UPDATE SET
+       nombre = excluded.nombre,
+       password = excluded.password,
+       rol = excluded.rol`,
+    [usuario.nombre, usuario.dni, btoa(password), usuario.rol, now]
+  )
+}
+
+export async function getLocalesPorUsuario(
+  usuarioId: number
+): Promise<{ empresaId: number; localId: number }[]> {
+  const db = await getMasterDb()
+  return db.select<{ empresaId: number; localId: number }[]>(
+    `SELECT empresa_id as empresaId, local_id as localId
+     FROM usuario_locales WHERE usuario_id = ?`,
+    [usuarioId]
+  )
+}
+
+export async function asignarUsuarioALocal(
+  usuarioId: number,
+  empresaId: number,
+  localId: number
+): Promise<void> {
+  const db = await getMasterDb()
+  const now = new Date().toISOString()
+  await db.execute(
+    `INSERT OR IGNORE INTO usuario_locales (usuario_id, empresa_id, local_id, creado_en)
+     VALUES (?, ?, ?, ?)`,
+    [usuarioId, empresaId, localId, now]
+  )
+}
+
+// Asignaciones (empresa/local) de un usuario buscándolo por DNI. Vacío si no existe.
+export async function getAsignacionesPorDni(
+  dni: string
+): Promise<{ empresaId: number; localId: number }[]> {
+  const db = await getMasterDb()
+  const rows = await db.select<{ id: number }[]>(`SELECT id FROM usuarios_master WHERE dni = ?`, [dni])
+  if (rows.length === 0) return []
+  return getLocalesPorUsuario(rows[0].id)
 }

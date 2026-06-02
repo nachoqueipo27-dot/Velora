@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { getEmpresas, type EmpresaRow } from '../../db/master'
+import { getEmpresas, getAsignacionesPorDni, type EmpresaRow } from '../../db/master'
+import { useAuthGlobalStore } from '../../store/authGlobalStore'
 import { NegocioCard } from './components/NegocioCard'
 import { ModalNuevoNegocio } from './ModalNuevoNegocio'
 import { Building2, Plus } from 'lucide-react'
@@ -9,10 +10,21 @@ interface SeleccionEmpresaProps {
 }
 
 export const SeleccionEmpresa = ({ onSelect }: SeleccionEmpresaProps) => {
+  const { usuario } = useAuthGlobalStore()
   const [empresas, setEmpresas] = useState<EmpresaRow[] | null>(null)
   const [modal, setModal] = useState(false)
 
-  const cargar = async () => setEmpresas(await getEmpresas())
+  // Admin General ve todas; usuario local solo sus empresas asignadas.
+  const cargar = async () => {
+    const todas = await getEmpresas()
+    if (usuario?.esAdminGeneral || !usuario?.dni) {
+      setEmpresas(todas)
+      return
+    }
+    const asignaciones = await getAsignacionesPorDni(usuario.dni)
+    const empresaIds = new Set(asignaciones.map(a => a.empresaId))
+    setEmpresas(todas.filter(e => empresaIds.has(e.id)))
+  }
   useEffect(() => { cargar() }, [])
 
   return (
