@@ -1,8 +1,43 @@
 import { useOnboardingStore } from '../../store/onboardingStore'
 import { useSessionStore } from '../../store/sessionStore'
+import { getDb } from '../../db'
 import { Button } from '../../components/ui/Button'
 import { cn } from '../../lib/utils'
 import { FUNCIONES_DISPONIBLES } from './types'
+
+// Inserta el usuario admin del onboarding en la DB del local activo (empleados),
+// con rol Admin. Idempotente: no duplica si ya existe el rol o el empleado.
+async function guardarAdminEnDB(nombre: string, password: string) {
+  try {
+    const db = await getDb()
+    const now = new Date().toISOString()
+
+    const roles = await db.select<{ id: number }[]>(`SELECT id FROM roles WHERE nombre = 'Admin' LIMIT 1`)
+    let rolId: number
+    if (roles.length === 0) {
+      await db.execute(`INSERT INTO roles (nombre, es_admin, creado_en) VALUES ('Admin', 1, ?)`, [now])
+      const nuevoRol = await db.select<{ id: number }[]>(`SELECT id FROM roles WHERE nombre = 'Admin' LIMIT 1`)
+      rolId = nuevoRol[0].id
+    } else {
+      rolId = roles[0].id
+    }
+
+    const admins = await db.select<{ count: number }[]>(
+      `SELECT COUNT(*) as count FROM empleados WHERE nombre = ? LIMIT 1`,
+      [nombre]
+    )
+    if (admins[0].count === 0) {
+      await db.execute(
+        `INSERT INTO empleados (nombre, rol_id, password, activo, tipo_horario, creado_en, actualizado_en)
+         VALUES (?, ?, ?, 1, 'fijo', ?, ?)`,
+        [nombre, rolId, btoa(password), now, now]
+      )
+      console.log('[onboarding] Usuario admin guardado en DB:', nombre)
+    }
+  } catch (e) {
+    console.error('[onboarding] Error guardando admin en DB:', e)
+  }
+}
 
 interface ResumenFinalProps {
   onBack: () => void
@@ -35,11 +70,15 @@ export const ResumenFinal = ({ onBack }: ResumenFinalProps) => {
   const habilitadas = data.funcionesHabilitadas ?? []
   const modulosActivos = FUNCIONES_DISPONIBLES.filter(f => habilitadas.includes(f.id)).length
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
+    // Guardar el admin del onboarding en la DB del local antes de completar.
+    if (data.adminNombre && data.adminPassword) {
+      await guardarAdminEnDB(data.adminNombre, data.adminPassword)
+    }
     setUsuario({
       id: 1,
       nombre: data.adminNombre ?? 'Administrador',
-      rol: 'Administrador',
+      rol: 'Admin',
       avatar: data.logo ?? null,
     })
     completarOnboarding()

@@ -673,6 +673,7 @@ async function initSchema(database: Db) {
 }
 
 async function seedDemoData(database: Db) {
+  await seedRolesBase(database)
   await seedClientesDemo(database)
   await seedEmpleadosDemo(database)
   await seedProductosDemo(database)
@@ -839,6 +840,20 @@ async function seedClientesDemo(database: Db) {
   }
 }
 
+// Roles base — se siembran SIEMPRE (idempotente), independiente de si hay empleados.
+// Toda DB nueva (incluido un local nuevo) queda con los 3 roles base desde el arranque.
+async function seedRolesBase(database: Db) {
+  const rolesCount = await database.select<{ count: number }[]>(
+    'SELECT COUNT(*) as count FROM roles'
+  )
+  if (rolesCount[0].count > 0) return
+
+  const now = new Date().toISOString()
+  await database.execute(`INSERT INTO roles (nombre, es_admin, creado_en) VALUES ('Admin', 1, ?)`, [now])
+  await database.execute(`INSERT INTO roles (nombre, es_admin, creado_en) VALUES ('Supervisor', 0, ?)`, [now])
+  await database.execute(`INSERT INTO roles (nombre, es_admin, creado_en) VALUES ('Operario', 0, ?)`, [now])
+}
+
 async function seedEmpleadosDemo(database: Db) {
   const empCount = await database.select<{ count: number }[]>(
     'SELECT COUNT(*) as count FROM empleados'
@@ -847,20 +862,7 @@ async function seedEmpleadosDemo(database: Db) {
 
   const now = new Date().toISOString()
 
-  // Roles
-  await database.execute(
-    `INSERT INTO roles (nombre, es_admin, creado_en) VALUES (?, ?, ?)`,
-    ['Admin', 1, now]
-  )
-  await database.execute(
-    `INSERT INTO roles (nombre, es_admin, creado_en) VALUES (?, ?, ?)`,
-    ['Supervisor', 0, now]
-  )
-  await database.execute(
-    `INSERT INTO roles (nombre, es_admin, creado_en) VALUES (?, ?, ?)`,
-    ['Operario', 0, now]
-  )
-
+  // Roles ya sembrados por seedRolesBase() — acá solo empleados.
   // Empleados
   await database.execute(
     `INSERT INTO empleados (nombre, rol_id, password, activo, tipo_horario, creado_en, actualizado_en)

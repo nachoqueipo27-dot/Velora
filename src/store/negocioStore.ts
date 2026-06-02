@@ -29,7 +29,13 @@ export const useNegocioStore = create<NegocioStore>()(
       negocioActivo: null,
 
       seleccionarNegocio: (negocio) => {
-        setActiveDb(dbKeyDe(negocio.empresaId, negocio.localId))
+        if (!negocio.empresaId || !negocio.localId) {
+          console.error('[negocioStore] empresaId o localId inválidos:', negocio)
+          return
+        }
+        const key = dbKeyDe(negocio.empresaId, negocio.localId)
+        console.log(`[negocioStore] DB activa → velora_${key}.db`)
+        setActiveDb(key)
         set({ negocioActivo: negocio })
         // Recarga para reinicializar DB, stores y onboarding del local elegido (estado limpio).
         window.location.reload()
