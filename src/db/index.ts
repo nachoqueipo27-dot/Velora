@@ -673,7 +673,19 @@ async function initSchema(database: Db) {
 }
 
 async function seedDemoData(database: Db) {
+  // Base mínima: corre SIEMPRE en todo local (nuevo o demo).
   await seedRolesBase(database)
+  await seedConfiguracionBase(database)
+
+  // Datos de ejemplo: SOLO en el local demo (e1_l1 o la DB default).
+  const key = getActiveDbKey()
+  const esLocalDemo = key === 'e1_l1' || key === 'default'
+  if (!esLocalDemo) {
+    console.log('[seed] Local nuevo — solo datos base, sin demo')
+    return
+  }
+
+  console.log('[seed] Local demo — cargando datos de ejemplo')
   await seedClientesDemo(database)
   await seedEmpleadosDemo(database)
   await seedProductosDemo(database)
@@ -683,10 +695,12 @@ async function seedDemoData(database: Db) {
   await seedOTsDemo(database)
   await seedCitasDemo(database)
   await seedCajaDemo(database)
-  await seedConfiguracionDemo(database)
 }
 
-async function seedConfiguracionDemo(database: Db) {
+// Configuración base que necesita TODO local para funcionar (no son datos de ejemplo):
+// plantillas de ticket/PDF, motivos de cancelación, categorías de gastos, tipo de cambio
+// inicial y el Remote ID de sync. Idempotente.
+async function seedConfiguracionBase(database: Db) {
   const now = new Date().toISOString()
 
   const bloquesTicketDefault = JSON.stringify([
