@@ -30,6 +30,7 @@ export const ModalEmpleado = ({ open, onClose, empleado }: ModalEmpleadoProps) =
   const esEdicion = !!empleado
 
   const [nombre, setNombre] = useState('')
+  const [dni, setDni] = useState('')
   const [password, setPassword] = useState('')
   const [rolId, setRolId] = useState<number | ''>('')
   const [tipoHorario, setTipoHorario] = useState<'fijo' | 'turno'>('fijo')
@@ -48,6 +49,7 @@ export const ModalEmpleado = ({ open, onClose, empleado }: ModalEmpleadoProps) =
     cargarTurnos()
     if (empleado) {
       setNombre(empleado.nombre)
+      setDni(empleado.dni ?? '')
       setPassword('')
       setRolId(empleado.rolId)
       setTipoHorario(empleado.tipoHorario)
@@ -62,7 +64,7 @@ export const ModalEmpleado = ({ open, onClose, empleado }: ModalEmpleadoProps) =
         })
       }
     } else {
-      setNombre(''); setPassword(''); setRolId(''); setTipoHorario('fijo')
+      setNombre(''); setDni(''); setPassword(''); setRolId(''); setTipoHorario('fijo')
       setTurnoId(''); setActivo(true); setHorarios(horariosPorDefecto())
     }
     setTouched(false)
@@ -70,9 +72,10 @@ export const ModalEmpleado = ({ open, onClose, empleado }: ModalEmpleadoProps) =
   }, [open, empleado])
 
   const nombreInvalido = nombre.trim() === ''
+  const dniInvalido = !/^\d{7,}$/.test(dni.trim())
   const passwordInvalido = !esEdicion && password.trim() === ''
   const rolInvalido = rolId === ''
-  const invalido = nombreInvalido || passwordInvalido || rolInvalido
+  const invalido = nombreInvalido || dniInvalido || passwordInvalido || rolInvalido
 
   const setDia = (idx: number, patch: Partial<HorarioFijo>) =>
     setHorarios(h => h.map((d, i) => (i === idx ? { ...d, ...patch } : d)))
@@ -83,6 +86,7 @@ export const ModalEmpleado = ({ open, onClose, empleado }: ModalEmpleadoProps) =
     try {
       const payload = {
         nombre: nombre.trim(),
+        dni: dni.trim(),
         rolId: Number(rolId),
         password,
         tipoHorario,
@@ -118,6 +122,15 @@ export const ModalEmpleado = ({ open, onClose, empleado }: ModalEmpleadoProps) =
           onChange={e => setNombre(e.target.value)}
           error={touched && nombreInvalido ? 'Obligatorio' : undefined}
           autoFocus
+        />
+        <Input
+          label="DNI *"
+          placeholder="Solo números (mín. 7 dígitos)"
+          inputMode="numeric"
+          value={dni}
+          onChange={e => setDni(e.target.value.replace(/\D/g, ''))}
+          error={touched && dniInvalido ? 'DNI inválido (mínimo 7 dígitos)' : undefined}
+          hint="Identificador único para iniciar sesión."
         />
         <div className="grid grid-cols-2 gap-3">
           <Input

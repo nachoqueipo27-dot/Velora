@@ -329,6 +329,31 @@ export async function asignarUsuarioALocal(
   )
 }
 
+// Quita la asignación de un usuario (por DNI) a un local. Si no le quedan locales
+// asignados, elimina también el usuario del cache (salvo que sea admin master / copia local).
+export async function eliminarUsuarioDeLocal(
+  dni: string,
+  localId: number
+): Promise<void> {
+  if (!dni) return
+  const db = await getMasterDb()
+  const rows = await db.select<{ id: number; es_local: number }[]>(
+    `SELECT id, es_local FROM usuarios_master WHERE dni = ?`,
+    [dni]
+  )
+  if (rows.length === 0) return
+  const { id, es_local } = rows[0]
+  await db.execute(`DELETE FROM usuario_locales WHERE usuario_id = ? AND local_id = ?`, [id, localId])
+  const restantes = await db.select<{ count: number }[]>(
+    `SELECT COUNT(*) as count FROM usuario_locales WHERE usuario_id = ?`,
+    [id]
+  )
+  // No borrar al admin master (copia local del Admin General).
+  if (restantes[0].count === 0 && es_local === 1) {
+    await db.execute(`DELETE FROM usuarios_master WHERE id = ?`, [id])
+  }
+}
+
 // Asignaciones (empresa/local) de un usuario buscándolo por DNI. Vacío si no existe.
 export async function getAsignacionesPorDni(
   dni: string

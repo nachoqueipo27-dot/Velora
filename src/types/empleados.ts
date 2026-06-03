@@ -16,6 +16,7 @@ export type NivelPermiso = 'sin_acceso' | 'solo_ver' | 'editar'
 export interface Empleado {
   id: number
   nombre: string
+  dni: string
   rolId: number
   rolNombre: string
   avatar: string | null

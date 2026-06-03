@@ -94,6 +94,7 @@ async function initSchema(database: Db) {
     CREATE TABLE IF NOT EXISTS empleados (
       id             INTEGER PRIMARY KEY AUTOINCREMENT,
       nombre         TEXT NOT NULL,
+      dni            TEXT,
       rol_id         INTEGER NOT NULL,
       password       TEXT NOT NULL,
       avatar         TEXT,
@@ -635,6 +636,11 @@ async function initSchema(database: Db) {
       creado_en  TEXT NOT NULL
     )
   `)
+
+  // Migración: columna dni en empleados (DBs creadas antes de este cambio).
+  try {
+    await database.execute(`ALTER TABLE empleados ADD COLUMN dni TEXT`)
+  } catch { /* la columna ya existe */ }
 
   // ─── Migración segura — columnas de sync (Fase 2) ─────────────
   // Agrega sync_status / synced_at / remote_id / deleted_at a las tablas que se
