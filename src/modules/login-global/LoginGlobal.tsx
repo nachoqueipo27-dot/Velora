@@ -72,12 +72,6 @@ const LoginGlobal = () => {
             {cargando ? 'Ingresando...' : 'Ingresar'}
           </Button>
         </form>
-
-        {import.meta.env.DEV && (
-          <p className="text-[11px] text-[#606060]">
-            Demo: DNI <span className="text-[#A0A0A0]">42997462</span> / <span className="text-[#A0A0A0]">Dark1996$</span>
-          </p>
-        )}
       </div>
     </div>
   )
