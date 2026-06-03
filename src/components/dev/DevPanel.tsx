@@ -7,6 +7,7 @@ import { useOnboardingStore } from '../../store/onboardingStore'
 import { useNavigationStore } from '../../store/navigationStore'
 import { useSyncStore } from '../../store/syncStore'
 import { useConectividadStore } from '../../store/conectividadStore'
+import { useSistemaStore } from '../../store/sistemaStore'
 import { useThemeStore } from '../../store/themeStore'
 import { useToastStore } from '../../store/toastStore'
 import { getDb } from '../../db'
@@ -29,6 +30,7 @@ export const DevPanel = () => {
   const { activeModule, setModule } = useNavigationStore()
   const { pendientes, sincronizar, heartbeat } = useSyncStore()
   const { estado: estadoConexion, ultimoCheck, verificar: pingManual } = useConectividadStore()
+  const { systemId } = useSistemaStore()
   const { theme } = useThemeStore()
   const { agregar: toast } = useToastStore()
 
@@ -430,6 +432,7 @@ export const DevPanel = () => {
               ['Onboarding', completado ? 'Completado' : 'Pendiente'],
               ['Módulo', activeModule],
               ['Sync pendientes', String(pendientes)],
+              ['System ID', systemId ?? '—'],
               ['Conectividad', estadoConexion],
               ['Último ping', ultimoCheck ? `hace ${Math.round((Date.now() - new Date(ultimoCheck).getTime()) / 1000)}s` : '—'],
               ['Tema', theme],

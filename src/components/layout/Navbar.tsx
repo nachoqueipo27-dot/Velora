@@ -3,6 +3,7 @@ import { useThemeStore } from '../../store/themeStore'
 import { useNegocioStore } from '../../store/negocioStore'
 import { useConectividadStore } from '../../store/conectividadStore'
 import { useSyncStore } from '../../store/syncStore'
+import { useSistemaStore } from '../../store/sistemaStore'
 import { useConectividad } from '../../hooks/useConectividad'
 import { cn } from '../../lib/utils'
 import { VeloraLogo } from '../ui/VeloraLogo'
@@ -59,6 +60,8 @@ export const Navbar = () => {
   const { activeModule, isDropdownOpen, modulosVisibles, history, setModule, nextModule, prevModule, goBack, toggleDropdown, closeDropdown } = useNavigationStore()
   const { theme, toggleTheme } = useThemeStore()
   const { negocioActivo } = useNegocioStore()
+
+  const { systemId } = useSistemaStore()
 
   // Inicia el timer adaptativo de conectividad (el navbar siempre está montado en el Layout).
   useConectividad()
@@ -145,6 +148,19 @@ export const Navbar = () => {
         </div>
         <div className="flex items-center gap-3">
           <StatusIndicador />
+          {systemId && (
+            <div
+              className={cn(
+                'flex items-center gap-1 px-2 py-1 rounded-input border text-[11px] font-mono transition-all duration-300',
+                'border-[#2A2A2A] text-[#606060]',
+                'light:border-[#E4E4E4] light:text-[#888888]',
+              )}
+              title={`ID del sistema: ${systemId}`}
+            >
+              <span className="text-[10px] text-[#606060] light:text-[#888888]">ID</span>
+              <span className="text-[#A0A0A0] light:text-[#404040] select-all cursor-text">{systemId}</span>
+            </div>
+          )}
           <button
             onClick={toggleTheme}
             aria-label={theme === 'dark' ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro'}

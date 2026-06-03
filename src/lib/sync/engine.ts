@@ -3,6 +3,7 @@ import { getPendientes, marcarSincronizado, marcarError } from './queries'
 import { actualizarUltimaSync } from '../../db/master'
 import { useNegocioStore } from '../../store/negocioStore'
 import { useConectividadStore } from '../../store/conectividadStore'
+import { useSistemaStore } from '../../store/sistemaStore'
 import { getDb } from '../../db'
 import type { TablaSyncable, ResultadoSync } from './types'
 
@@ -125,6 +126,7 @@ export async function enviarHeartbeat(): Promise<void> {
     await invoke('sync_heartbeat', {
       payload: {
         local_id: localRemoteId,
+        system_id: useSistemaStore.getState().systemId ?? null,
         ots_activas: otsActivas[0]?.count ?? 0,
         saldo_caja_hoy: (cobros[0]?.total ?? 0) - (gastos[0]?.total ?? 0),
         empleados_online: 1,

@@ -3,6 +3,8 @@ import { Navbar } from './Navbar'
 import { StatusBar } from './StatusBar'
 import { useNavigationStore } from '../../store/navigationStore'
 import { useOnboardingStore } from '../../store/onboardingStore'
+import { useSistemaStore } from '../../store/sistemaStore'
+import { useNegocioStore } from '../../store/negocioStore'
 import { useInitDb } from '../../hooks/useInitDb'
 import { useBarcodeScan } from '../../hooks/useBarcodeScan'
 import { ModalEscaneo } from '../modals/ModalEscaneo'
@@ -48,12 +50,24 @@ export const Layout = () => {
   const funcionesHabilitadas = useOnboardingStore(s => s.data.funcionesHabilitadas)
   const ActiveComponent = MODULE_COMPONENTS[activeModule]
   const { ready, error } = useInitDb()
+  const { inicializar, registrarEnSupabase } = useSistemaStore()
+  const { negocioActivo } = useNegocioStore()
   const [codigoEscaneado, setCodigoEscaneado] = useState<string | null>(null)
 
   // Filtrar módulos visibles según funciones habilitadas en el onboarding/config.
   useEffect(() => {
     actualizarModulosVisibles(funcionesHabilitadas ?? [])
   }, [funcionesHabilitadas, actualizarModulosVisibles])
+
+  // ID único por PC: generar y registrar en Supabase (si hay local remoto).
+  useEffect(() => {
+    inicializar().then(() => {
+      if (negocioActivo?.localRemoteId) {
+        registrarEnSupabase(negocioActivo.localRemoteId, undefined)
+      }
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const onScan = useCallback((code: string) => {
     // El POS maneja el escaneo directamente (Paso 11)

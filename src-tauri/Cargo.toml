@@ -28,4 +28,5 @@ tauri-plugin-http = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 bcrypt = "0.15"
+hostname = "0.3"
 

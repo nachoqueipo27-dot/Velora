@@ -1,6 +1,8 @@
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 use bcrypt::{hash, verify, DEFAULT_COST};
 use serde::{Deserialize, Serialize};
+use std::collections::hash_map::DefaultHasher;
+use std::hash::{Hash, Hasher};
 use tauri_plugin_http::reqwest;
 
 #[tauri::command]
@@ -119,6 +121,36 @@ async fn ping_supabase() -> bool {
     }
 }
 
+// ID único y determinístico por PC (hostname → hash → 16 chars alfanuméricos).
+// No se guarda: se regenera siempre igual desde el hardware.
+#[tauri::command]
+fn get_system_id() -> String {
+    let hostname = hostname::get()
+        .unwrap_or_default()
+        .to_string_lossy()
+        .to_string();
+
+    let seed = format!("{}-velora-system", hostname);
+
+    let mut hasher = DefaultHasher::new();
+    seed.hash(&mut hasher);
+    let hash = hasher.finish();
+
+    let chars: Vec<char> = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+        .chars()
+        .collect();
+
+    let mut id = String::with_capacity(16);
+    let mut n = hash;
+    for _ in 0..16 {
+        id.push(chars[(n % chars.len() as u64) as usize]);
+        n = n
+            .wrapping_mul(6364136223846793005)
+            .wrapping_add(1442695040888963407);
+    }
+    id
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -128,7 +160,7 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_http::init())
-        .invoke_handler(tauri::generate_handler![greet, sync_tabla, sync_heartbeat, ping_supabase, hash_password, verify_password])
+        .invoke_handler(tauri::generate_handler![greet, sync_tabla, sync_heartbeat, ping_supabase, hash_password, verify_password, get_system_id])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
