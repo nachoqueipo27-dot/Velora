@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { loginLocal, loginSupabase } from '../db/master'
+import { loginLocal, loginSupabase, seedAdminGeneralSiNoExiste } from '../db/master'
 import { useConectividadStore } from './conectividadStore'
 
 interface UsuarioGlobal {
@@ -30,6 +30,10 @@ export const useAuthGlobalStore = create<AuthGlobalStore>()(
 
       login: async (dni, password) => {
         set({ cargando: true, loginError: null })
+
+        // Seed lazy del Admin General (necesita invoke disponible → acá, no en initSchema).
+        await seedAdminGeneralSiNoExiste()
+
         try {
           // 1. Login local primero (rápido, funciona offline).
           const usuarioLocal = await loginLocal(dni, password)

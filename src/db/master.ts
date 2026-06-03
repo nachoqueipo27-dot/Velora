@@ -1,4 +1,5 @@
 import Database from '@tauri-apps/plugin-sql'
+import { hashPassword, verifyPassword, esBcrypt } from '../lib/crypto'
 
 let masterDb: Awaited<ReturnType<typeof Database.load>> | null = null
 
@@ -52,6 +53,10 @@ async function initMasterSchema() {
   // Columna dni (idempotente: ALTER falla si ya existe).
   try {
     await db.execute(`ALTER TABLE usuarios_master ADD COLUMN dni TEXT`)
+  } catch { /* la columna ya existe */ }
+  // Columna es_local (1: creado localmente · 0: admin master con copia local de Supabase).
+  try {
+    await db.execute(`ALTER TABLE usuarios_master ADD COLUMN es_local INTEGER DEFAULT 1`)
   } catch { /* la columna ya existe */ }
   // Índice único por DNI (permite ON CONFLICT(dni)).
   await db.execute(`CREATE UNIQUE INDEX IF NOT EXISTS usuarios_master_dni_unique ON usuarios_master(dni)`)
@@ -155,19 +160,64 @@ export async function actualizarUltimaSync(localId: number) {
   )
 }
 
-// Login local por DNI (offline, contra el cache de master.db).
+// Seed lazy del Admin General: copia local cifrada con bcrypt. Se llama desde el login
+// (no en initMasterSchema) porque los comandos Tauri (invoke) recién están disponibles
+// con el webview listo. es_local = 0 marca que es la copia local del admin master.
+export async function seedAdminGeneralSiNoExiste(): Promise<void> {
+  const db = await getMasterDb()
+  const existe = await db.select<{ count: number }[]>(
+    `SELECT COUNT(*) as count FROM usuarios_master WHERE dni = '42997462'`
+  )
+  if (existe[0].count > 0) return
+
+  try {
+    const passwordHash = await hashPassword('Dark1996$')
+    const now = new Date().toISOString()
+    await db.execute(
+      `INSERT INTO usuarios_master (nombre, dni, password, rol, es_local, creado_en)
+       VALUES (?, ?, ?, 'admin_master', 0, ?)`,
+      ['Administrador', '42997462', passwordHash, now]
+    )
+    console.log('[master] Admin General seedeado con bcrypt')
+  } catch (e) {
+    console.warn('[master] No se pudo seedear Admin General:', e)
+  }
+}
+
+// Login local por DNI (offline, contra el cache de master.db). Verifica con bcrypt;
+// los hashes legacy (btoa) se migran a bcrypt silenciosamente al primer login exitoso.
 export async function loginLocal(
   dni: string,
   password: string
 ): Promise<{ id: number; nombre: string; dni: string; rol: string } | null> {
   const db = await getMasterDb()
-  const rows = await db.select<{ id: number; nombre: string; dni: string; rol: string; password: string }[]>(
+  const rows = await db.select<{
+    id: number; nombre: string; dni: string; rol: string; password: string; es_local: number
+  }[]>(
     `SELECT * FROM usuarios_master WHERE dni = ?`,
     [dni]
   )
   if (rows.length === 0) return null
-  if (rows[0].password !== btoa(password)) return null
-  return { id: rows[0].id, nombre: rows[0].nombre, dni: rows[0].dni, rol: rows[0].rol }
+
+  const usuario = rows[0]
+  let passwordOk = false
+
+  if (esBcrypt(usuario.password)) {
+    passwordOk = await verifyPassword(password, usuario.password)
+  } else {
+    // Legacy btoa — verificar y migrar a bcrypt.
+    passwordOk = usuario.password === btoa(password)
+    if (passwordOk) {
+      try {
+        const nuevoHash = await hashPassword(password)
+        await db.execute(`UPDATE usuarios_master SET password = ? WHERE dni = ?`, [nuevoHash, dni])
+        console.log('[master] Password migrada a bcrypt:', dni)
+      } catch { /* si falla la migración, el login igual procede */ }
+    }
+  }
+
+  if (!passwordOk) return null
+  return { id: usuario.id, nombre: usuario.nombre, dni: usuario.dni, rol: usuario.rol }
 }
 
 // Login contra Supabase por DNI + Supabase Auth (contraseña en la nube prevalece).
@@ -198,8 +248,26 @@ export async function loginSupabase(
     })
     if (error) return null
 
-    // Cachear en master.db para acceso offline futuro — EXCEPTO el Admin General.
-    if (usuario.rol !== 'admin_master') {
+    // Cachear en master.db para acceso offline futuro.
+    if (usuario.rol === 'admin_master') {
+      // Admin General → copia local cifrada (es_local = 0). Supabase prevalece en password.
+      try {
+        const passwordHash = await hashPassword(password)
+        const now = new Date().toISOString()
+        const db = await getMasterDb()
+        await db.execute(
+          `INSERT INTO usuarios_master (nombre, dni, password, rol, es_local, creado_en)
+           VALUES (?, ?, ?, 'admin_master', 0, ?)
+           ON CONFLICT(dni) DO UPDATE SET
+             nombre = excluded.nombre,
+             password = excluded.password`,
+          [usuario.nombre, usuario.dni, passwordHash, now]
+        )
+        console.log('[master] Copia local Admin General actualizada')
+      } catch (e) {
+        console.warn('[master] No se pudo actualizar copia local:', e)
+      }
+    } else {
       await guardarUsuarioLocal({ nombre: usuario.nombre, dni: usuario.dni, rol: usuario.rol, email: usuario.email }, password)
     }
 
@@ -223,14 +291,16 @@ export async function guardarUsuarioLocal(
 ): Promise<void> {
   const db = await getMasterDb()
   const now = new Date().toISOString()
+  // Siempre cifrar con bcrypt (vía Rust).
+  const passwordHash = await hashPassword(password)
   await db.execute(
-    `INSERT INTO usuarios_master (nombre, dni, password, rol, creado_en)
-     VALUES (?, ?, ?, ?, ?)
+    `INSERT INTO usuarios_master (nombre, dni, password, rol, es_local, creado_en)
+     VALUES (?, ?, ?, ?, 1, ?)
      ON CONFLICT(dni) DO UPDATE SET
        nombre = excluded.nombre,
        password = excluded.password,
        rol = excluded.rol`,
-    [usuario.nombre, usuario.dni, btoa(password), usuario.rol, now]
+    [usuario.nombre, usuario.dni, passwordHash, usuario.rol, now]
   )
 }
 
