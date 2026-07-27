@@ -4,16 +4,18 @@ import Ventas from './ventas'
 import CajaFinanzas from './caja-finanzas'
 import InventarioStock from './inventario-stock'
 import OTPresupuestos from './ot-presupuestos'
+import ClientesReporte from './clientes'
 import RecursosHumanos from './recursos-humanos'
-import { TrendingUp, Wallet, Boxes, ClipboardList, Users } from 'lucide-react'
+import { TrendingUp, Wallet, Boxes, ClipboardList, Contact, Users } from 'lucide-react'
 
-type Seccion = 'ventas' | 'caja-finanzas' | 'inventario-stock' | 'ot-presupuestos' | 'recursos-humanos'
+type Seccion = 'ventas' | 'caja-finanzas' | 'inventario-stock' | 'ot-presupuestos' | 'clientes' | 'recursos-humanos'
 
 const SUBMENU: { id: Seccion; label: string; icon: React.ReactNode }[] = [
   { id: 'ventas', label: 'Ventas', icon: <TrendingUp size={15} /> },
   { id: 'caja-finanzas', label: 'Caja y Finanzas', icon: <Wallet size={15} /> },
   { id: 'inventario-stock', label: 'Inventario y Stock', icon: <Boxes size={15} /> },
   { id: 'ot-presupuestos', label: 'OT y Presupuestos', icon: <ClipboardList size={15} /> },
+  { id: 'clientes', label: 'Clientes', icon: <Contact size={15} /> },
   { id: 'recursos-humanos', label: 'Recursos Humanos', icon: <Users size={15} /> },
 ]
 
@@ -26,6 +28,7 @@ const Reportes = () => {
       case 'caja-finanzas': return <CajaFinanzas />
       case 'inventario-stock': return <InventarioStock />
       case 'ot-presupuestos': return <OTPresupuestos />
+      case 'clientes': return <ClientesReporte />
       case 'recursos-humanos': return <RecursosHumanos />
     }
   }
