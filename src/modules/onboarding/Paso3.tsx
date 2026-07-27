@@ -48,14 +48,12 @@ export const Paso3 = ({ onNext, onBack }: PasoProps) => {
   useEffect(() => {
     const patch: Record<string, string> = {}
     if (!data.moneda) patch.moneda = 'ARS'
-    if (!data.anchoPapel) patch.anchoPapel = '80mm'
     if (!data.tema) patch.tema = theme
     if (Object.keys(patch).length) updateData(patch as any)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const moneda = data.moneda ?? 'ARS'
-  const anchoPapel = data.anchoPapel ?? '80mm'
 
   return (
     <div className="flex flex-col gap-5">
@@ -87,16 +85,6 @@ export const Paso3 = ({ onNext, onBack }: PasoProps) => {
             { value: 'light', label: 'Claro' },
           ]}
           onChange={v => { setTheme(v); updateData({ tema: v }) }}
-        />
-
-        <OptionGroup
-          label="Ancho de papel (impresión)"
-          value={anchoPapel}
-          options={[
-            { value: '58mm', label: '58 mm' },
-            { value: '80mm', label: '80 mm' },
-          ]}
-          onChange={v => updateData({ anchoPapel: v })}
         />
       </div>
 

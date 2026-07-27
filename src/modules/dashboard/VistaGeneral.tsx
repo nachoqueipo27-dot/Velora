@@ -51,6 +51,23 @@ export const VistaGeneral = () => {
 
   return (
     <div className="flex flex-col gap-6 h-full overflow-y-auto pr-1 pb-4">
+      {/* Alertas */}
+      {alertas.length > 0 && (
+        <div className="flex flex-col gap-2">
+          {alertas.map(a => (
+            <div key={a.key} className={cn('flex items-center gap-3 rounded-card border px-4 py-2.5',
+              a.tono === 'error'
+                ? 'border-[#C0392B]/30 bg-[#C0392B]/[0.06]'
+                : 'border-[#D4921A]/30 bg-[#D4921A]/[0.06]')}>
+              {a.icon}
+              <span className="text-[13px] text-white light:text-black flex-1">{a.texto}</span>
+              <button onClick={a.onClick} className="text-[12px] font-medium text-[#A0A0A0] light:text-[#404040] hover:text-white light:hover:text-black transition-colors">{a.accion}</button>
+              <button onClick={() => setDescartadas(s => new Set(s).add(a.key))} className="p-1 rounded text-[#606060] hover:text-white light:hover:text-black hover:bg-white/10 light:hover:bg-black/5 transition-all"><X size={13} /></button>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Sección 1 — Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <CardMetrica titulo="OTs activas" valor={data.totalOTsActivas} subtitulo="en curso"
@@ -116,23 +133,6 @@ export const VistaGeneral = () => {
           )}
         </div>
       </div>
-
-      {/* Sección 4 — Alertas */}
-      {alertas.length > 0 && (
-        <div className="flex flex-col gap-2">
-          {alertas.map(a => (
-            <div key={a.key} className={cn('flex items-center gap-3 rounded-card border px-4 py-2.5',
-              a.tono === 'error'
-                ? 'border-[#C0392B]/30 bg-[#C0392B]/[0.06]'
-                : 'border-[#D4921A]/30 bg-[#D4921A]/[0.06]')}>
-              {a.icon}
-              <span className="text-[13px] text-white light:text-black flex-1">{a.texto}</span>
-              <button onClick={a.onClick} className="text-[12px] font-medium text-[#A0A0A0] light:text-[#404040] hover:text-white light:hover:text-black transition-colors">{a.accion}</button>
-              <button onClick={() => setDescartadas(s => new Set(s).add(a.key))} className="p-1 rounded text-[#606060] hover:text-white light:hover:text-black hover:bg-white/10 light:hover:bg-black/5 transition-all"><X size={13} /></button>
-            </div>
-          ))}
-        </div>
-      )}
     </div>
   )
 }

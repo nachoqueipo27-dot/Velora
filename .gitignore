@@ -26,10 +26,6 @@ dist-ssr
 # Rust / Tauri build
 src-tauri/target/
 
-# Variables de entorno / secretos
-.env
-.env.*
-!.env.example
 
 # Artefactos intermedios
 src-tauri/icons/source-1024.png

@@ -73,7 +73,7 @@ export const useClientesStore = create<ClientesStore>((set) => ({
       .join(', ')
     const values = [...Object.values(data), now, id]
     await db.execute(
-      `UPDATE clientes SET ${fields}, actualizado_en = ?, sync_status = 'pendiente' WHERE id = ?`,
+      `UPDATE clientes SET ${fields}, actualizado_en = ? WHERE id = ?`,
       values
     )
     await registrarActividad({ modulo: 'Clientes', accion: 'Editó un cliente', entidadTipo: 'cliente', entidadId: id, campoNuevo: data })

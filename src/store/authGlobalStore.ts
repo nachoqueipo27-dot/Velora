@@ -1,15 +1,12 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { loginLocal, loginSupabase, seedAdminGeneralSiNoExiste } from '../db/master'
-import { useConectividadStore } from './conectividadStore'
+import { loginLocal } from '../db/master'
 
 interface UsuarioGlobal {
   nombre: string
   dni: string
   rol: string
   esAdminGeneral: boolean
-  localId: number | null
-  empresaId: number | null
 }
 
 interface AuthGlobalStore {
@@ -31,11 +28,7 @@ export const useAuthGlobalStore = create<AuthGlobalStore>()(
       login: async (dni, password) => {
         set({ cargando: true, loginError: null })
 
-        // Seed lazy del Admin General (necesita invoke disponible → acá, no en initSchema).
-        await seedAdminGeneralSiNoExiste()
-
         try {
-          // 1. Login local primero (rápido, funciona offline).
           const usuarioLocal = await loginLocal(dni, password)
           if (usuarioLocal) {
             set({
@@ -44,34 +37,6 @@ export const useAuthGlobalStore = create<AuthGlobalStore>()(
                 dni: usuarioLocal.dni,
                 rol: usuarioLocal.rol,
                 esAdminGeneral: usuarioLocal.rol === 'admin_master',
-                localId: null,
-                empresaId: null,
-              },
-              cargando: false,
-            })
-            return true
-          }
-
-          // 2. No está en local → intentar Supabase (requiere conexión).
-          const { estado } = useConectividadStore.getState()
-          if (estado === 'desconectado') {
-            set({
-              loginError: 'Usuario no encontrado. Sin conexión para verificar en la nube.',
-              cargando: false,
-            })
-            return false
-          }
-
-          const usuarioNube = await loginSupabase(dni, password)
-          if (usuarioNube) {
-            set({
-              usuario: {
-                nombre: usuarioNube.nombre,
-                dni: usuarioNube.dni,
-                rol: usuarioNube.rol,
-                esAdminGeneral: usuarioNube.rol === 'admin_master',
-                localId: null,
-                empresaId: null,
               },
               cargando: false,
             })

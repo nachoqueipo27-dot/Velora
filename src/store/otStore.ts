@@ -275,7 +275,7 @@ export const useOTStore = create<OTStore>((set, get) => ({
     const db = await getDb()
     const now = new Date().toISOString()
     const o = get().ots.find(x => x.id === id)
-    await db.execute("UPDATE ordenes_trabajo SET estado = ?, actualizado_en = ?, sync_status = 'pendiente' WHERE id = ?", [estado, now, id])
+    await db.execute("UPDATE ordenes_trabajo SET estado = ?, actualizado_en = ? WHERE id = ?", [estado, now, id])
     await registrarActividad({ modulo: 'Órdenes de Trabajo', accion: 'Cambió estado de OT', detalle: `OT #${String(o?.numero ?? id).padStart(3, '0')} → ${estado}`, entidadTipo: 'ot', entidadId: id, campoAnterior: { estado: o?.estado }, campoNuevo: { estado } })
     if (estado === 'entregado' && o && o.garantiaDias > 0) {
       const vence = sumarDias(new Date(), o.garantiaDias)

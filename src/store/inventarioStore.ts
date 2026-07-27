@@ -19,7 +19,6 @@ export interface NuevoProducto {
   precioCosto: number
   monedaCosto: 'ARS' | 'USD'
   codigoSku: string
-  codigoBarras: string
   stock: number
   stockMinimo: number
   imagen: string | null
@@ -48,7 +47,6 @@ interface InventarioStore {
   cargarMovimientos: (productoId: number) => Promise<void>
   obtenerSalidasPorProducto: (desdeISO?: string) => Promise<Map<number, number>>
   cargarInformeRentabilidad: () => Promise<void>
-  buscarPorCodigoBarras: (codigo: string) => Promise<Producto | null>
 }
 
 const mapProducto = (r: any): Producto => ({
@@ -62,7 +60,6 @@ const mapProducto = (r: any): Producto => ({
   precioCosto: r.precio_costo ?? 0,
   monedaCosto: (r.moneda_costo ?? 'ARS') as 'ARS' | 'USD',
   codigoSku: r.codigo_sku ?? '',
-  codigoBarras: r.codigo_barras ?? '',
   stock: r.stock ?? 0,
   stockMinimo: r.stock_minimo ?? 0,
   imagen: r.imagen ?? null,
@@ -137,10 +134,10 @@ export const useInventarioStore = create<InventarioStore>((set, get) => ({
     const now = new Date().toISOString()
     const res = await db.execute(
       `INSERT INTO productos
-       (nombre, tipo, descripcion, categoria_id, precio, precio_costo, moneda_costo, codigo_sku, codigo_barras, stock, stock_minimo, imagen, trazabilidad, activo, creado_en, actualizado_en)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       (nombre, tipo, descripcion, categoria_id, precio, precio_costo, moneda_costo, codigo_sku, stock, stock_minimo, imagen, trazabilidad, activo, creado_en, actualizado_en)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [data.nombre, data.tipo, data.descripcion, data.categoriaId, data.precio, data.precioCosto, data.monedaCosto,
-       data.codigoSku, data.codigoBarras, data.stock, data.stockMinimo, data.imagen, data.trazabilidad, data.activo ? 1 : 0, now, now]
+       data.codigoSku, data.stock, data.stockMinimo, data.imagen, data.trazabilidad, data.activo ? 1 : 0, now, now]
     )
     const id = Number(res.lastInsertId)
     if (data.tipo === 'conjunto') await guardarComponentes(db, id, componentes)
@@ -153,9 +150,9 @@ export const useInventarioStore = create<InventarioStore>((set, get) => ({
     const now = new Date().toISOString()
     await db.execute(
       `UPDATE productos SET nombre=?, tipo=?, descripcion=?, categoria_id=?, precio=?, precio_costo=?, moneda_costo=?,
-        codigo_sku=?, codigo_barras=?, stock=?, stock_minimo=?, imagen=?, trazabilidad=?, activo=?, actualizado_en=?, sync_status='pendiente' WHERE id=?`,
+        codigo_sku=?, stock=?, stock_minimo=?, imagen=?, trazabilidad=?, activo=?, actualizado_en=? WHERE id=?`,
       [data.nombre, data.tipo, data.descripcion, data.categoriaId, data.precio, data.precioCosto, data.monedaCosto,
-       data.codigoSku, data.codigoBarras, data.stock, data.stockMinimo, data.imagen, data.trazabilidad, data.activo ? 1 : 0, now, id]
+       data.codigoSku, data.stock, data.stockMinimo, data.imagen, data.trazabilidad, data.activo ? 1 : 0, now, id]
     )
     if (data.tipo === 'conjunto') await guardarComponentes(db, id, componentes)
     else await db.execute('DELETE FROM conjunto_componentes WHERE conjunto_id = ?', [id])
@@ -277,16 +274,5 @@ export const useInventarioStore = create<InventarioStore>((set, get) => ({
       }
     })
     set({ informe })
-  },
-
-  buscarPorCodigoBarras: async (codigo) => {
-    const db = await getDb()
-    const rows = await db.select<any[]>(
-      `SELECT p.*, c.nombre as categoria_nombre FROM productos p
-       LEFT JOIN categorias c ON p.categoria_id = c.id
-       WHERE p.codigo_barras = ? LIMIT 1`,
-      [codigo]
-    )
-    return rows.length ? mapProducto(rows[0]) : null
   },
 }))

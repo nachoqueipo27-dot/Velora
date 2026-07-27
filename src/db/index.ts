@@ -1,40 +1,20 @@
 import Database from '@tauri-apps/plugin-sql'
 
-// Una conexión SQLite por local activo (multi-tenant).
+// Una única conexión SQLite fija — instalación single-tenant (un negocio, un local).
 // Guardamos la PROMESA (no la conexión resuelta) para que llamadas concurrentes
 // compartan la misma inicialización y no corran initSchema/seedDemoData dos veces.
-const dbMap = new Map<string, Promise<Db>>()
-
-// Key del local activo — la setea negocioStore al elegir empresa+local.
-let activeDbKey = 'default'
-
-export function setActiveDb(key: string) {
-  activeDbKey = key
-}
-
-export function getActiveDbKey(): string {
-  return activeDbKey
-}
+let dbPromise: Promise<Db> | null = null
 
 export function getDb(): Promise<Db> {
-  const key = activeDbKey
-  if (!dbMap.has(key)) {
-    const dbName = key === 'default'
-      ? 'sqlite:velora.db'
-      : `sqlite:velora_${key}.db`
-
-    // Guardamos la PROMESA inmediatamente, antes de awaitar nada, para que
-    // cualquier llamada concurrente reciba esta misma promesa y espere su resultado.
-    const promesa = (async () => {
-      const database = await Database.load(dbName)
+  if (!dbPromise) {
+    dbPromise = (async () => {
+      const database = await Database.load('sqlite:velora.db')
       await initSchema(database)
       await seedDemoData(database)
       return database
     })()
-
-    dbMap.set(key, promesa)
   }
-  return dbMap.get(key)!
+  return dbPromise
 }
 
 async function initSchema(database: Db) {
@@ -641,57 +621,17 @@ async function initSchema(database: Db) {
   try {
     await database.execute(`ALTER TABLE empleados ADD COLUMN dni TEXT`)
   } catch { /* la columna ya existe */ }
-
-  // ─── Migración segura — columnas de sync (Fase 2) ─────────────
-  // Agrega sync_status / synced_at / remote_id / deleted_at a las tablas que se
-  // sincronizan con Supabase. SQLite no soporta ADD COLUMN IF NOT EXISTS, así que
-  // el patrón idempotente y a prueba de races es intentar el ALTER y capturar el
-  // error de "duplicate column name" por columna individual.
-  const tablasSync = [
-    'clientes', 'empleados', 'productos', 'ordenes_trabajo',
-    'presupuestos', 'items_presupuesto', 'cobros_caja',
-    'gastos_operativos', 'cierres_caja', 'cierres_mes',
-    'fichajes', 'horas_extras', 'ausencias',
-    'movimientos_stock', 'proveedores', 'ordenes_compra',
-  ]
-  const columnasSync: { nombre: string; def: string }[] = [
-    { nombre: 'sync_status', def: `TEXT DEFAULT 'pendiente'` },
-    { nombre: 'synced_at',   def: `TEXT` },
-    { nombre: 'remote_id',   def: `TEXT` },
-    { nombre: 'deleted_at',  def: `TEXT` },
-  ]
-  for (const tabla of tablasSync) {
-    for (const col of columnasSync) {
-      try {
-        await database.execute(`ALTER TABLE ${tabla} ADD COLUMN ${col.nombre} ${col.def}`)
-      } catch (e) {
-        const msg = String(e).toLowerCase()
-        if (msg.includes('duplicate column name')) {
-          // Caso esperado: la columna ya existe (SQLite no tiene ADD COLUMN IF NOT EXISTS).
-          continue
-        }
-        // Cualquier otro error (tabla inexistente, DB bloqueada): loguear sin romper.
-        // Una columna de sync faltante no es fatal para el arranque de la app.
-        console.warn(`[initSchema] ALTER TABLE ${tabla} ADD COLUMN ${col.nombre}:`, e)
-      }
-    }
-  }
 }
 
 async function seedDemoData(database: Db) {
-  // Base mínima: corre SIEMPRE en todo local (nuevo o demo).
+  // Base mínima: corre SIEMPRE (dev y producción) — configuración necesaria para operar.
   await seedRolesBase(database)
   await seedConfiguracionBase(database)
 
-  // Datos de ejemplo: SOLO en el local demo (e1_l1 o la DB default).
-  const key = getActiveDbKey()
-  const esLocalDemo = key === 'e1_l1' || key === 'default'
-  if (!esLocalDemo) {
-    console.log('[seed] Local nuevo — solo datos base, sin demo')
-    return
-  }
+  // Datos de ejemplo: SOLO en desarrollo, para no ensuciar instalaciones reales de clientes.
+  if (!import.meta.env.DEV) return
 
-  console.log('[seed] Local demo — cargando datos de ejemplo')
+  console.log('[seed] Entorno DEV — cargando datos de ejemplo')
   await seedClientesDemo(database)
   await seedEmpleadosDemo(database)
   await seedProductosDemo(database)
@@ -704,8 +644,8 @@ async function seedDemoData(database: Db) {
 }
 
 // Configuración base que necesita TODO local para funcionar (no son datos de ejemplo):
-// plantillas de ticket/PDF, motivos de cancelación, categorías de gastos, tipo de cambio
-// inicial y el Remote ID de sync. Idempotente.
+// plantillas de ticket/PDF, motivos de cancelación, categorías de gastos y tipo de
+// cambio inicial. Idempotente.
 async function seedConfiguracionBase(database: Db) {
   const now = new Date().toISOString()
 
@@ -768,17 +708,6 @@ async function seedConfiguracionBase(database: Db) {
     await database.execute(
       `INSERT INTO tipos_cambio (valor, fecha, creado_por, creado_en) VALUES (?, ?, 'Administrador', ?)`,
       [1000, now, now]
-    )
-  }
-
-  // Remote ID demo para sync: toda DB nueva queda lista para sincronizar desde el 1er arranque.
-  const remoteIdExiste = await database.select<{ count: number }[]>(
-    `SELECT COUNT(*) as count FROM configuracion WHERE clave = 'sync_local_remote_id'`
-  )
-  if (remoteIdExiste[0].count === 0) {
-    await database.execute(
-      `INSERT INTO configuracion (clave, valor) VALUES ('sync_local_remote_id', ?)`,
-      ['b0000000-0000-0000-0000-000000000001']
     )
   }
 }

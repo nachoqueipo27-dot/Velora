@@ -1,20 +1,29 @@
 import { useOnboardingStore } from '../../store/onboardingStore'
 import { useSessionStore } from '../../store/sessionStore'
-import { useNegocioStore } from '../../store/negocioStore'
+import { useAuthGlobalStore } from '../../store/authGlobalStore'
 import { getDb } from '../../db'
-import { getMasterDb, guardarUsuarioLocal, asignarUsuarioALocal } from '../../db/master'
+import { guardarUsuarioLocal, guardarPreguntaSeguridad } from '../../db/master'
+import { hashPassword } from '../../lib/crypto'
+import { labelPreguntaSeguridad } from '../../lib/preguntasSeguridad'
 import { Button } from '../../components/ui/Button'
 import { cn } from '../../lib/utils'
 import { FUNCIONES_DISPONIBLES } from './types'
 
-// Guarda el admin del onboarding: empleado en la DB del local (acceso operativo) +
-// usuario en master.db por DNI (login futuro) + asignación al local activo. Idempotente.
-async function guardarAdminEnDB(nombre: string, dni: string, password: string) {
+// Guarda el Admin General nacido del onboarding: empleado en la DB del negocio
+// (acceso operativo) + usuario en master.db por DNI, rol admin_master (login del
+// sistema) + pregunta de seguridad para recuperación de contraseña. 100% local.
+async function guardarAdminEnDB(
+  nombre: string,
+  dni: string,
+  password: string,
+  preguntaId: string,
+  respuestaSeguridad: string,
+) {
   try {
     const db = await getDb()
     const now = new Date().toISOString()
 
-    // 1. Empleado en la DB del local (rol Admin).
+    // 1. Empleado en la DB del negocio (rol Admin).
     const roles = await db.select<{ id: number }[]>(`SELECT id FROM roles WHERE nombre = 'Admin' LIMIT 1`)
     let rolId: number
     if (roles.length === 0) {
@@ -36,17 +45,14 @@ async function guardarAdminEnDB(nombre: string, dni: string, password: string) {
       )
     }
 
-    // 2. Usuario en master.db por DNI (para login local futuro) + asignación al local.
-    await guardarUsuarioLocal({ nombre, dni, rol: 'admin' }, password)
-    const negocio = useNegocioStore.getState().negocioActivo
-    if (negocio) {
-      const masterDb = await getMasterDb()
-      const rows = await masterDb.select<{ id: number }[]>(`SELECT id FROM usuarios_master WHERE dni = ?`, [dni])
-      if (rows.length > 0) {
-        await asignarUsuarioALocal(rows[0].id, negocio.empresaId, negocio.localId)
-      }
-    }
-    console.log('[onboarding] Admin guardado (local + master) DNI:', dni)
+    // 2. Usuario en master.db por DNI, como Admin General de esta instalación.
+    await guardarUsuarioLocal({ nombre, dni, rol: 'admin_master' }, password)
+
+    // 3. Pregunta de seguridad (respuesta cifrada con bcrypt, mismo mecanismo que la password).
+    const respuestaHash = await hashPassword(respuestaSeguridad)
+    await guardarPreguntaSeguridad(dni, preguntaId, respuestaHash)
+
+    console.log('[onboarding] Admin General guardado (local + master) DNI:', dni)
   } catch (e) {
     console.error('[onboarding] Error guardando admin en DB:', e)
   }
@@ -84,15 +90,30 @@ export const ResumenFinal = ({ onBack }: ResumenFinalProps) => {
   const modulosActivos = FUNCIONES_DISPONIBLES.filter(f => habilitadas.includes(f.id)).length
 
   const handleConfirm = async () => {
-    // Guardar el admin del onboarding (local + master) antes de completar.
-    if (data.adminNombre && data.adminDni && data.adminPassword) {
-      await guardarAdminEnDB(data.adminNombre, data.adminDni, data.adminPassword)
+    // Guardar el Admin General del onboarding (local + master) antes de completar.
+    if (data.adminNombre && data.adminDni && data.adminPassword && data.adminPreguntaId && data.adminRespuestaSeguridad) {
+      await guardarAdminEnDB(
+        data.adminNombre,
+        data.adminDni,
+        data.adminPassword,
+        data.adminPreguntaId,
+        data.adminRespuestaSeguridad,
+      )
     }
     setUsuario({
       id: 1,
       nombre: data.adminNombre ?? 'Administrador',
       rol: 'Admin',
       avatar: data.logo ?? null,
+    })
+    // Autentica de una: el usuario recién creó sus credenciales, no debe volver a loguearse.
+    useAuthGlobalStore.setState({
+      usuario: {
+        nombre: data.adminNombre ?? 'Administrador',
+        dni: data.adminDni ?? '',
+        rol: 'admin_master',
+        esAdminGeneral: true,
+      },
     })
     completarOnboarding()
   }
@@ -120,12 +141,12 @@ export const ResumenFinal = ({ onBack }: ResumenFinalProps) => {
           <Row label="Nombre" value={data.adminNombre ?? ''} />
           <Row label="DNI" value={data.adminDni ?? ''} />
           <Row label="Contraseña" value={data.adminPassword ? '••••••••' : ''} />
+          <Row label="Pregunta de seguridad" value={labelPreguntaSeguridad(data.adminPreguntaId ?? '')} />
         </Section>
 
         <Section title="Preferencias">
           <Row label="Moneda" value={data.moneda ?? ''} />
           <Row label="Tema" value={data.tema === 'light' ? 'Claro' : data.tema === 'dark' ? 'Oscuro' : ''} />
-          <Row label="Ancho de papel" value={data.anchoPapel ?? ''} />
         </Section>
 
         <Section title="Funciones">

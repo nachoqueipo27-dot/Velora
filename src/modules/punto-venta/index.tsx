@@ -1,6 +1,5 @@
-import { useCallback, useState } from 'react'
+import { useState } from 'react'
 import { usePosStore } from '../../store/posStore'
-import { useBarcodeScan } from '../../hooks/useBarcodeScan'
 import { BuscadorProducto } from './BuscadorProducto'
 import { Carrito } from './Carrito'
 import { ResumenVenta } from './ResumenVenta'
@@ -10,12 +9,8 @@ import { toast } from '../../store/toastStore'
 import { ShoppingCart } from 'lucide-react'
 
 const PuntoVenta = () => {
-  const { agregarProductoPorCodigo, carrito, limpiarCarrito } = usePosStore()
+  const { carrito, limpiarCarrito } = usePosStore()
   const [confirmar, setConfirmar] = useState(false)
-
-  // Escáner: agrega directo al carrito (sin modal global, que ya se excluye para punto-venta en Layout).
-  const onScan = useCallback((code: string) => { void agregarProductoPorCodigo(code) }, [agregarProductoPorCodigo])
-  useBarcodeScan({ onScan })
 
   const onVenta = (v: VentaPOS) => {
     setConfirmar(false)

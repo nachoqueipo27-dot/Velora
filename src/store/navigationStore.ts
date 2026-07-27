@@ -2,6 +2,7 @@ import { create } from 'zustand'
 
 export type ModuleId =
   | 'dashboard'
+  | 'reportes'
   | 'clientes'
   | 'empleados'
   | 'inventario'
@@ -17,7 +18,8 @@ export type ModuleId =
   | 'uso'
 
 export const MODULES: { id: ModuleId; label: string }[] = [
-  { id: 'dashboard',       label: 'Dashboard' },
+  { id: 'dashboard',       label: 'Resumen General' },
+  { id: 'reportes',        label: 'Reportes' },
   { id: 'clientes',        label: 'Clientes' },
   { id: 'empleados',       label: 'Empleados' },
   { id: 'inventario',      label: 'Inventario' },
@@ -33,8 +35,11 @@ export const MODULES: { id: ModuleId; label: string }[] = [
   { id: 'uso',             label: 'Uso' },
 ]
 
+// Grupo "Administración" — se muestran agrupados en el dropdown del Navbar.
+export const MODULOS_ADMINISTRACION: ModuleId[] = ['dashboard', 'reportes', 'empleados', 'configuracion']
+
 // Módulos siempre visibles, independientes de funcionesHabilitadas.
-const SIEMPRE_VISIBLES: ModuleId[] = ['dashboard', 'configuracion', 'uso']
+const SIEMPRE_VISIBLES: ModuleId[] = ['dashboard', 'reportes', 'configuracion', 'uso']
 
 const MAX_HISTORIAL = 50
 

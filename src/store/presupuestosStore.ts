@@ -167,9 +167,9 @@ export const usePresupuestosStore = create<PresupuestosStore>((set, get) => ({
     const db = await getDb()
     const now = new Date().toISOString()
     if (estado === 'rechazado') {
-      await db.execute("UPDATE presupuestos SET estado=?, motivo_rechazo=?, actualizado_en=?, sync_status='pendiente' WHERE id=?", [estado, motivo ?? 'Sin especificar', now, id])
+      await db.execute("UPDATE presupuestos SET estado=?, motivo_rechazo=?, actualizado_en=? WHERE id=?", [estado, motivo ?? 'Sin especificar', now, id])
     } else {
-      await db.execute("UPDATE presupuestos SET estado=?, actualizado_en=?, sync_status='pendiente' WHERE id=?", [estado, now, id])
+      await db.execute("UPDATE presupuestos SET estado=?, actualizado_en=? WHERE id=?", [estado, now, id])
     }
     await registrarActividad({ modulo: 'Presupuestos', accion: 'Cambió estado de presupuesto', detalle: `→ ${estado}`, entidadTipo: 'presupuesto', entidadId: id, campoNuevo: { estado, motivo } })
     await get().cargarPresupuestos()

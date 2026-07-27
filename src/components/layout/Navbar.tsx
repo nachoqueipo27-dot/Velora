@@ -1,73 +1,24 @@
-import { useNavigationStore, MODULES } from '../../store/navigationStore'
+import { useNavigationStore, MODULES, MODULOS_ADMINISTRACION } from '../../store/navigationStore'
 import { useThemeStore } from '../../store/themeStore'
-import { useNegocioStore } from '../../store/negocioStore'
-import { useConectividadStore } from '../../store/conectividadStore'
-import { useSyncStore } from '../../store/syncStore'
-import { useSistemaStore } from '../../store/sistemaStore'
-import { useConectividad } from '../../hooks/useConectividad'
+import { useOnboardingStore } from '../../store/onboardingStore'
 import { cn } from '../../lib/utils'
 import { VeloraLogo } from '../ui/VeloraLogo'
-import { ArrowLeft, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Sun, Moon, Wifi, WifiOff, RefreshCw } from 'lucide-react'
+import { ArrowLeft, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Sun, Moon, Briefcase } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
-
-// Indicador pasivo de conectividad con Supabase. Lee los stores directamente.
-const StatusIndicador = () => {
-  const { estado: estadoConexion } = useConectividadStore()
-  const { pendientes } = useSyncStore()
-
-  const configs = {
-    conectado:    { icono: <Wifi size={11} />,      label: 'Online',   color: '#4CAF7D', pulsa: true },
-    sin_sync:     { icono: <RefreshCw size={11} />,  label: 'Sin sync', color: '#D4921A', pulsa: false },
-    desconectado: { icono: <WifiOff size={11} />,    label: 'Offline',  color: '#C0392B', pulsa: false },
-  } as const
-
-  const c = configs[estadoConexion]
-
-  return (
-    <div
-      className="flex items-center gap-1.5 px-2 py-1 rounded-input border text-[11px] font-medium transition-all duration-300 select-none"
-      style={{ color: c.color, backgroundColor: `${c.color}15`, borderColor: `${c.color}30` }}
-      title={
-        estadoConexion === 'sin_sync'
-          ? `${pendientes} cambio${pendientes !== 1 ? 's' : ''} pendiente${pendientes !== 1 ? 's' : ''} de sync`
-          : estadoConexion === 'desconectado'
-            ? 'Sin conexión con Supabase'
-            : 'Conectado a Supabase'
-      }
-    >
-      {/* Punto de estado con animación */}
-      <span className="relative flex h-2 w-2 shrink-0">
-        {c.pulsa && (
-          <span
-            className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-60"
-            style={{ backgroundColor: c.color }}
-          />
-        )}
-        <span className="relative inline-flex rounded-full h-2 w-2" style={{ backgroundColor: c.color }} />
-      </span>
-
-      {c.icono}
-      <span>{c.label}</span>
-
-      {estadoConexion === 'sin_sync' && pendientes > 0 && (
-        <span className="text-[10px] opacity-70">({pendientes})</span>
-      )}
-    </div>
-  )
-}
 
 export const Navbar = () => {
   const { activeModule, isDropdownOpen, modulosVisibles, history, setModule, nextModule, prevModule, goBack, toggleDropdown, closeDropdown } = useNavigationStore()
   const { theme, toggleTheme } = useThemeStore()
-  const { negocioActivo } = useNegocioStore()
-
-  const { systemId } = useSistemaStore()
-
-  // Inicia el timer adaptativo de conectividad (el navbar siempre está montado en el Layout).
-  useConectividad()
+  const nombreNegocio = useOnboardingStore(s => s.data.nombreNegocio)
 
   const modulos = modulosVisibles
     .map(id => MODULES.find(m => m.id === id))
+    .filter((m): m is typeof MODULES[number] => !!m)
+  // "Administración" agrupa Resumen General / Reportes / Empleados / Configuración
+  // en el dropdown — el resto de los módulos operativos se listan sin agrupar.
+  const modulosOperativos = modulos.filter(m => !MODULOS_ADMINISTRACION.includes(m.id))
+  const modulosAdmin = MODULOS_ADMINISTRACION
+    .map(id => modulos.find(m => m.id === id))
     .filter((m): m is typeof MODULES[number] => !!m)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const [displayModule, setDisplayModule] = useState(activeModule)
@@ -140,27 +91,13 @@ export const Navbar = () => {
           <span className="text-sm font-semibold tracking-widest uppercase text-white light:text-black">
             Velora
           </span>
-          {negocioActivo && (
+          {nombreNegocio && (
             <span className="ml-1 pl-2 border-l border-[#2A2A2A] light:border-[#E4E4E4] text-[10px] text-[#808080] light:text-[#707070] tracking-wide truncate max-w-[140px]">
-              {negocioActivo.localNombre}
+              {nombreNegocio}
             </span>
           )}
         </div>
         <div className="flex items-center gap-3">
-          <StatusIndicador />
-          {systemId && (
-            <div
-              className={cn(
-                'flex items-center gap-1 px-2 py-1 rounded-input border text-[11px] font-mono transition-all duration-300',
-                'border-[#2A2A2A] text-[#606060]',
-                'light:border-[#E4E4E4] light:text-[#888888]',
-              )}
-              title={`ID del sistema: ${systemId}`}
-            >
-              <span className="text-[10px] text-[#606060] light:text-[#888888]">ID</span>
-              <span className="text-[#A0A0A0] light:text-[#404040] select-all cursor-text">{systemId}</span>
-            </div>
-          )}
           <button
             onClick={toggleTheme}
             aria-label={theme === 'dark' ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro'}
@@ -237,12 +174,12 @@ export const Navbar = () => {
         {/* Dropdown */}
         {isDropdownOpen && (
           <div className={cn(
-            'absolute top-full mt-1 w-56 z-50 rounded-card border shadow-lg overflow-hidden',
+            'absolute top-full mt-1 w-56 z-50 rounded-card border shadow-lg overflow-hidden max-h-[80vh] overflow-y-auto',
             'border-[#2A2A2A] bg-[#141414]',
             'light:border-[#E4E4E4] light:bg-white',
             'animate-fade-slide-down',
           )}>
-            {modulos.map((mod, idx) => (
+            {modulosOperativos.map(mod => (
               <button
                 key={mod.id}
                 onClick={() => handleSelect(mod.id)}
@@ -256,10 +193,35 @@ export const Navbar = () => {
                   ]
                 )}
               >
-                <span className="text-[11px] text-[#606060] mr-2">{idx + 1}</span>
                 {mod.label}
               </button>
             ))}
+
+            {modulosAdmin.length > 0 && (
+              <>
+                <div className="border-t border-[#2A2A2A] light:border-[#E4E4E4] my-1" />
+                <span className="flex items-center gap-1.5 px-4 pt-1.5 pb-1 text-[10px] font-semibold uppercase tracking-wider text-[#606060]">
+                  <Briefcase size={11} /> Administración
+                </span>
+                {modulosAdmin.map(mod => (
+                  <button
+                    key={mod.id}
+                    onClick={() => handleSelect(mod.id)}
+                    className={cn(
+                      'w-full text-left px-4 py-2.5 text-sm transition-all duration-120',
+                      'text-[#A0A0A0] hover:text-white hover:bg-white/[0.06]',
+                      'light:text-[#404040] light:hover:text-black light:hover:bg-black/[0.04]',
+                      activeModule === mod.id && [
+                        'border-l-2 border-white text-white pl-[14px]',
+                        'light:border-black light:text-black',
+                      ]
+                    )}
+                  >
+                    {mod.label}
+                  </button>
+                ))}
+              </>
+            )}
           </div>
         )}
       </div>

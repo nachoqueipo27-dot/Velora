@@ -3,12 +3,7 @@ import { Button } from '../../components/ui/Button'
 import { Modal } from '../../components/ui/Modal'
 import { usePosStore } from '../../store/posStore'
 import { useSessionStore } from '../../store/sessionStore'
-import { useNegocio } from '../../hooks/useNegocio'
-import { useOnboardingStore } from '../../store/onboardingStore'
-import { imprimirTicket } from '../../lib/ticket/generarTicket'
 import { FORMAS_PAGO, type VentaPOS } from '../../types/pos'
-import { Printer } from 'lucide-react'
-import { format } from 'date-fns'
 
 const money = (n: number) => `$${Math.round(n).toLocaleString('es-AR')}`
 
@@ -19,12 +14,9 @@ interface ModalConfirmacionProps {
 }
 
 export const ModalConfirmacion = ({ open, onClose, onVenta }: ModalConfirmacionProps) => {
-  const { carrito, formaPago, procesando, calcularTotal, calcularSubtotal, calcularDescuentoGlobal, confirmarVenta, empleadoPOS } = usePosStore()
+  const { carrito, formaPago, procesando, calcularTotal, confirmarVenta, empleadoPOS } = usePosStore()
   const { usuario } = useSessionStore()
-  const negocio = useNegocio()
-  const anchoPapel = useOnboardingStore(s => s.data.anchoPapel) ?? '80mm'
   const [recibido, setRecibido] = useState('')
-  const [imprimir, setImprimir] = useState(true)
 
   useEffect(() => { if (open) setRecibido('') }, [open])
 
@@ -38,22 +30,8 @@ export const ModalConfirmacion = ({ open, onClose, onVenta }: ModalConfirmacionP
   const puedeConfirmar = !procesando && carrito.length > 0 && !insuficiente
 
   const handleConfirmar = async () => {
-    const subtotal = calcularSubtotal()
-    const descuento = calcularDescuentoGlobal()
     const venta = await confirmarVenta()
-    if (venta) {
-      if (imprimir) {
-        await imprimirTicket({
-          negocio: { nombre: negocio.nombre, direccion: negocio.direccion, telefono: negocio.telefono },
-          numero: String(venta.numero).padStart(3, '0'),
-          cliente: null,
-          items: venta.items.map(it => ({ nombre: it.nombre, cantidad: it.cantidad, precio: it.subtotal })),
-          subtotal, descuento, total: venta.totalFinal,
-          formaPago: formaLabel ?? venta.formaPago, fecha: format(new Date(), 'dd/MM/yyyy HH:mm'), anchoPapel,
-        })
-      }
-      onVenta(venta)
-    }
+    if (venta) onVenta(venta)
   }
 
   return (
@@ -102,14 +80,6 @@ export const ModalConfirmacion = ({ open, onClose, onVenta }: ModalConfirmacionP
         <div className="flex justify-between text-[11px] text-[#606060]">
           <span>Vendedor</span><span className="text-[#A0A0A0]">{empleadoNombre}</span>
         </div>
-
-        <button onClick={() => setImprimir(v => !v)}
-          className="flex items-center gap-2 text-[12px] text-[#A0A0A0] light:text-[#404040] hover:text-white light:hover:text-black transition-colors">
-          <span className={`w-4 h-4 rounded border flex items-center justify-center ${imprimir ? 'bg-white border-white light:bg-black light:border-black' : 'border-[#606060]'}`}>
-            {imprimir && <Printer size={10} className="text-black light:text-white" />}
-          </span>
-          Imprimir ticket al cobrar
-        </button>
       </div>
     </Modal>
   )

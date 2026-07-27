@@ -26,15 +26,21 @@ interface PosStore {
   calcularTotal: () => number
 
   confirmarVenta: () => Promise<VentaPOS | null>
-  agregarProductoPorCodigo: (codigoBarras: string) => Promise<{ nombre: string } | null>
   verificarPIN: (pin: string) => Promise<boolean>
 }
 
-const subtotalItem = (it: { precioUnitario: number; cantidad: number; descuentoItem: number }) =>
-  Math.max(0, it.precioUnitario * it.cantidad - (it.descuentoItem || 0))
+// El "Desc" de cada item sigue el mismo tipo (%/$) que el descuento global del carrito.
+const subtotalItem = (
+  it: { precioUnitario: number; cantidad: number; descuentoItem: number },
+  tipo: 'porcentaje' | 'monto',
+) => {
+  const bruto = it.precioUnitario * it.cantidad
+  const descuento = tipo === 'porcentaje' ? bruto * ((it.descuentoItem || 0) / 100) : (it.descuentoItem || 0)
+  return Math.max(0, bruto - descuento)
+}
 
-const recomputar = (items: ItemCarrito[]): ItemCarrito[] =>
-  items.map(i => ({ ...i, subtotal: subtotalItem(i) }))
+const recomputar = (items: ItemCarrito[], tipo: 'porcentaje' | 'monto'): ItemCarrito[] =>
+  items.map(i => ({ ...i, subtotal: subtotalItem(i, tipo) }))
 
 async function descontarStock(db: Awaited<ReturnType<typeof getDb>>, productoId: number, tipoItem: string, cantidad: number, numero: number, now: string) {
   const motivo = `Venta POS #${String(numero).padStart(3, '0')}`
@@ -72,7 +78,7 @@ export const usePosStore = create<PosStore>((set, get) => ({
     if (!prod) return
     const existe = get().carrito.find(i => i.productoId === productoId)
     if (existe) {
-      set({ carrito: recomputar(get().carrito.map(i => i.productoId === productoId ? { ...i, cantidad: i.cantidad + 1 } : i)) })
+      set({ carrito: recomputar(get().carrito.map(i => i.productoId === productoId ? { ...i, cantidad: i.cantidad + 1 } : i), get().tipoDescuentoGlobal) })
     } else {
       const nuevo: ItemCarrito = {
         productoId: prod.id, tipoItem, nombre: prod.nombre, precioUnitario: prod.precio,
@@ -85,17 +91,18 @@ export const usePosStore = create<PosStore>((set, get) => ({
   quitarProducto: (productoId) => set({ carrito: get().carrito.filter(i => i.productoId !== productoId) }),
 
   actualizarCantidad: (productoId, cantidad) =>
-    set({ carrito: recomputar(get().carrito.map(i => i.productoId === productoId ? { ...i, cantidad: Math.max(1, cantidad) } : i)) }),
+    set({ carrito: recomputar(get().carrito.map(i => i.productoId === productoId ? { ...i, cantidad: Math.max(1, cantidad) } : i), get().tipoDescuentoGlobal) }),
 
   actualizarDescuentoItem: (productoId, descuento) =>
-    set({ carrito: recomputar(get().carrito.map(i => i.productoId === productoId ? { ...i, descuentoItem: Math.max(0, descuento) } : i)) }),
+    set({ carrito: recomputar(get().carrito.map(i => i.productoId === productoId ? { ...i, descuentoItem: Math.max(0, descuento) } : i), get().tipoDescuentoGlobal) }),
 
-  setDescuentoGlobal: (descuento, tipo) => set({ descuentoGlobal: Math.max(0, descuento), tipoDescuentoGlobal: tipo }),
+  setDescuentoGlobal: (descuento, tipo) =>
+    set({ descuentoGlobal: Math.max(0, descuento), tipoDescuentoGlobal: tipo, carrito: recomputar(get().carrito, tipo) }),
   setFormaPago: (forma) => set({ formaPago: forma }),
   setEmpleadoPOS: (empleado) => set({ empleadoPOS: empleado }),
   limpiarCarrito: () => set({ carrito: [], descuentoGlobal: 0, tipoDescuentoGlobal: 'porcentaje' }),
 
-  calcularSubtotal: () => get().carrito.reduce((s, i) => s + subtotalItem(i), 0),
+  calcularSubtotal: () => get().carrito.reduce((s, i) => s + subtotalItem(i, get().tipoDescuentoGlobal), 0),
 
   calcularDescuentoGlobal: () => {
     const sub = get().calcularSubtotal()
@@ -166,13 +173,6 @@ export const usePosStore = create<PosStore>((set, get) => ({
     } finally {
       set({ procesando: false })
     }
-  },
-
-  agregarProductoPorCodigo: async (codigoBarras) => {
-    const prod = await useInventarioStore.getState().buscarPorCodigoBarras(codigoBarras)
-    if (!prod) return null
-    await get().agregarProducto(prod.id, prod.tipo)
-    return { nombre: prod.nombre }
   },
 
   verificarPIN: async (pin) => {

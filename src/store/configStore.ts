@@ -12,12 +12,6 @@ export interface BloqueConfig {
   texto?: string
 }
 
-export interface TicketConfig {
-  bloques: BloqueConfig[]
-  anchoPapel: '58mm' | '80mm'
-  impresoraNombre: string | null
-}
-
 export interface AlertasConfig {
   diasSinMovimiento: number
   stockMinimoDefault: number
@@ -25,11 +19,6 @@ export interface AlertasConfig {
   cargaModeradoMax: number
   faltasMes: number
   umbralVariacion: number
-}
-
-export interface CodigosBarrasConfig {
-  formato: 'EAN-13' | 'EAN-8' | 'Code128' | 'QR'
-  tamanio: 'pequena' | 'mediana' | 'grande'
 }
 
 export interface BackupConfig {
@@ -52,31 +41,26 @@ export interface RegistroActividad {
 export const ALERTAS_DEFAULT: AlertasConfig = {
   diasSinMovimiento: 3, stockMinimoDefault: 5, cargaLibreMax: 2, cargaModeradoMax: 5, faltasMes: 3, umbralVariacion: 20,
 }
-export const CODIGOS_DEFAULT: CodigosBarrasConfig = { formato: 'EAN-13', tamanio: 'mediana' }
 export const BACKUP_DEFAULT: BackupConfig = {
   frecuencia: 'diario', cadaHoras: 6, horaDiaria: '23:00', destinos: [''], limite: 30, umbralEspacioMB: 500,
 }
 
 interface ConfigStore {
-  ticket: TicketConfig | null
   pdfs: Record<string, BloqueConfig[]>
   motivos: MotivoCancelacion[]
   tipoCambioActual: number
   historialTC: TipoCambio[]
   alertas: AlertasConfig
-  codigos: CodigosBarrasConfig
   backupCfg: BackupConfig
   categoriasGastos: string[]
   backups: RegistroBackup[]
 
   cargarTodo: () => Promise<void>
-  guardarTicket: (cfg: TicketConfig) => Promise<void>
   guardarPDF: (tipo: string, bloques: BloqueConfig[]) => Promise<void>
   crearMotivo: (nombre: string) => Promise<void>
   eliminarMotivo: (id: number) => Promise<void>
   actualizarTipoCambio: (valor: number, recalcular: boolean) => Promise<void>
   guardarAlertas: (cfg: AlertasConfig) => Promise<void>
-  guardarCodigos: (cfg: CodigosBarrasConfig) => Promise<void>
   guardarBackupCfg: (cfg: BackupConfig) => Promise<void>
   crearCatGasto: (nombre: string) => Promise<void>
   editarCatGasto: (anterior: string, nuevo: string) => Promise<void>
@@ -98,24 +82,17 @@ async function setKV(db: Awaited<ReturnType<typeof getDb>>, clave: string, valor
 }
 
 export const useConfigStore = create<ConfigStore>((set, get) => ({
-  ticket: null,
   pdfs: {},
   motivos: [],
   tipoCambioActual: 0,
   historialTC: [],
   alertas: ALERTAS_DEFAULT,
-  codigos: CODIGOS_DEFAULT,
   backupCfg: BACKUP_DEFAULT,
   categoriasGastos: [],
   backups: [],
 
   cargarTodo: async () => {
     const db = await getDb()
-    const tRows = await db.select<any[]>('SELECT * FROM configuracion_ticket WHERE id = 1')
-    const ticket: TicketConfig = tRows[0]
-      ? { bloques: JSON.parse(tRows[0].bloques), anchoPapel: tRows[0].ancho_papel ?? '80mm', impresoraNombre: tRows[0].impresora_nombre ?? null }
-      : { bloques: [], anchoPapel: '80mm', impresoraNombre: null }
-
     const pRows = await db.select<any[]>('SELECT * FROM configuracion_pdf')
     const pdfs: Record<string, BloqueConfig[]> = {}
     pRows.forEach(r => { pdfs[r.tipo] = JSON.parse(r.bloques) })
@@ -127,26 +104,12 @@ export const useConfigStore = create<ConfigStore>((set, get) => ({
     const historialTC = tcRows.map(r => ({ id: r.id, valor: r.valor, fecha: r.fecha, creadoPor: r.creado_por }))
 
     const alertas = await getKV(db, 'alertas', ALERTAS_DEFAULT)
-    const codigos = await getKV(db, 'codigos_barras', CODIGOS_DEFAULT)
     const backupCfg = await getKV(db, 'backup', BACKUP_DEFAULT)
     const catRows = await db.select<{ valor: string }[]>('SELECT valor FROM configuracion WHERE clave = ?', ['categorias_gastos'])
     const categoriasGastos = catRows.length ? JSON.parse(catRows[0].valor) : []
 
-    set({ ticket, pdfs, motivos, historialTC, tipoCambioActual: historialTC[0]?.valor ?? 0, alertas, codigos, backupCfg, categoriasGastos })
+    set({ pdfs, motivos, historialTC, tipoCambioActual: historialTC[0]?.valor ?? 0, alertas, backupCfg, categoriasGastos })
     await get().cargarBackups()
-  },
-
-  guardarTicket: async (cfg) => {
-    const db = await getDb()
-    const now = new Date().toISOString()
-    await db.execute(
-      `INSERT INTO configuracion_ticket (id, bloques, ancho_papel, impresora_nombre, actualizado_en)
-       VALUES (1, ?, ?, ?, ?)
-       ON CONFLICT(id) DO UPDATE SET bloques=excluded.bloques, ancho_papel=excluded.ancho_papel, impresora_nombre=excluded.impresora_nombre, actualizado_en=excluded.actualizado_en`,
-      [JSON.stringify(cfg.bloques), cfg.anchoPapel, cfg.impresoraNombre, now]
-    )
-    set({ ticket: cfg })
-    await registrarActividad({ modulo: 'Configuración', accion: 'Editó el ticket' })
   },
 
   guardarPDF: async (tipo, bloques) => {
@@ -206,12 +169,6 @@ export const useConfigStore = create<ConfigStore>((set, get) => ({
     await setKV(db, 'alertas', cfg)
     set({ alertas: cfg })
     await registrarActividad({ modulo: 'Configuración', accion: 'Editó alertas globales' })
-  },
-
-  guardarCodigos: async (cfg) => {
-    const db = await getDb()
-    await setKV(db, 'codigos_barras', cfg)
-    set({ codigos: cfg })
   },
 
   guardarBackupCfg: async (cfg) => {

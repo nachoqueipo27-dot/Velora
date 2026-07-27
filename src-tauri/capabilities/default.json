@@ -16,7 +16,6 @@
     "fs:scope-appdata-recursive",
     "dialog:allow-save",
     "dialog:allow-open",
-    "shell:allow-execute",
-    "http:default"
+    "shell:allow-execute"
   ]
 }

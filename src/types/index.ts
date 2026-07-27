@@ -10,10 +10,11 @@ export interface OnboardingData {
   adminNombre: string
   adminDni: string
   adminPassword: string
+  adminPreguntaId: string
+  adminRespuestaSeguridad: string
   // Paso 3
   moneda: 'ARS' | 'USD'
   tema: 'dark' | 'light'
-  anchoPapel: '58mm' | '80mm'
   // Paso 4
   funcionesHabilitadas: string[]
 }

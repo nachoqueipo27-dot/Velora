@@ -1,7 +1,6 @@
 import { create } from 'zustand'
 import { getDb } from '../db'
-import { getMasterDb, guardarUsuarioLocal, asignarUsuarioALocal, eliminarUsuarioDeLocal } from '../db/master'
-import { useNegocioStore } from './negocioStore'
+import { getMasterDb, guardarUsuarioLocal } from '../db/master'
 import { registrarActividad } from '../lib/registrarActividad'
 import type {
   Empleado, Rol, Turno, Fichaje, HoraExtra, Ausencia, HorarioFijo,
@@ -103,14 +102,12 @@ async function guardarHorarios(
   }
 }
 
-// Registra/actualiza el usuario en master.db (login global por DNI) y lo asigna al
-// local activo. Si hay password la cifra (bcrypt vía guardarUsuarioLocal); si no, solo
-// actualiza nombre/rol sin tocar la contraseña. No hace nada si no hay DNI o negocio.
+// Registra/actualiza el usuario en master.db (login global por DNI). Si hay
+// password la cifra (bcrypt vía guardarUsuarioLocal); si no, solo actualiza
+// nombre/rol sin tocar la contraseña. No hace nada si no hay DNI.
 async function syncUsuarioMaster(data: NuevoEmpleado, roles: Rol[]) {
   const dni = data.dni?.trim()
   if (!dni) return
-  const negocio = useNegocioStore.getState().negocioActivo
-  if (!negocio) return
   const rol = (roles.find(r => r.id === data.rolId)?.nombre ?? 'usuario').toLowerCase()
   const masterDb = await getMasterDb()
 
@@ -124,9 +121,6 @@ async function syncUsuarioMaster(data: NuevoEmpleado, roles: Rol[]) {
       await guardarUsuarioLocal({ nombre: data.nombre, dni, rol }, 'cambiar')
     }
   }
-
-  const rows = await masterDb.select<{ id: number }[]>(`SELECT id FROM usuarios_master WHERE dni = ?`, [dni])
-  if (rows.length > 0) await asignarUsuarioALocal(rows[0].id, negocio.empresaId, negocio.localId)
 }
 
 export const useEmpleadosStore = create<EmpleadosStore>((set, get) => ({
@@ -197,12 +191,12 @@ export const useEmpleadosStore = create<EmpleadosStore>((set, get) => ({
     const now = new Date().toISOString()
     if (data.password && data.password.trim() !== '') {
       await db.execute(
-        `UPDATE empleados SET nombre = ?, dni = ?, rol_id = ?, password = ?, activo = ?, tipo_horario = ?, actualizado_en = ?, sync_status = 'pendiente' WHERE id = ?`,
+        `UPDATE empleados SET nombre = ?, dni = ?, rol_id = ?, password = ?, activo = ?, tipo_horario = ?, actualizado_en = ? WHERE id = ?`,
         [data.nombre, data.dni?.trim() || null, data.rolId, btoa(data.password), data.activo ? 1 : 0, data.tipoHorario, now, id]
       )
     } else {
       await db.execute(
-        `UPDATE empleados SET nombre = ?, dni = ?, rol_id = ?, activo = ?, tipo_horario = ?, actualizado_en = ?, sync_status = 'pendiente' WHERE id = ?`,
+        `UPDATE empleados SET nombre = ?, dni = ?, rol_id = ?, activo = ?, tipo_horario = ?, actualizado_en = ? WHERE id = ?`,
         [data.nombre, data.dni?.trim() || null, data.rolId, data.activo ? 1 : 0, data.tipoHorario, now, id]
       )
     }
@@ -221,15 +215,10 @@ export const useEmpleadosStore = create<EmpleadosStore>((set, get) => ({
   eliminarEmpleado: async (id) => {
     const db = await getDb()
     const emp = get().empleados.find(e => e.id === id)
-    // Limpiar dependencias y el empleado en la DB del local.
+    // Limpiar dependencias y el empleado en la DB del negocio.
     try { await db.execute('DELETE FROM horarios_fijos WHERE empleado_id = ?', [id]) } catch { /* tabla opcional */ }
     try { await db.execute('DELETE FROM asignacion_turnos WHERE empleado_id = ?', [id]) } catch { /* tabla opcional */ }
     await db.execute('DELETE FROM empleados WHERE id = ?', [id])
-    // Quitar del cache de login global (master.db) para el local activo.
-    if (emp?.dni) {
-      const negocio = useNegocioStore.getState().negocioActivo
-      if (negocio) await eliminarUsuarioDeLocal(emp.dni, negocio.localId)
-    }
     await registrarActividad({ modulo: 'Empleados', accion: 'Eliminó un empleado', detalle: emp?.nombre ?? String(id), entidadTipo: 'empleado', entidadId: id })
     await get().cargarEmpleados()
   },

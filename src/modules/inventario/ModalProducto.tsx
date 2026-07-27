@@ -16,12 +16,11 @@ interface ModalProductoProps {
   onClose: () => void
   producto?: Producto | null
   tipoInicial?: 'simple' | 'conjunto'
-  codigoBarrasInicial?: string
 }
 
 const num = (v: string) => (v === '' ? 0 : Number(v))
 
-export const ModalProducto = ({ open, onClose, producto, tipoInicial = 'simple', codigoBarrasInicial = '' }: ModalProductoProps) => {
+export const ModalProducto = ({ open, onClose, producto, tipoInicial = 'simple' }: ModalProductoProps) => {
   const { productos, categorias, crearProducto, actualizarProducto, crearCategoria, cargarCategorias, cargarComponentes } = useInventarioStore()
   const esEdicion = !!producto
 
@@ -32,7 +31,6 @@ export const ModalProducto = ({ open, onClose, producto, tipoInicial = 'simple',
   const [precioCosto, setPrecioCosto] = useState('')
   const [monedaCosto, setMonedaCosto] = useState<'ARS' | 'USD'>('ARS')
   const [codigoSku, setCodigoSku] = useState('')
-  const [codigoBarras, setCodigoBarras] = useState('')
   const [categoriaId, setCategoriaId] = useState<number | ''>('')
   const [stock, setStock] = useState('')
   const [stockMinimo, setStockMinimo] = useState('')
@@ -55,7 +53,6 @@ export const ModalProducto = ({ open, onClose, producto, tipoInicial = 'simple',
       setPrecioCosto(String(producto.precioCosto))
       setMonedaCosto(producto.monedaCosto)
       setCodigoSku(producto.codigoSku)
-      setCodigoBarras(producto.codigoBarras)
       setCategoriaId(producto.categoriaId ?? '')
       setStock(String(producto.stock))
       setStockMinimo(String(producto.stockMinimo))
@@ -67,7 +64,7 @@ export const ModalProducto = ({ open, onClose, producto, tipoInicial = 'simple',
       } else setComponentes([])
     } else {
       setTipo(tipoInicial); setNombre(''); setDescripcion(''); setPrecio(''); setPrecioCosto('')
-      setMonedaCosto('ARS'); setCodigoSku(''); setCodigoBarras(codigoBarrasInicial); setCategoriaId(''); setStock(''); setStockMinimo('')
+      setMonedaCosto('ARS'); setCodigoSku(''); setCategoriaId(''); setStock(''); setStockMinimo('')
       setTrazabilidad('ninguna'); setImagen(null); setComponentes([])
     }
     setNuevaCat(''); setMostrarNuevaCat(false); setTouched(false)
@@ -103,7 +100,6 @@ export const ModalProducto = ({ open, onClose, producto, tipoInicial = 'simple',
         precioCosto: num(precioCosto),
         monedaCosto,
         codigoSku: codigoSku.trim(),
-        codigoBarras: codigoBarras.trim(),
         stock: tipo === 'conjunto' ? 0 : num(stock),
         stockMinimo: num(stockMinimo),
         imagen,
@@ -172,10 +168,7 @@ export const ModalProducto = ({ open, onClose, producto, tipoInicial = 'simple',
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <Input label="Código SKU" value={codigoSku} onChange={e => setCodigoSku(e.target.value)} />
-            <Input label="Código de barras" value={codigoBarras} onChange={e => setCodigoBarras(e.target.value)} />
-          </div>
+          <Input label="Código SKU" value={codigoSku} onChange={e => setCodigoSku(e.target.value)} />
 
           {/* Categoría */}
           <div className="flex flex-col gap-1">

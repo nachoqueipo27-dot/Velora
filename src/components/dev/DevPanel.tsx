@@ -1,17 +1,13 @@
 import { useEffect, useState } from 'react'
 import { cn } from '../../lib/utils'
-import { useNegocioStore } from '../../store/negocioStore'
 import { useAuthGlobalStore } from '../../store/authGlobalStore'
 import { useSessionStore } from '../../store/sessionStore'
 import { useOnboardingStore } from '../../store/onboardingStore'
 import { useNavigationStore } from '../../store/navigationStore'
-import { useSyncStore } from '../../store/syncStore'
-import { useConectividadStore } from '../../store/conectividadStore'
-import { useSistemaStore } from '../../store/sistemaStore'
 import { useThemeStore } from '../../store/themeStore'
 import { useToastStore } from '../../store/toastStore'
 import { getDb } from '../../db'
-import { X, Terminal, Database, RefreshCw, Navigation, FlaskConical, Info } from 'lucide-react'
+import { X, Terminal, Database, Navigation, FlaskConical, Info } from 'lucide-react'
 
 interface ConfirmState {
   accion: string
@@ -23,14 +19,10 @@ export const DevPanel = () => {
   const [confirm, setConfirm] = useState<ConfirmState | null>(null)
   const [log, setLog] = useState<string[]>([])
 
-  const { negocioActivo, limpiarNegocio } = useNegocioStore()
   const { usuario: usuarioGlobal } = useAuthGlobalStore()
   const { usuario, cerrarSesion } = useSessionStore()
   const { resetOnboarding, completado } = useOnboardingStore()
   const { activeModule, setModule } = useNavigationStore()
-  const { pendientes, sincronizar, heartbeat } = useSyncStore()
-  const { estado: estadoConexion, ultimoCheck, verificar: pingManual } = useConectividadStore()
-  const { systemId } = useSistemaStore()
   const { theme } = useThemeStore()
   const { agregar: toast } = useToastStore()
 
@@ -154,12 +146,6 @@ export const DevPanel = () => {
   }
 
   // NAVEGACIÓN
-  const irASeleccion = async () => {
-    addLog('Navegando a SeleccionNegocio')
-    toast('Yendo a SeleccionNegocio', 'info')
-    limpiarNegocio()
-  }
-
   const irAOnboarding = async () => {
     resetOnboarding()
     addLog('Reseteando onboarding')
@@ -172,70 +158,6 @@ export const DevPanel = () => {
     addLog('Cerrando sesión')
     toast('Sesión cerrada', 'info')
     setAbierto(false)
-  }
-
-  // SYNC
-  const syncAhora = async () => {
-    addLog('Iniciando sync manual...')
-    toast('Sincronizando...', 'info')
-    try {
-      await sincronizar()
-      addLog('Sync completado')
-      toast('Sync completado', 'success')
-    } catch (e) {
-      addLog(`Sync error: ${e}`)
-      toast('Error en sync', 'error')
-    }
-  }
-
-  const heartbeatManual = async () => {
-    addLog('Enviando heartbeat...')
-    await heartbeat()
-    addLog('Heartbeat enviado')
-    toast('Heartbeat enviado', 'success')
-  }
-
-  const marcarTodoPendiente = async () => {
-    try {
-      const db = await getDb()
-      const tablas = [
-        'clientes', 'empleados', 'productos', 'ordenes_trabajo',
-        'presupuestos', 'cobros_caja', 'gastos_operativos',
-        'cierres_caja', 'cierres_mes', 'fichajes',
-        'movimientos_stock', 'proveedores', 'ordenes_compra',
-      ]
-      for (const tabla of tablas) {
-        try { await db.execute(`UPDATE ${tabla} SET sync_status = 'pendiente'`) } catch { /* tabla sin columna */ }
-      }
-      addLog('Todo marcado como pendiente')
-      toast('Todo marcado como pendiente', 'warning')
-    } catch (e) {
-      addLog(`Error: ${e}`)
-    }
-  }
-
-  const verPendientes = async () => {
-    try {
-      const db = await getDb()
-      const tablas = [
-        'clientes', 'empleados', 'productos', 'ordenes_trabajo',
-        'presupuestos', 'cobros_caja', 'gastos_operativos',
-      ]
-      const counts: Record<string, number> = {}
-      for (const tabla of tablas) {
-        try {
-          const r = await db.select<{ count: number }[]>(
-            `SELECT COUNT(*) as count FROM ${tabla} WHERE sync_status = 'pendiente'`
-          )
-          counts[tabla] = r[0]?.count ?? 0
-        } catch { /* ignore */ }
-      }
-      console.table(counts)
-      addLog('Pendientes por tabla — ver consola')
-      toast('Pendientes en consola', 'info')
-    } catch (e) {
-      addLog(`Error: ${e}`)
-    }
   }
 
   // DATOS DE PRUEBA
@@ -318,11 +240,9 @@ export const DevPanel = () => {
     const info = {
       version: '1.0.0',
       entorno: 'DEV',
-      negocio: negocioActivo ? `${negocioActivo.empresaNombre} / ${negocioActivo.localNombre}` : 'Sin negocio',
       usuario: usuario ? `${usuario.nombre} (${usuario.rol})` : 'Sin sesión',
       modulo: activeModule,
       tema: theme,
-      pendientesSync: pendientes,
       timestamp: new Date().toISOString(),
     }
     navigator.clipboard.writeText(JSON.stringify(info, null, 2))
@@ -356,26 +276,10 @@ export const DevPanel = () => {
       icon: <Navigation size={12} />,
       titulo: 'Navegación',
       acciones: [
-        { label: 'Ir a LoginGlobal', fn: async () => { addLog('Ir a LoginGlobal — Demo: DNI 42997462 / Dark1996$'); useAuthGlobalStore.getState().logout(); window.location.reload() } },
-        { label: 'Ir a SeleccionNegocio', fn: irASeleccion },
+        { label: 'Ir a LoginGlobal', fn: async () => { addLog('Ir a LoginGlobal'); useAuthGlobalStore.getState().logout(); window.location.reload() } },
         { label: 'Ir a Onboarding', fn: irAOnboarding },
         { label: 'Ir a Login', fn: irALogin },
-        { label: 'Ir a Dashboard', fn: async () => { setModule('dashboard'); setAbierto(false) } },
-      ],
-    },
-    {
-      icon: <RefreshCw size={12} />,
-      titulo: 'Sync',
-      acciones: [
-        { label: 'Sincronizar ahora', fn: syncAhora },
-        { label: 'Enviar heartbeat manual', fn: heartbeatManual },
-        { label: 'Ping manual a Supabase', fn: async () => {
-          const ok = await pingManual()
-          addLog(`Ping Supabase: ${ok ? 'OK ✓' : 'FALLÓ ✗'}`)
-          toast(ok ? 'Supabase responde correctamente' : 'Sin conexión con Supabase', ok ? 'success' : 'error')
-        } },
-        { label: 'Marcar todo como pendiente', fn: marcarTodoPendiente },
-        { label: 'Ver pendientes por tabla', fn: verPendientes },
+        { label: 'Ir a Resumen General', fn: async () => { setModule('dashboard'); setAbierto(false) } },
       ],
     },
     {
@@ -426,15 +330,9 @@ export const DevPanel = () => {
             {[
               ['Auth global', usuarioGlobal ? `${usuarioGlobal.nombre} (${usuarioGlobal.rol})` : '—'],
               ['DNI', usuarioGlobal?.dni ?? '—'],
-              ['Negocio', negocioActivo ? `${negocioActivo.empresaNombre} / ${negocioActivo.localNombre}` : '—'],
-              ['DB activa', negocioActivo ? `velora_e${negocioActivo.empresaId}_l${negocioActivo.localId}.db` : 'velora.db (default)'],
               ['Usuario', usuario ? `${usuario.nombre} — ${usuario.rol}` : '—'],
               ['Onboarding', completado ? 'Completado' : 'Pendiente'],
               ['Módulo', activeModule],
-              ['Sync pendientes', String(pendientes)],
-              ['System ID', systemId ?? '—'],
-              ['Conectividad', estadoConexion],
-              ['Último ping', ultimoCheck ? `hace ${Math.round((Date.now() - new Date(ultimoCheck).getTime()) / 1000)}s` : '—'],
               ['Tema', theme],
             ].map(([label, value]) => (
               <div key={label} className="flex items-center justify-between">

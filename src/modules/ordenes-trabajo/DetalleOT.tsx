@@ -12,11 +12,9 @@ import { HistorialDevoluciones } from '../devoluciones/HistorialDevoluciones'
 import type { Devolucion } from '../../types/devoluciones'
 import { usePDF } from '../../hooks/usePDF'
 import { useNegocio } from '../../hooks/useNegocio'
-import { useOnboardingStore } from '../../store/onboardingStore'
 import { PDFOrdenTrabajo } from '../../lib/pdf/documentos/PDFOrdenTrabajo'
-import { imprimirTicket } from '../../lib/ticket/generarTicket'
 import { toast } from '../../store/toastStore'
-import { ArrowLeft, User, ShieldCheck, Printer, Download, Copy, Play, Check, PackageCheck, X, RotateCcw } from 'lucide-react'
+import { ArrowLeft, User, ShieldCheck, Download, Copy, Play, Check, PackageCheck, X, RotateCcw } from 'lucide-react'
 import { format } from 'date-fns'
 
 interface DetalleOTProps { onVolver: () => void }
@@ -27,7 +25,6 @@ export const DetalleOT = ({ onVolver }: DetalleOTProps) => {
   const { otActiva: o, notas, cargarNotas, agregarNota, cambiarEstado, duplicarOT } = useOTStore()
   const negocio = useNegocio()
   const { descargar, generando } = usePDF()
-  const anchoPapel = useOnboardingStore(s => s.data.anchoPapel) ?? '80mm'
   const [nota, setNota] = useState('')
   const [cancelar, setCancelar] = useState(false)
   const [devolucion, setDevolucion] = useState(false)
@@ -46,18 +43,6 @@ export const DetalleOT = ({ onVolver }: DetalleOTProps) => {
       <PDFOrdenTrabajo ot={o} negocio={negocio} fecha={format(new Date(), 'dd/MM/yyyy HH:mm')} />,
       `OT-${String(o.numero).padStart(3, '0')}.pdf`,
     )
-  }
-
-  const imprimir = async () => {
-    await imprimirTicket({
-      negocio: { nombre: negocio.nombre, direccion: negocio.direccion, telefono: negocio.telefono },
-      numero: String(o.numero).padStart(3, '0'),
-      cliente: o.clienteNombre,
-      items: [{ nombre: o.productoNombre, cantidad: 1, precio: o.totalFinal }],
-      subtotal: o.precio, descuento: Math.max(0, o.precio - o.totalFinal), total: o.totalFinal,
-      formaPago: '—', fecha: format(new Date(), 'dd/MM/yyyy HH:mm'), anchoPapel,
-    })
-    toast.success('Ticket enviado a impresión')
   }
 
   return (
@@ -113,9 +98,8 @@ export const DetalleOT = ({ onVolver }: DetalleOTProps) => {
         <div className="rounded-input bg-[#C0392B]/10 px-3 py-2 text-[13px] text-[#C0392B] mb-4">Cancelada · Motivo: {o.motivoCancelacion}</div>
       )}
 
-      {/* Ticket térmico + PDF */}
+      {/* PDF */}
       <div className="flex gap-2 mb-4">
-        <Button size="sm" variant="secondary" onClick={imprimir}><Printer size={14} className="mr-1.5" /> Imprimir ticket</Button>
         <Button size="sm" variant="secondary" onClick={descargarPDF} disabled={generando}><Download size={14} className="mr-1.5" /> {generando ? 'Generando...' : 'Descargar PDF'}</Button>
       </div>
 

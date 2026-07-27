@@ -74,7 +74,6 @@ export const FichaProducto = ({ onVolver }: FichaProductoProps) => {
           <span className="text-[11px] font-semibold uppercase tracking-wider text-[#606060]">Identificación y stock</span>
           <div className="grid grid-cols-2 gap-y-2 mt-3 text-sm">
             <span className="text-[#606060]">SKU</span><span className="text-white light:text-black text-right">{p.codigoSku || '—'}</span>
-            <span className="text-[#606060]">Cód. barras</span><span className="text-white light:text-black text-right">{p.codigoBarras || '—'}</span>
             <span className="text-[#606060]">Stock</span>
             <span className="text-right flex items-center justify-end gap-2">
               <span className="text-white light:text-black">{p.tipo === 'conjunto' ? '—' : p.stock}</span>

@@ -14,7 +14,6 @@ export interface Producto {
   precioCosto: number
   monedaCosto: 'ARS' | 'USD'
   codigoSku: string
-  codigoBarras: string
   stock: number
   stockMinimo: number
   imagen: string | null

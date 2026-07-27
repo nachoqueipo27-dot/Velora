@@ -58,6 +58,20 @@ select:focus-visible {
   outline: none;
 }
 
+/* El popup nativo de <option> no sigue un patrón consistente en el código: algunos
+   <select> fijan su propio fondo por option (ej. bg-[#141414]) sin fijar el color
+   de texto, y el WebView tampoco respeta el tema de la app por defecto. Forzamos
+   fondo + texto coherentes con el tema actual, con !important para ganarle a
+   cualquier clase puntual de cada <option> y evitar combinaciones illegibles. */
+select option {
+  background-color: #FFFFFF !important;
+  color: #0A0A0A !important;
+}
+.dark select option {
+  background-color: #141414 !important;
+  color: #FFFFFF !important;
+}
+
 /* Selección de texto acorde al tema */
 ::selection {
   background: rgba(255, 255, 255, 0.15);

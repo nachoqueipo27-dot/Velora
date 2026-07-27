@@ -5,7 +5,7 @@ import { Minus, Plus, X, ImageOff } from 'lucide-react'
 const money = (n: number) => `$${Math.round(n).toLocaleString('es-AR')}`
 
 export const ItemCarrito = ({ item }: { item: TItemCarrito }) => {
-  const { actualizarCantidad, actualizarDescuentoItem, quitarProducto } = usePosStore()
+  const { tipoDescuentoGlobal, actualizarCantidad, actualizarDescuentoItem, quitarProducto } = usePosStore()
 
   return (
     <div className="flex items-center gap-2 rounded-input border border-[#2A2A2A] light:border-[#E4E4E4] p-2 animate-fade-slide-down">
@@ -25,9 +25,9 @@ export const ItemCarrito = ({ item }: { item: TItemCarrito }) => {
               className="w-5 h-5 rounded flex items-center justify-center text-[#A0A0A0] hover:text-white hover:bg-white/10 light:hover:text-black light:hover:bg-black/5"><Plus size={11} /></button>
           </div>
           <span className="text-[11px] text-[#606060]">× {money(item.precioUnitario)}</span>
-          {/* Descuento */}
+          {/* Descuento — sigue el tipo (%/$) del descuento global del carrito */}
           <div className="flex items-center gap-1">
-            <span className="text-[10px] text-[#606060]">Desc</span>
+            <span className="text-[10px] text-[#606060]">Desc {tipoDescuentoGlobal === 'porcentaje' ? '%' : '$'}</span>
             <input type="number" min={0} value={item.descuentoItem || ''} placeholder="0"
               onChange={e => actualizarDescuentoItem(item.productoId, Number(e.target.value))}
               className="w-14 px-1.5 py-0.5 text-[11px] rounded-input border bg-transparent outline-none border-[#2A2A2A] text-white focus:border-white light:border-[#E4E4E4] light:text-[#0A0A0A]" />

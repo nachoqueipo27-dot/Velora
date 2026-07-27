@@ -1,19 +1,16 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { Navbar } from './Navbar'
 import { StatusBar } from './StatusBar'
 import { useNavigationStore } from '../../store/navigationStore'
 import { useOnboardingStore } from '../../store/onboardingStore'
-import { useSistemaStore } from '../../store/sistemaStore'
-import { useNegocioStore } from '../../store/negocioStore'
 import { useInitDb } from '../../hooks/useInitDb'
-import { useBarcodeScan } from '../../hooks/useBarcodeScan'
-import { ModalEscaneo } from '../modals/ModalEscaneo'
 import { ToastContainer } from '../ui/ToastContainer'
 import { VeloraLogo } from '../ui/VeloraLogo'
 import { cn } from '../../lib/utils'
 
 // Importar todos los módulos
 import Dashboard from '../../modules/dashboard'
+import Reportes from '../../modules/reportes'
 import Clientes from '../../modules/clientes'
 import Empleados from '../../modules/empleados'
 import Inventario from '../../modules/inventario'
@@ -30,6 +27,7 @@ import Uso from '../../modules/uso'
 
 const MODULE_COMPONENTS = {
   'dashboard':       Dashboard,
+  'reportes':        Reportes,
   'clientes':        Clientes,
   'empleados':       Empleados,
   'inventario':      Inventario,
@@ -50,31 +48,11 @@ export const Layout = () => {
   const funcionesHabilitadas = useOnboardingStore(s => s.data.funcionesHabilitadas)
   const ActiveComponent = MODULE_COMPONENTS[activeModule]
   const { ready, error } = useInitDb()
-  const { inicializar, registrarEnSupabase } = useSistemaStore()
-  const { negocioActivo } = useNegocioStore()
-  const [codigoEscaneado, setCodigoEscaneado] = useState<string | null>(null)
 
   // Filtrar módulos visibles según funciones habilitadas en el onboarding/config.
   useEffect(() => {
     actualizarModulosVisibles(funcionesHabilitadas ?? [])
   }, [funcionesHabilitadas, actualizarModulosVisibles])
-
-  // ID único por PC: generar y registrar en Supabase (si hay local remoto).
-  useEffect(() => {
-    inicializar().then(() => {
-      if (negocioActivo?.localRemoteId) {
-        registrarEnSupabase(negocioActivo.localRemoteId, undefined)
-      }
-    })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  const onScan = useCallback((code: string) => {
-    // El POS maneja el escaneo directamente (Paso 11)
-    if (useNavigationStore.getState().activeModule === 'punto-venta') return
-    setCodigoEscaneado(code)
-  }, [])
-  useBarcodeScan({ onScan })
 
   if (!ready) return (
     <div className="flex h-screen flex-col items-center justify-center gap-6 bg-[#0A0A0A] light:bg-[#FAFAFA]">
@@ -102,10 +80,6 @@ export const Layout = () => {
         <ActiveComponent />
       </main>
       <StatusBar />
-
-      {codigoEscaneado !== null && (
-        <ModalEscaneo codigo={codigoEscaneado} onClose={() => setCodigoEscaneado(null)} />
-      )}
 
       <ToastContainer />
     </div>

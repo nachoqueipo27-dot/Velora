@@ -9,24 +9,21 @@ import { Categorias } from './Categorias'
 import { CategoriasGastos } from './CategoriasGastos'
 import { EtiquetasOT } from './EtiquetasOT'
 import { PlantillasOT } from './PlantillasOT'
-import { CodigosBarras } from './CodigosBarras'
 import { MotivosCancelacion } from './MotivosCancelacion'
 import { Multimoneda } from './Multimoneda'
 import { AlertasGlobales } from './AlertasGlobales'
-import { EditorTicket } from './EditorTicket'
 import { EditorPDF } from './EditorPDF'
 import { HistorialActividad } from './HistorialActividad'
 import { Backup } from './Backup'
-import { Sincronizacion } from './Sincronizacion'
 import {
-  Building2, Users, ToggleLeft, Tags, Wallet, Tag, LayoutTemplate, Barcode,
-  Ban, DollarSign, Bell, Receipt, FileText, History, DatabaseBackup, Lock, RefreshCw,
+  Building2, Users, ToggleLeft, Tags, Wallet, Tag, LayoutTemplate,
+  Ban, DollarSign, Bell, FileText, History, DatabaseBackup, Lock,
 } from 'lucide-react'
 
 type Seccion =
   | 'negocio' | 'usuarios' | 'funciones' | 'categorias' | 'cat-gastos' | 'etiquetas'
-  | 'plantillas' | 'codigos' | 'motivos' | 'multimoneda' | 'alertas'
-  | 'ticket' | 'pdf' | 'historial' | 'backup' | 'sync'
+  | 'plantillas' | 'motivos' | 'multimoneda' | 'alertas'
+  | 'pdf' | 'historial' | 'backup'
 
 const GRUPOS: { titulo: string; items: { id: Seccion; label: string; icon: React.ReactNode }[] }[] = [
   { titulo: 'Negocio', items: [
@@ -39,18 +36,15 @@ const GRUPOS: { titulo: string; items: { id: Seccion; label: string; icon: React
     { id: 'cat-gastos', label: 'Categorías de gastos', icon: <Wallet size={15} /> },
     { id: 'etiquetas',  label: 'Etiquetas de OT',     icon: <Tag size={15} /> },
     { id: 'plantillas', label: 'Plantillas de OT',    icon: <LayoutTemplate size={15} /> },
-    { id: 'codigos',    label: 'Códigos de barras',   icon: <Barcode size={15} /> },
     { id: 'motivos',    label: 'Motivos de cancelación', icon: <Ban size={15} /> },
   ]},
   { titulo: 'Operación', items: [
     { id: 'multimoneda', label: 'Multimoneda',     icon: <DollarSign size={15} /> },
     { id: 'alertas',     label: 'Alertas globales', icon: <Bell size={15} /> },
-    { id: 'ticket',      label: 'Editor de ticket', icon: <Receipt size={15} /> },
     { id: 'pdf',         label: 'Editor de PDFs',   icon: <FileText size={15} /> },
   ]},
   { titulo: 'Sistema', items: [
     { id: 'historial', label: 'Historial de actividad', icon: <History size={15} /> },
-    { id: 'sync',      label: 'Sincronización',         icon: <RefreshCw size={15} /> },
     { id: 'backup',    label: 'Backup',                 icon: <DatabaseBackup size={15} /> },
   ]},
 ]
@@ -84,14 +78,11 @@ const Configuracion = () => {
       case 'cat-gastos': return <CategoriasGastos />
       case 'etiquetas':  return <EtiquetasOT />
       case 'plantillas': return <PlantillasOT />
-      case 'codigos':    return <CodigosBarras />
       case 'motivos':    return <MotivosCancelacion />
       case 'multimoneda':return <Multimoneda />
       case 'alertas':    return <AlertasGlobales />
-      case 'ticket':     return <EditorTicket />
       case 'pdf':        return <EditorPDF />
       case 'historial':  return <HistorialActividad />
-      case 'sync':       return <Sincronizacion />
       case 'backup':     return <Backup />
     }
   }

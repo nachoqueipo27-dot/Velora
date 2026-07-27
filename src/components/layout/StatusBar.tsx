@@ -1,27 +1,16 @@
-import { useEffect } from 'react'
 import { useSessionStore } from '../../store/sessionStore'
 import { useAuthGlobalStore } from '../../store/authGlobalStore'
 import { useNavigationStore, MODULES } from '../../store/navigationStore'
-import { useNegocioStore } from '../../store/negocioStore'
-import { useSyncStore } from '../../store/syncStore'
 import { cn } from '../../lib/utils'
 import { realizarBackup } from '../../lib/backup'
 import { toast } from '../../store/toastStore'
 import { VeloraLogo } from '../ui/VeloraLogo'
-import { Save, LogOut, Building2, RefreshCw, CloudOff, Cloud } from 'lucide-react'
+import { Save, LogOut } from 'lucide-react'
 
 export const StatusBar = () => {
   const { usuario } = useSessionStore()
   const { logout: logoutGlobal } = useAuthGlobalStore()
   const { activeModule } = useNavigationStore()
-  const { negocioActivo, limpiarNegocio } = useNegocioStore()
-  const { estado, pendientes, sincronizar, actualizarPendientes, iniciarHeartbeatPeriodico } = useSyncStore()
-
-  useEffect(() => {
-    actualizarPendientes()
-    const stopHeartbeat = iniciarHeartbeatPeriodico()
-    return stopHeartbeat
-  }, [actualizarPendientes, iniciarHeartbeatPeriodico])
 
   const activeIndex = MODULES.findIndex(m => m.id === activeModule) + 1
   const iniciales = usuario?.nombre
@@ -81,23 +70,8 @@ export const StatusBar = () => {
         </button>
       </div>
 
-      {/* Derecha — negocio, backup y posición */}
+      {/* Derecha — backup y posición */}
       <div className="flex items-center gap-3">
-        {negocioActivo && (
-          <button
-            onClick={() => limpiarNegocio()}
-            title="Cambiar de negocio"
-            className={cn(
-              'flex items-center gap-1.5 text-[11px] transition-all duration-150',
-              'text-[#808080] hover:text-white',
-              'light:text-[#707070] light:hover:text-black',
-            )}
-          >
-            <Building2 size={12} />
-            <span className="truncate max-w-[140px]">{negocioActivo.empresaNombre}</span>
-          </button>
-        )}
-
         <button
           onClick={handleBackup}
           className={cn(
@@ -109,26 +83,6 @@ export const StatusBar = () => {
         >
           <Save size={12} />
           <span>Backup</span>
-        </button>
-
-        {/* Indicador de sincronización */}
-        <button
-          onClick={sincronizar}
-          disabled={estado.enCurso}
-          title={estado.enCurso ? 'Sincronizando...' : pendientes > 0 ? `${pendientes} cambios pendientes` : 'Todo sincronizado'}
-          className={cn(
-            'flex items-center gap-1 text-[11px] transition-all duration-150',
-            estado.enCurso
-              ? 'text-[#D4921A]'
-              : pendientes > 0
-                ? 'text-[#D4921A] hover:text-white light:hover:text-black'
-                : 'text-[#4CAF7D]',
-          )}
-        >
-          {estado.enCurso
-            ? <RefreshCw size={11} className="animate-spin" />
-            : pendientes > 0 ? <CloudOff size={11} /> : <Cloud size={11} />}
-          <span>{estado.enCurso ? 'Sync...' : pendientes > 0 ? `${pendientes} pend.` : 'Sync OK'}</span>
         </button>
 
         <span className={cn(
