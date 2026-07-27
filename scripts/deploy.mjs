@@ -1,4 +1,4 @@
-import { execSync } from 'node:child_process'
+import { execSync, spawnSync } from 'node:child_process'
 import { existsSync, readFileSync, statSync } from 'node:fs'
 
 const BUILD_CMD = 'npx tsc --noEmit'
@@ -14,6 +14,24 @@ function runCapture(cmd) {
 function fail(msg) {
   console.error(msg)
   process.exit(1)
+}
+
+// Traduce el error de git push a una explicación de una línea.
+function explicarErrorPush(salida) {
+  const s = salida.toLowerCase()
+  if (s.includes('403') || (s.includes('permission') && s.includes('denied'))) {
+    return 'Probablemente git se está autenticando con una cuenta de GitHub que no tiene permiso sobre este repositorio (revisá con qué usuario estás logueado en el Administrador de credenciales de Windows).'
+  }
+  if (s.includes('authentication failed') || s.includes('could not read username')) {
+    return 'Probablemente las credenciales de GitHub son inválidas o expiraron (token vencido o login desactualizado).'
+  }
+  if (s.includes('fetch first') || s.includes('non-fast-forward') || s.includes('rejected')) {
+    return 'Probablemente el remoto tiene commits que no tenés localmente: hacé "git pull" y volvé a intentar.'
+  }
+  if (s.includes('could not resolve host') || s.includes('timed out') || s.includes('connection refused')) {
+    return 'Probablemente hay un problema de conexión a internet o el remoto no está accesible.'
+  }
+  return 'Revisá el mensaje de git de arriba: puede ser falta de permisos, credenciales vencidas o problemas de conexión.'
 }
 
 // 0. Repositorio git con remoto configurado
@@ -43,11 +61,30 @@ try {
 console.log('Compilación OK.\n')
 
 // b. Cambios pendientes
-const status = runCapture('git status --porcelain')
-if (!status.trim()) {
-  console.log('No hay cambios para subir.')
-  process.exit(0)
+// Ojo: "sin cambios" no siempre significa "nada que hacer". Si un push anterior falló,
+// el árbol puede estar limpio pero con commits locales sin subir; en ese caso hay que pushear igual.
+function commitsSinPushear() {
+  try {
+    return parseInt(runCapture('git rev-list --count @{u}..HEAD').trim(), 10) || 0
+  } catch {
+    return null // la rama no tiene upstream configurado todavía
+  }
 }
+
+const status = runCapture('git status --porcelain')
+const hayCambios = status.trim().length > 0
+
+if (!hayCambios) {
+  const pendientes = commitsSinPushear()
+  if (pendientes === 0) {
+    console.log('No hay cambios para subir.')
+    process.exit(0)
+  }
+  console.log(pendientes === null
+    ? 'No hay cambios sin commitear, pero la rama todavía no tiene upstream: se intentará pushear.'
+    : `No hay cambios sin commitear, pero hay ${pendientes} commit(s) local(es) sin pushear: se intentará pushear.`)
+}
+
 const lineas = status.split('\n').filter(Boolean)
 
 // c. Conflictos de merge sin resolver
@@ -80,28 +117,33 @@ if (conflictos.length > 0) {
   fail('Deploy detenido: resolvé los conflictos antes de reintentar.')
 }
 
-// d. Agregar cambios
-run('git add .')
+let mensaje = null
+if (hayCambios) {
+  // d. Agregar cambios
+  run('git add .')
 
-// e. Commit con mensaje automático
-const ahora = new Date()
-const pad = n => String(n).padStart(2, '0')
-const fecha = `${ahora.getFullYear()}-${pad(ahora.getMonth() + 1)}-${pad(ahora.getDate())} ${pad(ahora.getHours())}:${pad(ahora.getMinutes())}`
-const mensaje = `deploy: actualización automática - ${fecha}`
-run(`git commit -m "${mensaje}"`)
+  // e. Commit con mensaje automático
+  const ahora = new Date()
+  const pad = n => String(n).padStart(2, '0')
+  const fecha = `${ahora.getFullYear()}-${pad(ahora.getMonth() + 1)}-${pad(ahora.getDate())} ${pad(ahora.getHours())}:${pad(ahora.getMinutes())}`
+  mensaje = `deploy: actualización automática - ${fecha}`
+  run(`git commit -m "${mensaje}"`)
+}
 
 // f. Push a la rama actual
 const rama = runCapture('git rev-parse --abbrev-ref HEAD').trim()
 console.log(`\nPusheando a origin/${rama}...`)
-try {
-  run(`git push origin ${rama}`)
-} catch {
+const push = spawnSync('git', ['push', 'origin', rama], { encoding: 'utf8' })
+const salidaPush = (push.stdout || '') + (push.stderr || '')
+if (salidaPush) process.stdout.write(salidaPush)
+if (push.status !== 0) {
   console.error('\nEl push falló (ver el error de git arriba).')
-  console.error('Esto probablemente significa que el remoto tiene commits que no tenés localmente (hacé "git pull") o que falla la conexión/autenticación con el remoto.')
+  console.error(explicarErrorPush(salidaPush))
+  console.error('Los commits quedaron hechos localmente: cuando resuelvas el problema, volvé a correr "npm run deploy" y los subirá. Nunca uses --force.')
   process.exit(1)
 }
 
 // g. Confirmación final
 console.log('\nDeploy completado con éxito.')
-console.log(`Commit: "${mensaje}"`)
+console.log(mensaje ? `Commit: "${mensaje}"` : 'Commit: (se subieron commits locales que ya existían)')
 console.log(`Rama: ${rama}`)
