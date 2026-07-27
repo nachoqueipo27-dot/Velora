@@ -44,7 +44,7 @@ const MODULE_COMPONENTS = {
 }
 
 export const Layout = () => {
-  const { activeModule, actualizarModulosVisibles } = useNavigationStore()
+  const { activeModule, actualizarModulosVisibles, isDropdownOpen, closeDropdown } = useNavigationStore()
   const funcionesHabilitadas = useOnboardingStore(s => s.data.funcionesHabilitadas)
   const ActiveComponent = MODULE_COMPONENTS[activeModule]
   const { ready, error } = useInitDb()
@@ -80,6 +80,23 @@ export const Layout = () => {
         <ActiveComponent />
       </main>
       <StatusBar />
+
+      {/* Overlay difuminado del menú de módulos.
+          Vive acá (no en Navbar) para quedar como hermano de <main> y del <header>:
+          con z-40 tapa y difumina todo el contenido del módulo activo, mientras el
+          Navbar (z-50) queda por encima, sin difuminar y con sus botones usables.
+          Siempre montado y animado sólo con opacidad, así el fade se ve tanto al
+          abrir como al cerrar; `pointer-events-none` lo vuelve inerte con el menú
+          cerrado para no bloquear ninguna interacción. */}
+      <div
+        onClick={closeDropdown}
+        aria-hidden="true"
+        className={cn(
+          'fixed inset-0 z-40 backdrop-blur-sm transition-opacity duration-200',
+          'bg-black/40 light:bg-black/20',
+          isDropdownOpen ? 'opacity-100' : 'opacity-0 pointer-events-none',
+        )}
+      />
 
       <ToastContainer />
     </div>

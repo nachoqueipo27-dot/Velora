@@ -3,8 +3,13 @@ import { useThemeStore } from '../../store/themeStore'
 import { useOnboardingStore } from '../../store/onboardingStore'
 import { cn } from '../../lib/utils'
 import { VeloraLogo } from '../ui/VeloraLogo'
-import { ArrowLeft, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Sun, Moon, Briefcase } from 'lucide-react'
+import { ArrowLeft, ChevronLeft, ChevronRight, Sun, Moon, Briefcase, Menu, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
+
+// Duración de la transición de apertura/cierre del dropdown.
+// Debe coincidir con la clase `duration-200` del panel para que el desmontaje
+// ocurra recién cuando terminó la animación de salida.
+const DURACION_DROPDOWN = 200
 
 export const Navbar = () => {
   const { activeModule, isDropdownOpen, modulosVisibles, history, setModule, nextModule, prevModule, goBack, toggleDropdown, closeDropdown } = useNavigationStore()
@@ -21,9 +26,14 @@ export const Navbar = () => {
     .map(id => modulos.find(m => m.id === id))
     .filter((m): m is typeof MODULES[number] => !!m)
   const dropdownRef = useRef<HTMLDivElement>(null)
+  const hamburguesaRef = useRef<HTMLButtonElement>(null)
   const [displayModule, setDisplayModule] = useState(activeModule)
   const [animating, setAnimating] = useState(false)
   const [direction, setDirection] = useState<'left' | 'right'>('right')
+  // `montado` mantiene el panel en el DOM durante la animación de salida;
+  // `visible` dispara la transición de entrada/salida.
+  const [montado, setMontado] = useState(false)
+  const [visible, setVisible] = useState(false)
 
   const handleNext = () => {
     setDirection('right')
@@ -54,19 +64,42 @@ export const Navbar = () => {
     if (!animating) setDisplayModule(activeModule)
   }, [activeModule, animating])
 
+  // Entrada: montar y, con doble rAF, pasar al estado visible para que el navegador
+  // alcance a pintar el estado inicial y la transición se vea.
+  // Salida: quitar `visible` y desmontar recién cuando terminó la animación.
+  useEffect(() => {
+    if (!isDropdownOpen) {
+      setVisible(false)
+      const t = setTimeout(() => setMontado(false), DURACION_DROPDOWN)
+      return () => clearTimeout(t)
+    }
+    setMontado(true)
+    let raf2 = 0
+    const raf1 = requestAnimationFrame(() => {
+      raf2 = requestAnimationFrame(() => setVisible(true))
+    })
+    return () => { cancelAnimationFrame(raf1); cancelAnimationFrame(raf2) }
+  }, [isDropdownOpen])
+
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        closeDropdown()
-      }
+      const target = e.target as Node
+      if (dropdownRef.current?.contains(target)) return
+      // El botón hamburguesa maneja su propio toggle: si cerráramos acá, su onClick
+      // volvería a abrir el menú y nunca se podría cerrar desde el mismo botón.
+      if (hamburguesaRef.current?.contains(target)) return
+      closeDropdown()
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [closeDropdown])
 
   return (
+    // `relative z-50` deja todo el Navbar (ambas filas + el dropdown) por encima
+    // del overlay difuminado de Layout (z-40), así no se difumina a sí mismo y sus
+    // botones siguen siendo clickeables con el menú abierto.
     <header className={cn(
-      'flex flex-col border-b select-none',
+      'relative z-50 flex flex-col border-b select-none',
       'border-[#2A2A2A] bg-[#0A0A0A]',
       'light:border-[#E4E4E4] light:bg-[#FAFAFA]',
     )}>
@@ -109,11 +142,29 @@ export const Navbar = () => {
           >
             {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
           </button>
+
+          {/* Hamburguesa — único trigger del menú de módulos */}
+          <button
+            ref={hamburguesaRef}
+            onClick={toggleDropdown}
+            aria-haspopup="menu"
+            aria-expanded={isDropdownOpen}
+            aria-label={isDropdownOpen ? 'Cerrar menú de módulos' : 'Abrir menú de módulos'}
+            title="Módulos"
+            className={cn(
+              'p-1.5 rounded-input transition-all duration-150',
+              isDropdownOpen
+                ? 'text-white bg-white/10 light:text-black light:bg-black/5'
+                : 'text-[#808080] hover:text-white hover:bg-white/10 light:text-[#707070] light:hover:text-black light:hover:bg-black/5',
+            )}
+          >
+            {isDropdownOpen ? <X size={16} /> : <Menu size={16} />}
+          </button>
         </div>
       </div>
 
       {/* Fila 2 — navegación */}
-      <div className="relative flex flex-col items-center pb-3" ref={dropdownRef}>
+      <div className="relative flex flex-col items-center pb-3">
         <div className="flex items-center gap-4">
           <button
             onClick={handlePrev}
@@ -127,13 +178,8 @@ export const Navbar = () => {
             <ChevronLeft size={16} />
           </button>
 
-          {/* Nombre del módulo — botón que despliega el menú */}
-          <button
-            onClick={toggleDropdown}
-            aria-haspopup="menu"
-            aria-expanded={isDropdownOpen}
-            className="w-48 overflow-hidden rounded-input"
-          >
+          {/* Nombre del módulo — puramente informativo, ya no abre el menú */}
+          <div className="w-48 overflow-hidden rounded-input">
             <div
               className={cn(
                 'text-sm font-semibold text-center transition-all',
@@ -145,7 +191,7 @@ export const Navbar = () => {
             >
               {MODULES.find(m => m.id === displayModule)?.label}
             </div>
-          </button>
+          </div>
 
           <button
             onClick={handleNext}
@@ -160,25 +206,24 @@ export const Navbar = () => {
           </button>
         </div>
 
-        {/* Flecha abajo — indicador visual del estado del menú (el trigger es el título) */}
-        <span
-          aria-hidden="true"
-          className={cn(
-            'mt-1 p-1 transition-colors duration-150',
-            isDropdownOpen ? 'text-white light:text-black' : 'text-[#808080] light:text-[#707070]',
-          )}
-        >
-          {isDropdownOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-        </span>
+      </div>
 
-        {/* Dropdown */}
-        {isDropdownOpen && (
-          <div className={cn(
-            'absolute top-full mt-1 w-56 z-50 rounded-card border shadow-lg overflow-hidden max-h-[80vh] overflow-y-auto',
+      {/* Dropdown — anclado bajo el ícono hamburguesa (esquina superior derecha).
+          `right-6` lo alinea con el padding px-6 de la Fila 1. */}
+      {montado && (
+        <div
+          ref={dropdownRef}
+          role="menu"
+          className={cn(
+            'absolute right-6 top-full mt-2 w-56 z-50 rounded-card border shadow-lg overflow-hidden max-h-[80vh] overflow-y-auto',
             'border-[#2A2A2A] bg-[#141414]',
             'light:border-[#E4E4E4] light:bg-white',
-            'animate-fade-slide-down',
-          )}>
+            'origin-top-right transition-all duration-200 ease-out',
+            visible
+              ? 'opacity-100 scale-100 translate-y-0'
+              : 'opacity-0 scale-95 -translate-y-2 pointer-events-none',
+          )}
+        >
             {modulosOperativos.map(mod => (
               <button
                 key={mod.id}
@@ -221,10 +266,9 @@ export const Navbar = () => {
                   </button>
                 ))}
               </>
-            )}
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
     </header>
   )
 }
