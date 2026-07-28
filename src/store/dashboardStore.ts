@@ -91,7 +91,7 @@ const mapProducto = (r: any): Producto => ({
   precioCosto: r.precio_costo ?? 0, monedaCosto: r.moneda_costo ?? 'ARS',
   codigoSku: r.codigo_sku ?? '',
   stock: r.stock ?? 0, stockMinimo: r.stock_minimo ?? 0, imagen: r.imagen ?? null,
-  trazabilidad: r.trazabilidad ?? 'ninguna', activo: r.activo === 1,
+  trazabilidad: r.trazabilidad ?? 'ninguna', unidadMedida: r.unidad_medida ?? 'unidad', activo: r.activo === 1,
   creadoEn: r.creado_en, actualizadoEn: r.actualizado_en,
 })
 

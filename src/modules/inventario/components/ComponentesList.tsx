@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { cn } from '../../../lib/utils'
-import type { Producto } from '../../../types/inventario'
+import { permiteDecimales, type Producto } from '../../../types/inventario'
 import type { ComponenteInput } from '../../../store/inventarioStore'
 import { Search, Plus, Minus, X, AlertTriangle } from 'lucide-react'
 
@@ -32,8 +32,12 @@ export const ComponentesList = ({ productosSimples, value, onChange }: Component
     setBusqueda('')
   }
   const quitar = (id: number) => onChange(value.filter(v => v.componenteId !== id))
-  const setCant = (id: number, cant: number) =>
-    onChange(value.map(v => (v.componenteId === id ? { ...v, cantidad: Math.max(1, cant) } : v)))
+  // El mínimo y el redondeo dependen de la unidad de medida del componente: si no admite
+  // decimales (Unidad/Caja) se fuerza a entero, igual que en el formulario de producto.
+  const setCant = (id: number, cant: number, permite: boolean) =>
+    onChange(value.map(v => (v.componenteId === id
+      ? { ...v, cantidad: permite ? Math.max(0.01, cant) : Math.max(1, Math.round(cant)) }
+      : v)))
 
   return (
     <div className="flex flex-col gap-2">
@@ -72,15 +76,21 @@ export const ComponentesList = ({ productosSimples, value, onChange }: Component
           {value.map(v => {
             const p = prodById.get(v.componenteId)
             const bajo = p ? p.stock <= p.stockMinimo : false
+            const permite = p ? permiteDecimales(p.unidadMedida) : false
+            const minCant = permite ? 0.01 : 1
             return (
               <div key={v.componenteId} className={cn('flex items-center gap-2 rounded-input border px-2 py-1.5', 'border-[#2A2A2A] light:border-[#E4E4E4]')}>
                 <div className="flex items-center gap-1">
-                  <button type="button" disabled={v.cantidad <= 1} onClick={() => setCant(v.componenteId, v.cantidad - 1)}
+                  <button type="button" disabled={v.cantidad <= minCant} onClick={() => setCant(v.componenteId, v.cantidad - 1, permite)}
                     className="w-5 h-5 rounded flex items-center justify-center text-[#A0A0A0] hover:text-white hover:bg-white/10 disabled:opacity-30 light:hover:text-black light:hover:bg-black/5">
                     <Minus size={12} />
                   </button>
-                  <span className="w-6 text-center text-[13px] text-white light:text-black">{v.cantidad}</span>
-                  <button type="button" onClick={() => setCant(v.componenteId, v.cantidad + 1)}
+                  <input
+                    type="number" step={permite ? '0.01' : '1'} min={minCant} value={v.cantidad}
+                    onChange={e => setCant(v.componenteId, Number(e.target.value), permite)}
+                    className="w-12 text-center text-[13px] bg-transparent outline-none text-white light:text-black"
+                  />
+                  <button type="button" onClick={() => setCant(v.componenteId, v.cantidad + 1, permite)}
                     className="w-5 h-5 rounded flex items-center justify-center text-[#A0A0A0] hover:text-white hover:bg-white/10 light:hover:text-black light:hover:bg-black/5">
                     <Plus size={12} />
                   </button>

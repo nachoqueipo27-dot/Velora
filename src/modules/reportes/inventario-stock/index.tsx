@@ -7,12 +7,14 @@ import { usePDF } from '../../../hooks/usePDF'
 import { CardMetrica } from '../../dashboard/components/CardMetrica'
 import { Button } from '../../../components/ui/Button'
 import { PDFReporteInventario } from '../../../lib/pdf/documentos/PDFReporteInventario'
+import { UNIDADES_MEDIDA } from '../../../types/inventario'
 import { PackageX, DollarSign, Clock, PackagePlus, PackageMinus, Download, Check } from 'lucide-react'
 
 const money = (n: number) => `$${Math.round(n).toLocaleString('es-AR')}`
 const hoyStr = () => format(new Date(), 'yyyy-MM-dd')
 
 const TIPO_LABEL: Record<string, string> = { entrada: 'Entrada', salida: 'Salida', ajuste: 'Ajuste' }
+const LABEL_UNIDAD: Record<string, string> = Object.fromEntries(UNIDADES_MEDIDA.map(u => [u.value, u.label]))
 
 type RangoId = 'hoy' | 'semana' | 'mes' | 'mesAnterior'
 
@@ -158,7 +160,7 @@ const InventarioStock = () => {
                   <td className="px-3 py-2.5 text-white light:text-black">{format(new Date(m.fecha), 'dd/MM/yyyy')}</td>
                   <td className="px-3 py-2.5 text-[#A0A0A0] light:text-[#404040]">{m.productoNombre}</td>
                   <td className="px-3 py-2.5 text-[#A0A0A0] light:text-[#404040]">{TIPO_LABEL[m.tipo] ?? m.tipo}</td>
-                  <td className="px-3 py-2.5 text-right text-white light:text-black font-medium">{m.cantidad}</td>
+                  <td className="px-3 py-2.5 text-right text-white light:text-black font-medium">{m.cantidad} {LABEL_UNIDAD[m.unidadMedida] ?? ''}</td>
                   <td className="px-3 py-2.5 text-[#606060] truncate max-w-[200px]">{m.motivo ?? '—'}</td>
                 </tr>
               ))}

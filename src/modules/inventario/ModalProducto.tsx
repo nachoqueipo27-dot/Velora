@@ -6,7 +6,10 @@ import { Select } from '../../components/ui/Select'
 import { Textarea } from '../../components/ui/Textarea'
 import { Modal } from '../../components/ui/Modal'
 import { useInventarioStore, type ComponenteInput, type NuevoProducto } from '../../store/inventarioStore'
-import { TRAZABILIDAD_OPCIONES, type Producto, type Trazabilidad } from '../../types/inventario'
+import {
+  TRAZABILIDAD_OPCIONES, UNIDADES_MEDIDA, permiteDecimales,
+  type Producto, type Trazabilidad, type UnidadMedida,
+} from '../../types/inventario'
 import { ImagenCropper } from './components/ImagenCropper'
 import { ComponentesList } from './components/ComponentesList'
 import { Plus } from 'lucide-react'
@@ -35,6 +38,7 @@ export const ModalProducto = ({ open, onClose, producto, tipoInicial = 'simple' 
   const [stock, setStock] = useState('')
   const [stockMinimo, setStockMinimo] = useState('')
   const [trazabilidad, setTrazabilidad] = useState<Trazabilidad>('ninguna')
+  const [unidadMedida, setUnidadMedida] = useState<UnidadMedida>('unidad')
   const [imagen, setImagen] = useState<string | null>(null)
   const [componentes, setComponentes] = useState<ComponenteInput[]>([])
   const [nuevaCat, setNuevaCat] = useState('')
@@ -57,6 +61,7 @@ export const ModalProducto = ({ open, onClose, producto, tipoInicial = 'simple' 
       setStock(String(producto.stock))
       setStockMinimo(String(producto.stockMinimo))
       setTrazabilidad(producto.trazabilidad)
+      setUnidadMedida(producto.unidadMedida)
       setImagen(producto.imagen)
       if (producto.tipo === 'conjunto') {
         cargarComponentes(producto.id).then(comps =>
@@ -65,7 +70,7 @@ export const ModalProducto = ({ open, onClose, producto, tipoInicial = 'simple' 
     } else {
       setTipo(tipoInicial); setNombre(''); setDescripcion(''); setPrecio(''); setPrecioCosto('')
       setMonedaCosto('ARS'); setCodigoSku(''); setCategoriaId(''); setStock(''); setStockMinimo('')
-      setTrazabilidad('ninguna'); setImagen(null); setComponentes([])
+      setTrazabilidad('ninguna'); setUnidadMedida('unidad'); setImagen(null); setComponentes([])
     }
     setNuevaCat(''); setMostrarNuevaCat(false); setTouched(false)
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -78,7 +83,18 @@ export const ModalProducto = ({ open, onClose, producto, tipoInicial = 'simple' 
 
   const nombreInvalido = nombre.trim() === ''
   const conjuntoSinComp = tipo === 'conjunto' && componentes.length === 0
-  const invalido = nombreInvalido || conjuntoSinComp
+  const stockAceptaDecimales = permiteDecimales(unidadMedida)
+  const stockConDecimalInvalido = tipo === 'simple' && !stockAceptaDecimales && stock !== '' && !Number.isInteger(num(stock))
+  const invalido = nombreInvalido || conjuntoSinComp || stockConDecimalInvalido
+
+  // Si la unidad pasa a ser entera (Unidad/Caja) y el stock cargado tiene decimales,
+  // se redondea al cambiar de unidad en vez de dejar que el usuario choque con el error.
+  const handleUnidadMedida = (u: UnidadMedida) => {
+    setUnidadMedida(u)
+    if (!permiteDecimales(u) && stock !== '' && !Number.isInteger(num(stock))) {
+      setStock(String(Math.round(num(stock))))
+    }
+  }
 
   const agregarCategoria = async () => {
     if (nuevaCat.trim() === '') return
@@ -104,6 +120,7 @@ export const ModalProducto = ({ open, onClose, producto, tipoInicial = 'simple' 
         stockMinimo: num(stockMinimo),
         imagen,
         trazabilidad,
+        unidadMedida,
         activo: producto?.activo ?? true,
       }
       if (esEdicion && producto) await actualizarProducto(producto.id, payload, componentes)
@@ -194,14 +211,23 @@ export const ModalProducto = ({ open, onClose, producto, tipoInicial = 'simple' 
 
           {tipo === 'simple' && (
             <div className="grid grid-cols-2 gap-3">
-              <Input label="Stock actual" type="number" value={stock} onChange={e => setStock(e.target.value)} />
+              <Input
+                label="Stock actual" type="number" step={stockAceptaDecimales ? '0.01' : '1'}
+                value={stock} onChange={e => setStock(e.target.value)}
+                error={touched && stockConDecimalInvalido ? 'Esta unidad no admite decimales' : undefined}
+              />
               <Input label="Stock mínimo" type="number" value={stockMinimo} onChange={e => setStockMinimo(e.target.value)} />
             </div>
           )}
 
-          <Select label="Trazabilidad" value={trazabilidad} onChange={e => setTrazabilidad(e.target.value as Trazabilidad)}>
-            {TRAZABILIDAD_OPCIONES.map(o => <option key={o.value} value={o.value} className="bg-[#141414] light:bg-white">{o.label}</option>)}
-          </Select>
+          <div className="grid grid-cols-2 gap-3">
+            <Select label="Unidad de medida" value={unidadMedida} onChange={e => handleUnidadMedida(e.target.value as UnidadMedida)}>
+              {UNIDADES_MEDIDA.map(o => <option key={o.value} value={o.value} className="bg-[#141414] light:bg-white">{o.label}</option>)}
+            </Select>
+            <Select label="Trazabilidad" value={trazabilidad} onChange={e => setTrazabilidad(e.target.value as Trazabilidad)}>
+              {TRAZABILIDAD_OPCIONES.map(o => <option key={o.value} value={o.value} className="bg-[#141414] light:bg-white">{o.label}</option>)}
+            </Select>
+          </div>
 
           {tipo === 'conjunto' && (
             <>

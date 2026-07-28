@@ -8,6 +8,7 @@ import { CardMetrica } from '../../dashboard/components/CardMetrica'
 import { Button } from '../../../components/ui/Button'
 import { PDFReporteVentas } from '../../../lib/pdf/documentos/PDFReporteVentas'
 import type { ProductoTop } from '../../../store/reporteVentasStore'
+import { UNIDAD_ABREVIADA } from '../../../types/inventario'
 import { DollarSign, ShoppingCart, Receipt, Download, Check } from 'lucide-react'
 
 const money = (n: number) => `$${Math.round(n).toLocaleString('es-AR')}`
@@ -124,7 +125,7 @@ const Ventas = () => {
 
       {/* Top 5 */}
       <div className="grid grid-cols-2 gap-4">
-        <TopTabla titulo="Top 5 — Más vendidos" items={topPorCantidad} valor={i => String(i.cantidad)} />
+        <TopTabla titulo="Top 5 — Más vendidos" items={topPorCantidad} valor={i => `${i.cantidad} ${UNIDAD_ABREVIADA[i.unidadMedida]}`} />
         <TopTabla titulo="Top 5 — Mayor facturación" items={topPorFacturacion} valor={i => money(i.facturacion)} />
       </div>
 

@@ -7,12 +7,30 @@ import { useNavigationStore } from '../../store/navigationStore'
 import { useThemeStore } from '../../store/themeStore'
 import { useToastStore } from '../../store/toastStore'
 import { getDb } from '../../db'
-import { X, Terminal, Database, Navigation, FlaskConical, Info } from 'lucide-react'
+import { getMasterDb } from '../../db/master'
+import { X, Terminal, Database, Navigation, TriangleAlert, Info } from 'lucide-react'
 
 interface ConfirmState {
   accion: string
   fn: () => Promise<void>
+  detalle?: string
 }
+
+// Tablas cuyo contenido sobrevive al Reset Total: son exactamente las que siembran
+// seedRolesBase() y seedConfiguracionBase() en src/db/index.ts. Sin esto la app
+// arranca sin roles, sin plantillas de ticket/PDF ni motivos de cancelación.
+const TABLAS_CONFIG_BASE = [
+  'roles',
+  'configuracion',
+  'configuracion_ticket',
+  'configuracion_pdf',
+  'motivos_cancelacion',
+  'tipos_cambio',
+]
+
+// Única clave de la tabla `configuracion` que crea seedConfiguracionBase. El resto
+// (alertas, backup) son preferencias del usuario y sí se borran en un reset de fábrica.
+const CLAVE_CONFIG_BASE = 'categorias_gastos'
 
 export const DevPanel = () => {
   const [abierto, setAbierto] = useState(false)
@@ -48,7 +66,7 @@ export const DevPanel = () => {
 
   // ── ACCIONES ──────────────────────────────────────
 
-  const confirmar = (accion: string, fn: () => Promise<void>) => setConfirm({ accion, fn })
+  const confirmar = (accion: string, fn: () => Promise<void>, detalle?: string) => setConfirm({ accion, fn, detalle })
 
   const ejecutarConFirm = async () => {
     if (!confirm) return
@@ -91,24 +109,6 @@ export const DevPanel = () => {
   }
 
   // BASE DE DATOS
-  const borrarDBActiva = async () => {
-    addLog('Borrando DB activa...')
-    localStorage.clear()
-    toast('DB activa borrada — recargando', 'warning')
-    setTimeout(() => window.location.reload(), 800)
-  }
-
-  const borrarTodo = async () => {
-    addLog('Borrando TODO...')
-    localStorage.clear()
-    const dbs = await window.indexedDB.databases?.() ?? []
-    for (const db of dbs) {
-      if (db.name) window.indexedDB.deleteDatabase(db.name)
-    }
-    toast('Todo borrado — recargando', 'warning')
-    setTimeout(() => window.location.reload(), 800)
-  }
-
   const listarTablas = async () => {
     try {
       const db = await getDb()
@@ -160,78 +160,93 @@ export const DevPanel = () => {
     setAbierto(false)
   }
 
-  // DATOS DE PRUEBA
-  const seedClientesExtra = async () => {
+  // RESET TOTAL — vuelta a estado de fábrica.
+  // Vacía todas las tablas de negocio de velora.db, borra los usuarios de master.db
+  // (incluido el Admin General) y limpia localStorage. Al recargar, App.tsx encuentra
+  // existeUsuarioMaster() === false y arranca el Onboarding desde cero.
+  const resetTotal = async () => {
     try {
+      addLog('Reset Total: vaciando tablas de negocio...')
       const db = await getDb()
-      const now = new Date().toISOString()
-      const clientes = [
-        ['Juan Prueba', '011-1234-5678', 'juan@test.com', 'Buenos Aires', 'Frecuente'],
-        ['María Testing', '011-8765-4321', 'maria@test.com', 'Palermo', 'VIP'],
-        ['Carlos Demo', '011-5555-9999', '', 'San Telmo', 'Ocasional'],
-      ]
-      for (const [nombre, telefono, email, direccion, categoria] of clientes) {
-        await db.execute(
-          `INSERT INTO clientes (nombre, telefono, email, direccion, categoria, creado_en, actualizado_en)
-           VALUES (?, ?, ?, ?, ?, ?, ?)`,
-          [nombre, telefono, email, direccion, categoria, now, now]
-        )
-      }
-      addLog('3 clientes de prueba insertados')
-      toast('3 clientes insertados', 'success')
-    } catch (e) {
-      addLog(`Error: ${e}`)
-      toast('Error al insertar clientes', 'error')
-    }
-  }
 
-  const seedOTsExtra = async () => {
-    try {
-      const db = await getDb()
-      const now = new Date().toISOString()
-      const ots = [
-        [5, 1, 5, 'simple', 'Gaseosa 500ml', 'recepcion', 400],
-        [6, 2, 7, 'simple', 'Cable USB-C', 'en_proceso', 2500],
-        [7, 1, 9, 'conjunto', 'Combo Hamburguesa', 'finalizado', 2500],
-      ]
-      for (const [numero, clienteId, productoId, tipo, nombre, estado, precio] of ots) {
-        await db.execute(
-          `INSERT INTO ordenes_trabajo
-           (numero, cliente_id, producto_id, tipo_item, producto_nombre,
-            estado, precio, total_final, creado_por, creado_en, actualizado_en)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'DEV', ?, ?)`,
-          [numero, clienteId, productoId, tipo, nombre, estado, precio, precio, now, now]
-        )
-      }
-      addLog('3 OTs de prueba insertadas')
-      toast('3 OTs insertadas', 'success')
-    } catch (e) {
-      addLog(`Error: ${e}`)
-      toast('Error al insertar OTs', 'error')
-    }
-  }
+      const tablas = await db.select<{ name: string }[]>(
+        `SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'`
+      )
 
-  const seedCobrosHoy = async () => {
-    try {
-      const db = await getDb()
-      const now = new Date().toISOString()
-      const cobros = [
-        [2500, 'efectivo', 'OT demo #1'],
-        [1600, 'transferencia', 'Venta POS demo'],
-        [800, 'tarjeta', 'Cobro manual demo'],
-      ]
-      for (const [monto, forma, concepto] of cobros) {
-        await db.execute(
-          `INSERT INTO cobros_caja (fecha, monto, forma_pago, concepto, creado_en)
-           VALUES (?, ?, ?, ?, ?)`,
-          [now, monto, forma, concepto, now]
-        )
+      // Borrado en varias pasadas en lugar de "PRAGMA foreign_keys = OFF".
+      // Ese PRAGMA no sirve acá por dos motivos: es por CONEXIÓN y tauri-plugin-sql
+      // usa un pool de sqlx (el PRAGMA puede caer en una conexión distinta de la del
+      // DELETE), y además es un no-op si se ejecuta dentro de una transacción.
+      // Con FK activas hay que vaciar las hijas antes que las padres; cada pasada
+      // destraba el nivel siguiente (clientes/productos/proveedores son las raíces).
+      let pendientes = tablas.map(t => t.name).filter(n => !TABLAS_CONFIG_BASE.includes(n))
+      let vaciadas = 0
+      for (let pasada = 0; pasada < 10 && pendientes.length > 0; pasada++) {
+        const fallaron: string[] = []
+        for (const nombre of pendientes) {
+          try {
+            await db.execute(`DELETE FROM ${nombre}`)
+            vaciadas++
+          } catch {
+            fallaron.push(nombre) // casi siempre una FK todavía sin resolver
+          }
+        }
+        if (fallaron.length === pendientes.length) break // sin progreso: no insistir
+        pendientes = fallaron
       }
-      addLog('3 cobros del día insertados')
-      toast('3 cobros insertados', 'success')
+
+      // Si algo quedó sin vaciar, cortar ANTES de tocar master.db: es preferible dejar
+      // la instalación como estaba a dejarla sin usuario pero con datos viejos adentro.
+      if (pendientes.length > 0) {
+        addLog(`No se pudieron vaciar: ${pendientes.join(', ')}`)
+        toast('Reset abortado: quedaron tablas sin vaciar — ver log', 'error')
+        return
+      }
+
+      // De `configuracion` sobrevive sólo la clave base; alertas/backup vuelven a default.
+      await db.execute('DELETE FROM configuracion WHERE clave <> ?', [CLAVE_CONFIG_BASE])
+      // Reiniciar los AUTOINCREMENT de lo vaciado para que los IDs arranquen en 1.
+      try {
+        await db.execute(
+          `DELETE FROM sqlite_sequence WHERE name NOT IN (${TABLAS_CONFIG_BASE.map(() => '?').join(',')})`,
+          TABLAS_CONFIG_BASE
+        )
+      } catch { /* la DB puede no tener sqlite_sequence todavía */ }
+      addLog(`${vaciadas} tablas vaciadas (${TABLAS_CONFIG_BASE.length} de config base preservadas)`)
+
+      // Verificación: releer los conteos y confirmar que quedaron en cero. Sin esto un
+      // borrado parcial pasaría desapercibido, que es justo lo que costó detectar antes.
+      const sobrantes: string[] = []
+      for (const t of tablas) {
+        if (TABLAS_CONFIG_BASE.includes(t.name)) continue
+        const r = await db.select<{ n: number }[]>(`SELECT COUNT(*) as n FROM ${t.name}`)
+        if ((r[0]?.n ?? 0) > 0) sobrantes.push(`${t.name}(${r[0].n})`)
+      }
+      if (sobrantes.length > 0) {
+        addLog(`Verificación FALLIDA, con filas: ${sobrantes.join(', ')}`)
+        toast('Reset abortado: la verificación encontró filas — ver log', 'error')
+        return
+      }
+      addLog('Verificación OK: todas las tablas de negocio en cero')
+
+      addLog('Reset Total: borrando usuarios de master.db...')
+      const master = await getMasterDb()
+      await master.execute('DELETE FROM usuarios_master')
+      try { await master.execute(`DELETE FROM sqlite_sequence WHERE name = 'usuarios_master'`) } catch { /* idem */ }
+
+      // Resetear los stores persistidos ANTES de limpiar localStorage: si se hiciera al
+      // revés, el middleware `persist` de zustand reescribiría las claves recién borradas.
+      useAuthGlobalStore.getState().logout()
+      cerrarSesion()
+      resetOnboarding()
+      localStorage.clear()
+
+      addLog('Reset Total completado — reiniciando en Onboarding')
+      toast('Reset total completado — reiniciando', 'warning')
+      setTimeout(() => window.location.reload(), 600)
     } catch (e) {
-      addLog(`Error: ${e}`)
-      toast('Error al insertar cobros', 'error')
+      addLog(`Error en Reset Total: ${e}`)
+      toast('Error en el Reset Total — ver log', 'error')
     }
   }
 
@@ -266,8 +281,6 @@ export const DevPanel = () => {
       icon: <Database size={12} />,
       titulo: 'Base de datos',
       acciones: [
-        { label: 'Borrar DB activa', fn: async () => confirmar('Borrar DB activa', borrarDBActiva), danger: true },
-        { label: 'Borrar TODO (DB + storage)', fn: async () => confirmar('Borrar absolutamente todo', borrarTodo), danger: true },
         { label: 'Listar tablas en consola', fn: listarTablas },
         { label: 'Contar registros por tabla', fn: contarRegistros },
       ],
@@ -283,12 +296,21 @@ export const DevPanel = () => {
       ],
     },
     {
-      icon: <FlaskConical size={12} />,
-      titulo: 'Datos de prueba',
+      icon: <TriangleAlert size={12} />,
+      titulo: 'Zona peligrosa',
       acciones: [
-        { label: 'Seed: 3 clientes extra', fn: seedClientesExtra },
-        { label: 'Seed: 3 OTs extra', fn: seedOTsExtra },
-        { label: 'Seed: cobros del día', fn: seedCobrosHoy },
+        {
+          label: 'Reset Total (borra TODO)',
+          danger: true,
+          fn: async () => confirmar(
+            'Reset Total — volver a estado de fábrica',
+            resetTotal,
+            'Esto borrará TODOS los datos: negocio, usuarios (incluido el Admin General), '
+            + 'clientes, empleados, productos, proveedores, órdenes de trabajo, presupuestos, caja, todo. '
+            + 'Sólo se conserva la configuración base del sistema. La app va a reiniciar en el Onboarding. '
+            + 'Esta acción no se puede deshacer. ¿Continuar?',
+          ),
+        },
       ],
     },
   ]
@@ -347,6 +369,9 @@ export const DevPanel = () => {
             <div className="rounded-card border border-[#D4921A]/40 bg-[#D4921A]/10 p-3">
               <p className="text-[11px] text-[#D4921A] mb-2">¿Seguro? Esta acción no se puede deshacer.</p>
               <p className="text-[11px] text-white light:text-black mb-3 font-medium">{confirm.accion}</p>
+              {confirm.detalle && (
+                <p className="text-[11px] text-[#A0A0A0] light:text-[#404040] mb-3 leading-5">{confirm.detalle}</p>
+              )}
               <div className="flex gap-2">
                 <button onClick={() => setConfirm(null)}
                   className="flex-1 py-1.5 text-[11px] rounded-input border border-[#2A2A2A] text-[#A0A0A0] hover:bg-white/5 transition-all duration-150">

@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { getDb } from '../db'
 import { useSessionStore } from './sessionStore'
 import { useInventarioStore } from './inventarioStore'
+import { permiteDecimales } from '../types/inventario'
 import type { FormaPago, ItemCarrito, VentaPOS } from '../types/pos'
 
 interface PosStore {
@@ -11,10 +12,15 @@ interface PosStore {
   formaPago: FormaPago
   empleadoPOS: { id: number; nombre: string } | null
   procesando: boolean
+  // productoId del ítem cuyo input de cantidad debe recibir foco — lo dispara
+  // agregarProducto() al re-tocar un producto fraccionable ya en el carrito;
+  // ItemCarrito.tsx lo consume y lo limpia después de enfocar.
+  itemEnEdicion: number | null
 
   agregarProducto: (productoId: number, tipoItem: 'simple' | 'conjunto') => Promise<void>
   quitarProducto: (productoId: number) => void
   actualizarCantidad: (productoId: number, cantidad: number) => void
+  limpiarItemEnEdicion: () => void
   actualizarDescuentoItem: (productoId: number, descuento: number) => void
   setDescuentoGlobal: (descuento: number, tipo: 'porcentaje' | 'monto') => void
   setFormaPago: (forma: FormaPago) => void
@@ -70,6 +76,7 @@ export const usePosStore = create<PosStore>((set, get) => ({
   formaPago: 'efectivo',
   empleadoPOS: null,
   procesando: false,
+  itemEnEdicion: null,
 
   agregarProducto: async (productoId, tipoItem) => {
     const { productos, cargarProductos } = useInventarioStore.getState()
@@ -78,11 +85,21 @@ export const usePosStore = create<PosStore>((set, get) => ({
     if (!prod) return
     const existe = get().carrito.find(i => i.productoId === productoId)
     if (existe) {
-      set({ carrito: recomputar(get().carrito.map(i => i.productoId === productoId ? { ...i, cantidad: i.cantidad + 1 } : i), get().tipoDescuentoGlobal) })
+      if (permiteDecimales(existe.unidadMedida)) {
+        // Fraccionable: sumar 1 "a ciegas" no tiene sentido (¿1 metro más sobre los
+        // 2.5 ya cargados?). En vez de eso, se lleva el foco al input de cantidad de
+        // ese ítem para que el cajero escriba/corrija el valor exacto.
+        set({ itemEnEdicion: productoId })
+      } else {
+        set({ carrito: recomputar(get().carrito.map(i => i.productoId === productoId ? { ...i, cantidad: i.cantidad + 1 } : i), get().tipoDescuentoGlobal) })
+      }
     } else {
       const nuevo: ItemCarrito = {
         productoId: prod.id, tipoItem, nombre: prod.nombre, precioUnitario: prod.precio,
+        // La cantidad inicial siempre es 1 (una unidad de medida completa, ej. "1 metro"),
+        // sea la unidad fraccionable o no — el cajero ajusta el valor exacto desde ahí.
         cantidad: 1, descuentoItem: 0, subtotal: prod.precio, imagen: prod.imagen,
+        unidadMedida: prod.unidadMedida,
       }
       set({ carrito: [...get().carrito, nuevo] })
     }
@@ -90,8 +107,16 @@ export const usePosStore = create<PosStore>((set, get) => ({
 
   quitarProducto: (productoId) => set({ carrito: get().carrito.filter(i => i.productoId !== productoId) }),
 
+  limpiarItemEnEdicion: () => set({ itemEnEdicion: null }),
+
   actualizarCantidad: (productoId, cantidad) =>
-    set({ carrito: recomputar(get().carrito.map(i => i.productoId === productoId ? { ...i, cantidad: Math.max(1, cantidad) } : i), get().tipoDescuentoGlobal) }),
+    set({
+      carrito: recomputar(get().carrito.map(i => {
+        if (i.productoId !== productoId) return i
+        const cantidadFinal = permiteDecimales(i.unidadMedida) ? Math.max(0.01, cantidad) : Math.max(1, Math.round(cantidad))
+        return { ...i, cantidad: cantidadFinal }
+      }), get().tipoDescuentoGlobal),
+    }),
 
   actualizarDescuentoItem: (productoId, descuento) =>
     set({ carrito: recomputar(get().carrito.map(i => i.productoId === productoId ? { ...i, descuentoItem: Math.max(0, descuento) } : i), get().tipoDescuentoGlobal) }),
@@ -100,7 +125,7 @@ export const usePosStore = create<PosStore>((set, get) => ({
     set({ descuentoGlobal: Math.max(0, descuento), tipoDescuentoGlobal: tipo, carrito: recomputar(get().carrito, tipo) }),
   setFormaPago: (forma) => set({ formaPago: forma }),
   setEmpleadoPOS: (empleado) => set({ empleadoPOS: empleado }),
-  limpiarCarrito: () => set({ carrito: [], descuentoGlobal: 0, tipoDescuentoGlobal: 'porcentaje' }),
+  limpiarCarrito: () => set({ carrito: [], descuentoGlobal: 0, tipoDescuentoGlobal: 'porcentaje', itemEnEdicion: null }),
 
   calcularSubtotal: () => get().carrito.reduce((s, i) => s + subtotalItem(i, get().tipoDescuentoGlobal), 0),
 

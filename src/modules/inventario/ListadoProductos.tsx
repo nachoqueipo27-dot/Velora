@@ -3,10 +3,12 @@ import { cn } from '../../lib/utils'
 import { Button } from '../../components/ui/Button'
 import { Select } from '../../components/ui/Select'
 import { useInventarioStore } from '../../store/inventarioStore'
-import type { Producto } from '../../types/inventario'
+import { UNIDADES_MEDIDA, type Producto } from '../../types/inventario'
 import { StockBadge } from './components/StockBadge'
 import { ModalProducto } from './ModalProducto'
 import { Search, Plus, Eye, Pencil, Trash2, ImageOff, AlertTriangle, PackageX } from 'lucide-react'
+
+const LABEL_UNIDAD: Record<string, string> = Object.fromEntries(UNIDADES_MEDIDA.map(u => [u.value, u.label]))
 
 interface ListadoProductosProps {
   tipo: 'simple' | 'conjunto'
@@ -117,7 +119,9 @@ export const ListadoProductos = ({ tipo, onVer }: ListadoProductosProps) => {
                   </td>
                   <td className="px-3 py-2.5 text-[#A0A0A0] light:text-[#404040]">{p.categoriaNombre || '—'}</td>
                   <td className="px-3 py-2.5 text-right text-white light:text-black">${p.precio.toLocaleString('es-AR')}</td>
-                  <td className="px-3 py-2.5 text-right text-[#A0A0A0] light:text-[#404040]">{p.tipo === 'conjunto' ? '—' : p.stock}</td>
+                  <td className="px-3 py-2.5 text-right text-[#A0A0A0] light:text-[#404040]">
+                    {p.tipo === 'conjunto' ? '—' : `${p.stock} ${LABEL_UNIDAD[p.unidadMedida] ?? ''}`}
+                  </td>
                   <td className="px-3 py-2.5">{p.tipo === 'conjunto' ? <span className="text-[11px] text-[#606060]">—</span> : <StockBadge stock={p.stock} stockMinimo={p.stockMinimo} />}</td>
                   <td className="px-3 py-2.5">
                     {confirmId === p.id ? (

@@ -5,6 +5,7 @@ import { Badge } from '../../components/ui/Badge'
 import { Modal } from '../../components/ui/Modal'
 import { useProveedoresStore } from '../../store/proveedoresStore'
 import { useInventarioStore } from '../../store/inventarioStore'
+import { permiteDecimales } from '../../types/inventario'
 import { ArrowLeft, Send, PackageCheck, Search, Trash2, Plus } from 'lucide-react'
 import { format } from 'date-fns'
 
@@ -16,10 +17,14 @@ const money = (n: number) => `$${Math.round(n).toLocaleString('es-AR')}`
 const numFmt = (n: number) => `#${String(n).padStart(3, '0')}`
 
 export const RecepcionMercaderia = ({ onVolver }: RecepcionMercaderiaProps) => {
-  const { ordenSeleccionada, items, cargarItemsOrden, actualizarEstadoOrden, agregarItemOrden, eliminarItemOrden } = useProveedoresStore()
+  const { ordenSeleccionada, items, cargarItemsOrden, actualizarEstadoOrden, agregarItemOrden, actualizarCantidadItem, eliminarItemOrden } = useProveedoresStore()
   const { productos, cargarProductos } = useInventarioStore()
   const [confirmRecibir, setConfirmRecibir] = useState(false)
   const [busqueda, setBusqueda] = useState('')
+  // Buffer local del valor tipeado por item, para no atarlo directo al store en cada
+  // tecla (evita que un refetch a mitad de escritura le "coma" el "." de un decimal).
+  // Se confirma a la DB (y recalcula stock/total) recién en onBlur.
+  const [edits, setEdits] = useState<Record<number, string>>({})
 
   const o = ordenSeleccionada
 
@@ -34,9 +39,29 @@ export const RecepcionMercaderia = ({ onVolver }: RecepcionMercaderiaProps) => {
     const ya = new Set(items.map(i => i.productoId))
     return productos.filter(p => p.tipo === 'simple' && !ya.has(p.id) && q !== '' && p.nombre.toLowerCase().includes(q)).slice(0, 6)
   }, [productos, items, busqueda])
+  const prodPorId = useMemo(() => {
+    const m = new Map<number, typeof productos[number]>()
+    productos.forEach(p => m.set(p.id, p))
+    return m
+  }, [productos])
 
   if (!o) return null
   const esBorrador = o.estado === 'borrador'
+  // Editable mientras la orden no esté ya recibida: cubre tanto los items agregados en
+  // borrador (hoy fijos en 1) como el ajuste de la cantidad pedida al momento de recibir
+  // (puede llegar una cantidad distinta a la pedida).
+  const cantidadEditable = o.estado !== 'recibida'
+
+  const commitCantidad = (it: typeof items[number]) => {
+    const raw = edits[it.id]
+    if (raw === undefined) return
+    const val = Number(raw)
+    setEdits(prev => { const { [it.id]: _omit, ...resto } = prev; return resto })
+    if (Number.isNaN(val)) return
+    const permite = permiteDecimales(prodPorId.get(it.productoId)?.unidadMedida ?? 'unidad')
+    const cantidadFinal = permite ? Math.max(0.01, val) : Math.max(1, Math.round(val))
+    if (cantidadFinal !== it.cantidad) actualizarCantidadItem(it.id, cantidadFinal)
+  }
 
   return (
     <div className="flex flex-col h-full overflow-y-auto pr-1">
@@ -95,19 +120,32 @@ export const RecepcionMercaderia = ({ onVolver }: RecepcionMercaderiaProps) => {
           {esBorrador && <th className="text-right font-medium px-3 py-2" />}
         </tr></thead>
         <tbody>
-          {items.map(it => (
-            <tr key={it.id} className="border-t border-[#2A2A2A] light:border-[#E4E4E4]">
-              <td className="px-3 py-2.5 text-white light:text-black font-medium">{it.productoNombre}</td>
-              <td className="px-3 py-2.5 text-right text-[#A0A0A0] light:text-[#404040]">{it.cantidad}</td>
-              <td className="px-3 py-2.5 text-right text-[#A0A0A0] light:text-[#404040]">{money(it.precioCosto)}</td>
-              <td className="px-3 py-2.5 text-right text-[#A0A0A0] light:text-[#404040]">{money(it.cantidad * it.precioCosto)}</td>
-              {esBorrador && (
-                <td className="px-3 py-2.5 text-right">
-                  <button onClick={() => eliminarItemOrden(it.id)} className="w-6 h-6 rounded inline-flex items-center justify-center text-[#606060] hover:text-[#C0392B] hover:bg-[#C0392B]/10"><Trash2 size={13} /></button>
+          {items.map(it => {
+            const permite = permiteDecimales(prodPorId.get(it.productoId)?.unidadMedida ?? 'unidad')
+            return (
+              <tr key={it.id} className="border-t border-[#2A2A2A] light:border-[#E4E4E4]">
+                <td className="px-3 py-2.5 text-white light:text-black font-medium">{it.productoNombre}</td>
+                <td className="px-3 py-2.5 text-right text-[#A0A0A0] light:text-[#404040]">
+                  {cantidadEditable ? (
+                    <input
+                      type="number" min={permite ? 0.01 : 1} step={permite ? '0.01' : '1'}
+                      value={edits[it.id] ?? String(it.cantidad)}
+                      onChange={e => setEdits(prev => ({ ...prev, [it.id]: e.target.value }))}
+                      onBlur={() => commitCantidad(it)}
+                      className="w-20 px-2 py-1 text-[13px] text-right rounded-input border bg-transparent outline-none border-[#2A2A2A] text-white focus:border-white light:border-[#E4E4E4] light:text-[#0A0A0A]"
+                    />
+                  ) : it.cantidad}
                 </td>
-              )}
-            </tr>
-          ))}
+                <td className="px-3 py-2.5 text-right text-[#A0A0A0] light:text-[#404040]">{money(it.precioCosto)}</td>
+                <td className="px-3 py-2.5 text-right text-[#A0A0A0] light:text-[#404040]">{money(it.cantidad * it.precioCosto)}</td>
+                {esBorrador && (
+                  <td className="px-3 py-2.5 text-right">
+                    <button onClick={() => eliminarItemOrden(it.id)} className="w-6 h-6 rounded inline-flex items-center justify-center text-[#606060] hover:text-[#C0392B] hover:bg-[#C0392B]/10"><Trash2 size={13} /></button>
+                  </td>
+                )}
+              </tr>
+            )
+          })}
         </tbody>
         <tfoot>
           <tr className="border-t-2 border-[#2A2A2A] light:border-[#E4E4E4]">

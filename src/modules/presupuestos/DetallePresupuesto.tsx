@@ -6,6 +6,7 @@ import { Input } from '../../components/ui/Input'
 import { Modal } from '../../components/ui/Modal'
 import { usePresupuestosStore } from '../../store/presupuestosStore'
 import { MOTIVOS_RECHAZO, type Presupuesto } from '../../types/presupuestos'
+import { UNIDADES_MEDIDA } from '../../types/inventario'
 import { EstadoBadge } from './components/EstadoBadge'
 import { VigenciaIndicador } from './components/VigenciaIndicador'
 import { usePDF } from '../../hooks/usePDF'
@@ -21,6 +22,7 @@ interface DetallePresupuestoProps {
 
 const money = (n: number) => `$${Math.round(n).toLocaleString('es-AR')}`
 const numFmt = (n: number) => `#${String(n).padStart(3, '0')}`
+const LABEL_UNIDAD: Record<string, string> = Object.fromEntries(UNIDADES_MEDIDA.map(u => [u.value, u.label]))
 
 export const DetallePresupuesto = ({ onVolver, onEditar }: DetallePresupuestoProps) => {
   const { presupuestoActivo: p, items, cargarItems, cambiarEstado, reenviar, convertirAOT } = usePresupuestosStore()
@@ -96,7 +98,7 @@ export const DetallePresupuesto = ({ onVolver, onEditar }: DetallePresupuestoPro
             <tr key={i.id} className="border-t border-[#2A2A2A] light:border-[#E4E4E4]">
               <td className="px-3 py-2.5 text-white light:text-black font-medium">{i.nombre}</td>
               <td className="px-3 py-2.5 text-[#A0A0A0] light:text-[#404040]">{i.tipoItem === 'conjunto' ? 'Conjunto' : 'Simple'}</td>
-              <td className="px-3 py-2.5 text-right text-[#A0A0A0] light:text-[#404040]">{i.cantidad}</td>
+              <td className="px-3 py-2.5 text-right text-[#A0A0A0] light:text-[#404040]">{i.cantidad} {LABEL_UNIDAD[i.unidadMedida] ?? ''}</td>
               <td className="px-3 py-2.5 text-right text-[#A0A0A0] light:text-[#404040]">{money(i.precioUnitario)}</td>
               <td className="px-3 py-2.5 text-right text-[#A0A0A0] light:text-[#404040]">{i.descuentoItem ? money(i.descuentoItem) : '—'}</td>
               <td className="px-3 py-2.5 text-right text-white light:text-black">{money(i.subtotal)}</td>

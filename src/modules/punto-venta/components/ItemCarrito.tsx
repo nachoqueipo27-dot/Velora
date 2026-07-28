@@ -1,11 +1,26 @@
+import { useEffect, useRef } from 'react'
 import { usePosStore } from '../../../store/posStore'
 import type { ItemCarrito as TItemCarrito } from '../../../types/pos'
+import { UNIDAD_ABREVIADA, permiteDecimales } from '../../../types/inventario'
 import { Minus, Plus, X, ImageOff } from 'lucide-react'
 
 const money = (n: number) => `$${Math.round(n).toLocaleString('es-AR')}`
 
 export const ItemCarrito = ({ item }: { item: TItemCarrito }) => {
-  const { tipoDescuentoGlobal, actualizarCantidad, actualizarDescuentoItem, quitarProducto } = usePosStore()
+  const { tipoDescuentoGlobal, actualizarCantidad, actualizarDescuentoItem, quitarProducto, itemEnEdicion, limpiarItemEnEdicion } = usePosStore()
+  const permite = permiteDecimales(item.unidadMedida)
+  const minCant = permite ? 0.01 : 1
+  const cantidadRef = useRef<HTMLInputElement>(null)
+
+  // Al re-tocar un producto fraccionable ya en el carrito, posStore marca este ítem
+  // como "en edición" en vez de sumarle 1 a ciegas — acá se le da el foco y se
+  // preselecciona el valor para que escribir un número lo reemplace directo.
+  useEffect(() => {
+    if (itemEnEdicion !== item.productoId) return
+    cantidadRef.current?.focus()
+    cantidadRef.current?.select()
+    limpiarItemEnEdicion()
+  }, [itemEnEdicion, item.productoId, limpiarItemEnEdicion])
 
   return (
     <div className="flex items-center gap-2 rounded-input border border-[#2A2A2A] light:border-[#E4E4E4] p-2 animate-fade-slide-down">
@@ -18,11 +33,17 @@ export const ItemCarrito = ({ item }: { item: TItemCarrito }) => {
         <div className="flex items-center gap-2 mt-0.5">
           {/* Cantidad */}
           <div className="flex items-center gap-0.5">
-            <button onClick={() => actualizarCantidad(item.productoId, item.cantidad - 1)} disabled={item.cantidad <= 1}
+            <button onClick={() => actualizarCantidad(item.productoId, item.cantidad - 1)} disabled={item.cantidad <= minCant}
               className="w-5 h-5 rounded flex items-center justify-center text-[#A0A0A0] hover:text-white hover:bg-white/10 disabled:opacity-30 light:hover:text-black light:hover:bg-black/5"><Minus size={11} /></button>
-            <span className="w-5 text-center text-[12px] text-white light:text-black">{item.cantidad}</span>
+            <input
+              ref={cantidadRef}
+              type="number" step={permite ? '0.01' : '1'} min={minCant} value={item.cantidad}
+              onChange={e => actualizarCantidad(item.productoId, Number(e.target.value))}
+              className="w-11 text-center text-[12px] bg-transparent outline-none text-white light:text-black"
+            />
             <button onClick={() => actualizarCantidad(item.productoId, item.cantidad + 1)}
               className="w-5 h-5 rounded flex items-center justify-center text-[#A0A0A0] hover:text-white hover:bg-white/10 light:hover:text-black light:hover:bg-black/5"><Plus size={11} /></button>
+            <span className="text-[10px] text-[#606060]">{UNIDAD_ABREVIADA[item.unidadMedida]}</span>
           </div>
           <span className="text-[11px] text-[#606060]">× {money(item.precioUnitario)}</span>
           {/* Descuento — sigue el tipo (%/$) del descuento global del carrito */}

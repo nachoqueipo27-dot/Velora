@@ -1,3 +1,5 @@
+import type { UnidadMedida } from './inventario'
+
 export type EstadoPresupuesto =
   | 'borrador'
   | 'enviado'
@@ -33,6 +35,7 @@ export interface ItemPresupuesto {
   tipoItem: 'simple' | 'conjunto'
   nombre: string
   cantidad: number
+  unidadMedida: UnidadMedida
   precioUnitario: number
   descuentoItem: number
   subtotal: number

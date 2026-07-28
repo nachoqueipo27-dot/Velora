@@ -3,9 +3,11 @@ import { estilosPDF as s } from '../estilos'
 import { Encabezado, type DatosNegocio } from '../componentes/Encabezado'
 import { PiePagina } from '../componentes/PiePagina'
 import type { Presupuesto, ItemPresupuesto } from '../../../types/presupuestos'
+import { UNIDADES_MEDIDA } from '../../../types/inventario'
 import { format } from 'date-fns'
 
 const money = (n: number) => `$${Math.round(n).toLocaleString('es-AR')}`
+const LABEL_UNIDAD: Record<string, string> = Object.fromEntries(UNIDADES_MEDIDA.map(u => [u.value, u.label]))
 
 interface Props {
   presupuesto: Presupuesto
@@ -41,7 +43,7 @@ export const PDFPresupuesto = ({ presupuesto: p, items, negocio }: Props) => {
         {items.map((it, i) => (
           <View key={it.id} style={i % 2 === 1 ? [s.tablaFila, s.tablaFilaAlt] : s.tablaFila}>
             <Text style={s.colNombre}>{it.nombre}</Text>
-            <Text style={s.colCantidad}>{it.cantidad}</Text>
+            <Text style={s.colCantidad}>{it.cantidad} {LABEL_UNIDAD[it.unidadMedida] ?? ''}</Text>
             <Text style={s.colPrecio}>{money(it.precioUnitario)}</Text>
             <Text style={s.colPrecio}>{it.descuentoItem ? money(it.descuentoItem) : '—'}</Text>
             <Text style={s.colSubtotal}>{money(it.subtotal)}</Text>

@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { getDb } from '../db'
 import { registrarActividad } from '../lib/registrarActividad'
 import type {
-  Producto, Categoria, ComponenteConjunto, MovimientoStock, InformeRentabilidad, Trazabilidad,
+  Producto, Categoria, ComponenteConjunto, MovimientoStock, InformeRentabilidad, Trazabilidad, UnidadMedida,
 } from '../types/inventario'
 
 export interface ComponenteInput {
@@ -23,6 +23,7 @@ export interface NuevoProducto {
   stockMinimo: number
   imagen: string | null
   trazabilidad: Trazabilidad
+  unidadMedida: UnidadMedida
   activo: boolean
 }
 
@@ -64,6 +65,7 @@ const mapProducto = (r: any): Producto => ({
   stockMinimo: r.stock_minimo ?? 0,
   imagen: r.imagen ?? null,
   trazabilidad: (r.trazabilidad ?? 'ninguna') as Trazabilidad,
+  unidadMedida: (r.unidad_medida ?? 'unidad') as UnidadMedida,
   activo: r.activo === 1 || r.activo === true,
   creadoEn: r.creado_en,
   actualizadoEn: r.actualizado_en,
@@ -134,10 +136,10 @@ export const useInventarioStore = create<InventarioStore>((set, get) => ({
     const now = new Date().toISOString()
     const res = await db.execute(
       `INSERT INTO productos
-       (nombre, tipo, descripcion, categoria_id, precio, precio_costo, moneda_costo, codigo_sku, stock, stock_minimo, imagen, trazabilidad, activo, creado_en, actualizado_en)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       (nombre, tipo, descripcion, categoria_id, precio, precio_costo, moneda_costo, codigo_sku, stock, stock_minimo, imagen, trazabilidad, unidad_medida, activo, creado_en, actualizado_en)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [data.nombre, data.tipo, data.descripcion, data.categoriaId, data.precio, data.precioCosto, data.monedaCosto,
-       data.codigoSku, data.stock, data.stockMinimo, data.imagen, data.trazabilidad, data.activo ? 1 : 0, now, now]
+       data.codigoSku, data.stock, data.stockMinimo, data.imagen, data.trazabilidad, data.unidadMedida, data.activo ? 1 : 0, now, now]
     )
     const id = Number(res.lastInsertId)
     if (data.tipo === 'conjunto') await guardarComponentes(db, id, componentes)
@@ -150,9 +152,9 @@ export const useInventarioStore = create<InventarioStore>((set, get) => ({
     const now = new Date().toISOString()
     await db.execute(
       `UPDATE productos SET nombre=?, tipo=?, descripcion=?, categoria_id=?, precio=?, precio_costo=?, moneda_costo=?,
-        codigo_sku=?, stock=?, stock_minimo=?, imagen=?, trazabilidad=?, activo=?, actualizado_en=? WHERE id=?`,
+        codigo_sku=?, stock=?, stock_minimo=?, imagen=?, trazabilidad=?, unidad_medida=?, activo=?, actualizado_en=? WHERE id=?`,
       [data.nombre, data.tipo, data.descripcion, data.categoriaId, data.precio, data.precioCosto, data.monedaCosto,
-       data.codigoSku, data.stock, data.stockMinimo, data.imagen, data.trazabilidad, data.activo ? 1 : 0, now, id]
+       data.codigoSku, data.stock, data.stockMinimo, data.imagen, data.trazabilidad, data.unidadMedida, data.activo ? 1 : 0, now, id]
     )
     if (data.tipo === 'conjunto') await guardarComponentes(db, id, componentes)
     else await db.execute('DELETE FROM conjunto_componentes WHERE conjunto_id = ?', [id])

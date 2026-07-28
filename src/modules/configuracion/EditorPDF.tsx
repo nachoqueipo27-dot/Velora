@@ -26,7 +26,7 @@ const DEMO_PRES: Presupuesto = {
   fechaVigencia: hoy(), otId: null, creadoPor: 'Admin', creadoEn: hoy(), actualizadoEn: hoy(), vencido: false,
 }
 const DEMO_ITEMS: ItemPresupuesto[] = [
-  { id: 1, presupuestoId: 0, productoId: 1, tipoItem: 'conjunto', nombre: 'Combo Hamburguesa', cantidad: 2, precioUnitario: 2500, descuentoItem: 0, subtotal: 5000 },
+  { id: 1, presupuestoId: 0, productoId: 1, tipoItem: 'conjunto', nombre: 'Combo Hamburguesa', cantidad: 2, unidadMedida: 'unidad', precioUnitario: 2500, descuentoItem: 0, subtotal: 5000 },
 ]
 const DEMO_OT: OrdenTrabajo = {
   id: 0, numero: 1, clienteId: 0, clienteNombre: 'Juan Pérez', empleadoId: null, empleadoNombre: 'María López',

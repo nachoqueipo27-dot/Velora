@@ -37,6 +37,7 @@ interface ProveedoresStore {
   recepcionarMercaderia: (ordenId: number) => Promise<void>
   cargarItemsOrden: (ordenId: number) => Promise<void>
   agregarItemOrden: (ordenId: number, productoId: number, cantidad: number, precioCosto: number) => Promise<void>
+  actualizarCantidadItem: (itemId: number, cantidad: number) => Promise<void>
   eliminarItemOrden: (itemId: number) => Promise<void>
   eliminarOrden: (ordenId: number) => Promise<void>
   seleccionarOrden: (o: OrdenCompra | null) => void
@@ -228,6 +229,22 @@ export const useProveedoresStore = create<ProveedoresStore>((set, get) => ({
     await recalcularTotal(db, ordenId)
     await get().cargarItemsOrden(ordenId)
     await get().cargarOrdenes()
+  },
+
+  // Actualiza la cantidad de un item ya persistido de la orden. Se usa desde
+  // RecepcionMercaderia para que la cantidad efectivamente recibida (que puede diferir
+  // de la pedida originalmente) quede escrita en items_orden_compra ANTES de confirmar
+  // la recepción — recepcionarMercaderia() suma a stock justamente ese valor.
+  actualizarCantidadItem: async (itemId, cantidad) => {
+    const db = await getDb()
+    await db.execute('UPDATE items_orden_compra SET cantidad = ? WHERE id = ?', [cantidad, itemId])
+    const rows = await db.select<any[]>('SELECT orden_id FROM items_orden_compra WHERE id = ?', [itemId])
+    const ordenId = rows[0]?.orden_id
+    if (ordenId) {
+      await recalcularTotal(db, ordenId)
+      await get().cargarItemsOrden(ordenId)
+      await get().cargarOrdenes()
+    }
   },
 
   eliminarItemOrden: async (itemId) => {

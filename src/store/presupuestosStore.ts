@@ -118,7 +118,14 @@ export const usePresupuestosStore = create<PresupuestosStore>((set, get) => ({
 
   cargarItems: async (presupuestoId) => {
     const db = await getDb()
-    const rows = await db.select<any[]>('SELECT * FROM items_presupuesto WHERE presupuesto_id = ?', [presupuestoId])
+    // LEFT JOIN (no INNER): un item nunca debería quedar sin producto, pero así no
+    // desaparece de la lista si alguna vez pasara — solo pierde la unidad mostrada.
+    const rows = await db.select<any[]>(
+      `SELECT ip.*, p.unidad_medida FROM items_presupuesto ip
+       LEFT JOIN productos p ON ip.producto_id = p.id
+       WHERE ip.presupuesto_id = ?`,
+      [presupuestoId]
+    )
     set({
       items: rows.map(r => ({
         id: r.id,
@@ -127,6 +134,7 @@ export const usePresupuestosStore = create<PresupuestosStore>((set, get) => ({
         tipoItem: r.tipo_item,
         nombre: r.nombre,
         cantidad: r.cantidad,
+        unidadMedida: r.unidad_medida ?? 'unidad',
         precioUnitario: r.precio_unitario,
         descuentoItem: r.descuento_item ?? 0,
         subtotal: r.subtotal,

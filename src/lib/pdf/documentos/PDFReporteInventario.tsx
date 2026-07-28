@@ -3,11 +3,13 @@ import { estilosPDF as s } from '../estilos'
 import { Encabezado, type DatosNegocio } from '../componentes/Encabezado'
 import { PiePagina } from '../componentes/PiePagina'
 import type { MovimientoStockResumen } from '../../../store/reporteInventarioStore'
+import { UNIDADES_MEDIDA } from '../../../types/inventario'
 import { format } from 'date-fns'
 
 const money = (n: number) => `$${Math.round(n).toLocaleString('es-AR')}`
 
 const TIPO_LABEL: Record<string, string> = { entrada: 'Entrada', salida: 'Salida', ajuste: 'Ajuste' }
+const LABEL_UNIDAD: Record<string, string> = Object.fromEntries(UNIDADES_MEDIDA.map(u => [u.value, u.label]))
 
 interface Props {
   negocio: DatosNegocio
@@ -74,7 +76,7 @@ export const PDFReporteInventario = ({
             <Text style={s.colNombre}>{format(new Date(m.fecha), 'dd/MM/yyyy')}</Text>
             <Text style={s.colNombre}>{m.productoNombre}</Text>
             <Text style={s.colCantidad}>{TIPO_LABEL[m.tipo] ?? m.tipo}</Text>
-            <Text style={s.colCantidad}>{m.cantidad}</Text>
+            <Text style={s.colCantidad}>{m.cantidad} {LABEL_UNIDAD[m.unidadMedida] ?? ''}</Text>
             <Text style={s.colNombre}>{m.motivo ?? '—'}</Text>
           </View>
         ))}

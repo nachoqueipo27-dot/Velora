@@ -3,6 +3,7 @@ import { estilosPDF as s } from '../estilos'
 import { Encabezado, type DatosNegocio } from '../componentes/Encabezado'
 import { PiePagina } from '../componentes/PiePagina'
 import type { ProductoTop, VentaResumen } from '../../../store/reporteVentasStore'
+import { UNIDAD_ABREVIADA } from '../../../types/inventario'
 import { format } from 'date-fns'
 
 const money = (n: number) => `$${Math.round(n).toLocaleString('es-AR')}`
@@ -31,7 +32,7 @@ const TablaTop = ({ titulo, items }: { titulo: string; items: ProductoTop[] }) =
     {items.map((it, i) => (
       <View key={i} style={i % 2 === 1 ? [s.tablaFila, s.tablaFilaAlt] : s.tablaFila}>
         <Text style={s.colNombre}>{it.productoNombre}</Text>
-        <Text style={s.colCantidad}>{it.cantidad}</Text>
+        <Text style={s.colCantidad}>{it.cantidad} {UNIDAD_ABREVIADA[it.unidadMedida]}</Text>
         <Text style={s.colPrecio}>{money(it.facturacion)}</Text>
       </View>
     ))}

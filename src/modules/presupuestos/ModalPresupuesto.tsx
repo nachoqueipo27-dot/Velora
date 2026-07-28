@@ -8,6 +8,7 @@ import { Modal } from '../../components/ui/Modal'
 import { usePresupuestosStore, calcularTotales, subtotalItem, type ItemPresupuestoInput } from '../../store/presupuestosStore'
 import { useClientesStore } from '../../store/clientesStore'
 import { useInventarioStore } from '../../store/inventarioStore'
+import { permiteDecimales } from '../../types/inventario'
 import type { Presupuesto } from '../../types/presupuestos'
 import { Search, Trash2 } from 'lucide-react'
 
@@ -69,6 +70,12 @@ export const ModalPresupuesto = ({ open, onClose, presupuesto }: ModalPresupuest
     const ya = new Set(items.map(i => i.productoId))
     return productos.filter(p => p.tipo === tipoItem && !ya.has(p.id) && q !== '' && p.nombre.toLowerCase().includes(q)).slice(0, 6)
   }, [productos, items, busqueda, tipoItem])
+
+  const prodPorId = useMemo(() => {
+    const m = new Map<number, typeof productos[number]>()
+    productos.forEach(p => m.set(p.id, p))
+    return m
+  }, [productos])
 
   const { subtotal, totalFinal } = useMemo(
     () => calcularTotales(items, Number(descuento) || 0, tipoDescuento),
@@ -158,10 +165,17 @@ export const ModalPresupuesto = ({ open, onClose, presupuesto }: ModalPresupuest
               <div className="grid grid-cols-[1fr_70px_100px_90px_80px_28px] gap-2 text-[10px] uppercase tracking-wider text-[#606060] px-1">
                 <span>Item</span><span className="text-center">Cant.</span><span className="text-center">P. unit.</span><span className="text-center">Desc.</span><span className="text-right">Subtotal</span><span />
               </div>
-              {items.map(it => (
+              {items.map(it => {
+                const permite = permiteDecimales(prodPorId.get(it.productoId)?.unidadMedida ?? 'unidad')
+                return (
                 <div key={it.productoId} className="grid grid-cols-[1fr_70px_100px_90px_80px_28px] gap-2 items-center">
                   <span className="text-[13px] text-white light:text-black truncate">{it.nombre}</span>
-                  <input type="number" min={1} value={it.cantidad} onChange={e => setItem(it.productoId, { cantidad: Math.max(1, Number(e.target.value)) })}
+                  <input
+                    type="number" min={permite ? 0.01 : 1} step={permite ? '0.01' : '1'} value={it.cantidad}
+                    onChange={e => {
+                      const val = Number(e.target.value)
+                      setItem(it.productoId, { cantidad: permite ? Math.max(0.01, val) : Math.max(1, Math.round(val)) })
+                    }}
                     className="px-2 py-1 text-[13px] text-center rounded-input border bg-transparent outline-none border-[#2A2A2A] text-white focus:border-white light:border-[#E4E4E4] light:text-[#0A0A0A]" />
                   <input type="number" min={0} value={it.precioUnitario} onChange={e => setItem(it.productoId, { precioUnitario: Number(e.target.value) })}
                     className="px-2 py-1 text-[13px] text-center rounded-input border bg-transparent outline-none border-[#2A2A2A] text-white focus:border-white light:border-[#E4E4E4] light:text-[#0A0A0A]" />
@@ -170,7 +184,8 @@ export const ModalPresupuesto = ({ open, onClose, presupuesto }: ModalPresupuest
                   <span className="text-[13px] text-right text-[#A0A0A0] light:text-[#404040]">{money(subtotalItem(it))}</span>
                   <button type="button" onClick={() => quitar(it.productoId)} className="w-6 h-6 rounded flex items-center justify-center text-[#606060] hover:text-[#C0392B] hover:bg-[#C0392B]/10"><Trash2 size={13} /></button>
                 </div>
-              ))}
+                )
+              })}
             </div>
           )}
         </div>

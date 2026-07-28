@@ -1,3 +1,5 @@
+import type { UnidadMedida } from './inventario'
+
 export type FormaPago = 'efectivo' | 'transferencia' | 'tarjeta'
 
 export const FORMAS_PAGO: { value: FormaPago; label: string }[] = [
@@ -15,6 +17,7 @@ export interface ItemCarrito {
   descuentoItem: number
   subtotal: number
   imagen: string | null
+  unidadMedida: UnidadMedida
 }
 
 export interface ItemVentaPOS {

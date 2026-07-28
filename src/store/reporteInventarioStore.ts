@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { format, subDays } from 'date-fns'
 import { getDb } from '../db'
+import type { UnidadMedida } from '../types/inventario'
 
 export interface MovimientoStockResumen {
   id: number
@@ -8,6 +9,7 @@ export interface MovimientoStockResumen {
   productoNombre: string
   tipo: string
   cantidad: number
+  unidadMedida: UnidadMedida
   motivo: string | null
 }
 
@@ -29,7 +31,8 @@ interface ReporteInventarioStore {
 }
 
 const mapMovimiento = (r: any): MovimientoStockResumen => ({
-  id: r.id, fecha: r.fecha, productoNombre: r.producto_nombre, tipo: r.tipo, cantidad: r.cantidad, motivo: r.motivo ?? null,
+  id: r.id, fecha: r.fecha, productoNombre: r.producto_nombre, tipo: r.tipo, cantidad: r.cantidad,
+  unidadMedida: (r.unidad_medida ?? 'unidad') as UnidadMedida, motivo: r.motivo ?? null,
 })
 
 export const useReporteInventarioStore = create<ReporteInventarioStore>((set) => ({
@@ -87,7 +90,7 @@ export const useReporteInventarioStore = create<ReporteInventarioStore>((set) =>
       const totalMovimientos = totalRows[0]?.n ?? 0
 
       const movimientosRows = await db.select<any[]>(
-        `SELECT m.id, m.fecha, p.nombre as producto_nombre, m.tipo, m.cantidad, m.motivo
+        `SELECT m.id, m.fecha, p.nombre as producto_nombre, p.unidad_medida, m.tipo, m.cantidad, m.motivo
          FROM movimientos_stock m JOIN productos p ON m.producto_id = p.id
          WHERE substr(m.fecha,1,10) BETWEEN ? AND ?
          ORDER BY m.fecha DESC LIMIT ${PAGE} OFFSET ${pagina * PAGE}`,
@@ -114,7 +117,7 @@ export const useReporteInventarioStore = create<ReporteInventarioStore>((set) =>
   obtenerTodosLosMovimientos: async (desde, hasta) => {
     const db = await getDb()
     const rows = await db.select<any[]>(
-      `SELECT m.id, m.fecha, p.nombre as producto_nombre, m.tipo, m.cantidad, m.motivo
+      `SELECT m.id, m.fecha, p.nombre as producto_nombre, p.unidad_medida, m.tipo, m.cantidad, m.motivo
        FROM movimientos_stock m JOIN productos p ON m.producto_id = p.id
        WHERE substr(m.fecha,1,10) BETWEEN ? AND ? ORDER BY m.fecha DESC`,
       [desde, hasta]

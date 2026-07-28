@@ -136,10 +136,13 @@ export const productos = sqliteTable('productos', {
   monedaCosto:   text('moneda_costo').default('ARS'),
   codigoSku:     text('codigo_sku'),
   codigoBarras:  text('codigo_barras'),
-  stock:         integer('stock').default(0),
+  stock:         real('stock').default(0), // real: admite fracciones (metro/kg/litro)
   stockMinimo:   integer('stock_minimo').default(5),
   imagen:        text('imagen'),
   trazabilidad:  text('trazabilidad').default('ninguna'), // 'ninguna'|'serie'|'lote'
+  // 'unidad'|'metro'|'kilogramo'|'litro'|'caja' — ver UNIDADES_MEDIDA en types/inventario.ts.
+  // Determina si `stock`/cantidades vendidas de este producto aceptan decimales.
+  unidadMedida:  text('unidad_medida').notNull().default('unidad'),
   activo:        integer('activo').default(1),
   creadoEn:      text('creado_en').notNull(),
   actualizadoEn: text('actualizado_en').notNull(),
@@ -149,14 +152,14 @@ export const conjuntoComponentes = sqliteTable('conjunto_componentes', {
   id:           integer('id').primaryKey({ autoIncrement: true }),
   conjuntoId:   integer('conjunto_id').notNull(),
   componenteId: integer('componente_id').notNull(),
-  cantidad:     integer('cantidad').notNull().default(1),
+  cantidad:     real('cantidad').notNull().default(1), // real: componente puede ser fraccionable
 })
 
 export const movimientosStock = sqliteTable('movimientos_stock', {
   id:           integer('id').primaryKey({ autoIncrement: true }),
   productoId:   integer('producto_id').notNull(),
   tipo:         text('tipo').notNull(), // 'entrada'|'salida'|'ajuste'
-  cantidad:     integer('cantidad').notNull(),
+  cantidad:     real('cantidad').notNull(), // real: producto puede ser fraccionable
   motivo:       text('motivo'),
   referenciaId: integer('referencia_id'),
   lote:         text('lote'),
@@ -198,7 +201,7 @@ export const itemsOrdenCompra = sqliteTable('items_orden_compra', {
   id:          integer('id').primaryKey({ autoIncrement: true }),
   ordenId:     integer('orden_id').notNull(),
   productoId:  integer('producto_id').notNull(),
-  cantidad:    integer('cantidad').notNull(),
+  cantidad:    real('cantidad').notNull(), // real: producto puede ser fraccionable
   precioCosto: real('precio_costo').default(0),
   recibido:    integer('recibido').default(0),
 })
@@ -255,7 +258,7 @@ export const itemsPresupuesto = sqliteTable('items_presupuesto', {
   productoId:     integer('producto_id').notNull(),
   tipoItem:       text('tipo_item').notNull(), // 'simple' | 'conjunto'
   nombre:         text('nombre').notNull(),
-  cantidad:       integer('cantidad').notNull().default(1),
+  cantidad:       real('cantidad').notNull().default(1), // real: producto puede ser fraccionable
   precioUnitario: real('precio_unitario').notNull(),
   descuentoItem:  real('descuento_item').default(0),
   subtotal:       real('subtotal').notNull(),
@@ -369,7 +372,7 @@ export const itemsVentaPOS = sqliteTable('items_venta_pos', {
   productoId:     integer('producto_id').notNull(),
   tipoItem:       text('tipo_item').notNull(), // 'simple'|'conjunto'
   nombre:         text('nombre').notNull(),
-  cantidad:       integer('cantidad').notNull(),
+  cantidad:       real('cantidad').notNull(), // real: producto puede ser fraccionable
   precioUnitario: real('precio_unitario').notNull(),
   descuentoItem:  real('descuento_item').default(0),
   subtotal:       real('subtotal').notNull(),

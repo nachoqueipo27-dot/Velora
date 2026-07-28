@@ -178,10 +178,11 @@ async function initSchema(database: Db) {
       moneda_costo    TEXT DEFAULT 'ARS',
       codigo_sku      TEXT,
       codigo_barras   TEXT,
-      stock           INTEGER DEFAULT 0,
+      stock           REAL DEFAULT 0,
       stock_minimo    INTEGER DEFAULT 5,
       imagen          TEXT,
       trazabilidad    TEXT DEFAULT 'ninguna',
+      unidad_medida   TEXT NOT NULL DEFAULT 'unidad',
       activo          INTEGER DEFAULT 1,
       creado_en       TEXT NOT NULL,
       actualizado_en  TEXT NOT NULL
@@ -193,7 +194,7 @@ async function initSchema(database: Db) {
       id             INTEGER PRIMARY KEY AUTOINCREMENT,
       conjunto_id    INTEGER NOT NULL,
       componente_id  INTEGER NOT NULL,
-      cantidad       INTEGER NOT NULL DEFAULT 1,
+      cantidad       REAL NOT NULL DEFAULT 1,
       FOREIGN KEY (conjunto_id)   REFERENCES productos(id),
       FOREIGN KEY (componente_id) REFERENCES productos(id)
     )
@@ -204,7 +205,7 @@ async function initSchema(database: Db) {
       id            INTEGER PRIMARY KEY AUTOINCREMENT,
       producto_id   INTEGER NOT NULL,
       tipo          TEXT NOT NULL,
-      cantidad      INTEGER NOT NULL,
+      cantidad      REAL NOT NULL,
       motivo        TEXT,
       referencia_id INTEGER,
       lote          TEXT,
@@ -252,7 +253,7 @@ async function initSchema(database: Db) {
       id           INTEGER PRIMARY KEY AUTOINCREMENT,
       orden_id     INTEGER NOT NULL,
       producto_id  INTEGER NOT NULL,
-      cantidad     INTEGER NOT NULL,
+      cantidad     REAL NOT NULL,
       precio_costo REAL DEFAULT 0,
       recibido     INTEGER DEFAULT 0,
       FOREIGN KEY (orden_id)    REFERENCES ordenes_compra(id),
@@ -316,7 +317,7 @@ async function initSchema(database: Db) {
       producto_id      INTEGER NOT NULL,
       tipo_item        TEXT NOT NULL,
       nombre           TEXT NOT NULL,
-      cantidad         INTEGER NOT NULL DEFAULT 1,
+      cantidad         REAL NOT NULL DEFAULT 1,
       precio_unitario  REAL NOT NULL,
       descuento_item   REAL DEFAULT 0,
       subtotal         REAL NOT NULL,
@@ -449,7 +450,7 @@ async function initSchema(database: Db) {
       producto_id      INTEGER NOT NULL,
       tipo_item        TEXT NOT NULL,
       nombre           TEXT NOT NULL,
-      cantidad         INTEGER NOT NULL,
+      cantidad         REAL NOT NULL,
       precio_unitario  REAL NOT NULL,
       descuento_item   REAL DEFAULT 0,
       subtotal         REAL NOT NULL,
@@ -621,26 +622,35 @@ async function initSchema(database: Db) {
   try {
     await database.execute(`ALTER TABLE empleados ADD COLUMN dni TEXT`)
   } catch { /* la columna ya existe */ }
+
+  // Migración: unidad de medida en productos (DBs creadas antes de este cambio).
+  // SQLite calcula el DEFAULT constante para las filas existentes sin reescribir la tabla.
+  try {
+    await database.execute(`ALTER TABLE productos ADD COLUMN unidad_medida TEXT NOT NULL DEFAULT 'unidad'`)
+  } catch { /* la columna ya existe */ }
+
+  // NOTA sobre productos.stock / movimientos_stock.cantidad / items_venta_pos.cantidad /
+  // items_presupuesto.cantidad / items_orden_compra.cantidad / conjunto_componentes.cantidad
+  // (INTEGER -> REAL): en DBs ya existentes estas columnas NO se migran con ALTER/recreación
+  // de tabla, y es deliberado, no un olvido.
+  // SQLite usa "type affinity", no tipado estricto: una columna declarada INTEGER que
+  // recibe un valor como 2.5 lo guarda tal cual como REAL (no lo trunca ni lo redondea),
+  // y SUM()/agregaciones sobre esa columna devuelven el resultado real correcto — probado
+  // empíricamente antes de tomar esta decisión (ver Prompt 1: unidad de medida en productos).
+  // El único efecto del tipo declarado es metadata en PRAGMA table_info, no el valor
+  // almacenado ni el comportamiento en runtime. Las dos columnas agregadas en este prompt
+  // (items_orden_compra.cantidad, conjunto_componentes.cantidad) son el mismo caso: mismo
+  // criterio, sin necesidad de repetir la verificación empírica.
+  // Reescribir estas 6 tablas (con FKs desde tablas relacionadas) para cambiar solo esa
+  // metadata agregaría riesgo real de pérdida de datos sin ningún beneficio funcional.
+  // El CREATE TABLE de arriba ya declara REAL para instalaciones nuevas.
 }
 
+// Sólo configuración base. La app nunca carga datos de ejemplo: toda instalación
+// (dev o producción) arranca vacía de datos de negocio.
 async function seedDemoData(database: Db) {
-  // Base mínima: corre SIEMPRE (dev y producción) — configuración necesaria para operar.
   await seedRolesBase(database)
   await seedConfiguracionBase(database)
-
-  // Datos de ejemplo: SOLO en desarrollo, para no ensuciar instalaciones reales de clientes.
-  if (!import.meta.env.DEV) return
-
-  console.log('[seed] Entorno DEV — cargando datos de ejemplo')
-  await seedClientesDemo(database)
-  await seedEmpleadosDemo(database)
-  await seedProductosDemo(database)
-  await seedProveedoresDemo(database)
-  await seedListaPreciosDemo(database)
-  await seedPresupuestosDemo(database)
-  await seedOTsDemo(database)
-  await seedCitasDemo(database)
-  await seedCajaDemo(database)
 }
 
 // Configuración base que necesita TODO local para funcionar (no son datos de ejemplo):
@@ -714,81 +724,6 @@ async function seedConfiguracionBase(database: Db) {
 
 type Db = Awaited<ReturnType<typeof Database.load>>
 
-async function seedClientesDemo(database: Db) {
-  const result = await database.select<{ count: number }[]>(
-    'SELECT COUNT(*) as count FROM clientes'
-  )
-  if (result[0].count > 0) return
-
-  const now = new Date().toISOString()
-
-  const clientesDemo = [
-    {
-      nombre: 'Restaurante El Rincón',
-      telefono: '011-4523-7890',
-      email: 'contacto@elrincon.com',
-      direccion: 'Av. Corrientes 1234, CABA',
-      categoria: 'VIP',
-      notas: 'Cliente frecuente, prefiere facturas a fin de mes',
-    },
-    {
-      nombre: 'María González',
-      telefono: '011-1534-2210',
-      email: 'maria.gonzalez@gmail.com',
-      direccion: 'Palermo, CABA',
-      categoria: 'Frecuente',
-      notas: '',
-    },
-    {
-      nombre: 'Distribuidora Norte SA',
-      telefono: '011-4001-5566',
-      email: 'compras@disnorte.com.ar',
-      direccion: 'Zona Norte, GBA',
-      categoria: 'Mayorista',
-      notas: 'Pago a 30 días',
-    },
-    {
-      nombre: 'Carlos Pérez',
-      telefono: '011-1567-4432',
-      email: '',
-      direccion: '',
-      categoria: 'Ocasional',
-      notas: '',
-    },
-    {
-      nombre: 'Cafetería Roma',
-      telefono: '011-4788-1122',
-      email: 'roma@cafeteria.com',
-      direccion: 'San Telmo, CABA',
-      categoria: 'Frecuente',
-      notas: 'Pedidos los lunes',
-    },
-  ]
-
-  for (const c of clientesDemo) {
-    await database.execute(
-      `INSERT INTO clientes (nombre, telefono, email, direccion, categoria, notas, creado_en, actualizado_en)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [c.nombre, c.telefono, c.email, c.direccion, c.categoria, c.notas, now, now]
-    )
-  }
-
-  const logs = [
-    { clienteId: 1, responsable: 'Admin', resumen: 'Llamado para confirmar pedido semanal' },
-    { clienteId: 1, responsable: 'Admin', resumen: 'Consulta sobre nuevo producto disponible' },
-    { clienteId: 2, responsable: 'Admin', resumen: 'Coordinación de entrega' },
-    { clienteId: 3, responsable: 'Admin', resumen: 'Negociación de precio por volumen' },
-  ]
-
-  for (const l of logs) {
-    await database.execute(
-      `INSERT INTO log_comunicaciones (cliente_id, fecha, responsable, resumen, creado_en)
-       VALUES (?, ?, ?, ?, ?)`,
-      [l.clienteId, now, l.responsable, l.resumen, now]
-    )
-  }
-}
-
 // Roles base — se siembran SIEMPRE (idempotente), independiente de si hay empleados.
 // Toda DB nueva (incluido un local nuevo) queda con los 3 roles base desde el arranque.
 async function seedRolesBase(database: Db) {
@@ -801,370 +736,4 @@ async function seedRolesBase(database: Db) {
   await database.execute(`INSERT INTO roles (nombre, es_admin, creado_en) VALUES ('Admin', 1, ?)`, [now])
   await database.execute(`INSERT INTO roles (nombre, es_admin, creado_en) VALUES ('Supervisor', 0, ?)`, [now])
   await database.execute(`INSERT INTO roles (nombre, es_admin, creado_en) VALUES ('Operario', 0, ?)`, [now])
-}
-
-async function seedEmpleadosDemo(database: Db) {
-  const empCount = await database.select<{ count: number }[]>(
-    'SELECT COUNT(*) as count FROM empleados'
-  )
-  if (empCount[0].count > 0) return
-
-  const now = new Date().toISOString()
-
-  // Roles ya sembrados por seedRolesBase() — acá solo empleados.
-  // Empleados
-  await database.execute(
-    `INSERT INTO empleados (nombre, rol_id, password, activo, tipo_horario, creado_en, actualizado_en)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    ['Administrador', 1, btoa('admin123'), 1, 'fijo', now, now]
-  )
-  await database.execute(
-    `INSERT INTO empleados (nombre, rol_id, password, activo, tipo_horario, creado_en, actualizado_en)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    ['María López', 2, btoa('pass123'), 1, 'turno', now, now]
-  )
-  await database.execute(
-    `INSERT INTO empleados (nombre, rol_id, password, activo, tipo_horario, creado_en, actualizado_en)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    ['Carlos Ruiz', 3, btoa('pass123'), 1, 'fijo', now, now]
-  )
-
-  // Turnos
-  await database.execute(
-    `INSERT INTO turnos (nombre, entrada, salida, creado_en) VALUES (?, ?, ?, ?)`,
-    ['Turno Mañana', '07:00', '13:00', now]
-  )
-  await database.execute(
-    `INSERT INTO turnos (nombre, entrada, salida, creado_en) VALUES (?, ?, ?, ?)`,
-    ['Turno Tarde', '13:00', '19:00', now]
-  )
-  await database.execute(
-    `INSERT INTO turnos (nombre, entrada, salida, creado_en) VALUES (?, ?, ?, ?)`,
-    ['Turno Completo', '09:00', '18:00', now]
-  )
-
-  // Asignación de turno para María López (empleado 2 -> Turno Mañana)
-  await database.execute(
-    `INSERT INTO asignacion_turnos (empleado_id, turno_id, desde, hasta) VALUES (?, ?, ?, ?)`,
-    [2, 1, now, null]
-  )
-
-  // Horario fijo para Administrador (1) y Carlos (3): Lun-Vie 09:00-18:00
-  for (const empId of [1, 3]) {
-    for (let dia = 1; dia <= 5; dia++) {
-      await database.execute(
-        `INSERT INTO horarios_fijos (empleado_id, dia_semana, entrada, salida, laborable)
-         VALUES (?, ?, ?, ?, ?)`,
-        [empId, dia, '09:00', '18:00', 1]
-      )
-    }
-    for (const dia of [0, 6]) {
-      await database.execute(
-        `INSERT INTO horarios_fijos (empleado_id, dia_semana, entrada, salida, laborable)
-         VALUES (?, ?, ?, ?, ?)`,
-        [empId, dia, null, null, 0]
-      )
-    }
-  }
-}
-
-async function seedProductosDemo(database: Db) {
-  const count = await database.select<{ count: number }[]>(
-    'SELECT COUNT(*) as count FROM productos'
-  )
-  if (count[0].count > 0) return
-
-  const now = new Date().toISOString()
-
-  // Categorías
-  const cats = ['Bebidas', 'Comidas', 'Combos', 'Insumos', 'Electrónica']
-  for (const c of cats) {
-    await database.execute('INSERT INTO categorias (nombre, creado_en) VALUES (?, ?)', [c, now])
-  }
-
-  // Productos simples
-  const simples = [
-    { nombre: 'Pan de hamburguesa',  cat: 4, precio: 150,  costo: 80,   stock: 50, min: 10 },
-    { nombre: 'Medallón de carne',   cat: 4, precio: 400,  costo: 200,  stock: 30, min: 10 },
-    { nombre: 'Queso feteado',       cat: 4, precio: 120,  costo: 60,   stock: 40, min: 10 },
-    { nombre: 'Tomate',              cat: 4, precio: 80,   costo: 30,   stock: 20, min: 5  },
-    { nombre: 'Gaseosa 500ml',       cat: 1, precio: 400,  costo: 180,  stock: 60, min: 20 },
-    { nombre: 'Agua mineral 500ml',  cat: 1, precio: 250,  costo: 100,  stock: 45, min: 15 },
-    { nombre: 'Cable USB-C',         cat: 5, precio: 2500, costo: 1200, stock: 8,  min: 3  },
-    { nombre: 'Auriculares in-ear',  cat: 5, precio: 8000, costo: 4000, stock: 5,  min: 2  },
-  ]
-
-  for (const p of simples) {
-    await database.execute(
-      `INSERT INTO productos
-       (nombre, tipo, categoria_id, precio, precio_costo, stock, stock_minimo, creado_en, actualizado_en)
-       VALUES (?, 'simple', ?, ?, ?, ?, ?, ?, ?)`,
-      [p.nombre, p.cat, p.precio, p.costo, p.stock, p.min, now, now]
-    )
-  }
-
-  // Conjunto: Combo Hamburguesa (id 9)
-  await database.execute(
-    `INSERT INTO productos
-     (nombre, tipo, descripcion, categoria_id, precio, precio_costo, stock, stock_minimo, creado_en, actualizado_en)
-     VALUES (?, 'conjunto', ?, ?, ?, ?, ?, ?, ?, ?)`,
-    ['Combo Hamburguesa', 'Pan + medallón + queso + tomate', 3, 2500, 370, 0, 0, now, now]
-  )
-
-  // Componentes del combo (conjunto id = 9)
-  const componentes = [
-    { comp: 1, cant: 1 }, // Pan
-    { comp: 2, cant: 1 }, // Medallón
-    { comp: 3, cant: 2 }, // Queso x2
-    { comp: 4, cant: 1 }, // Tomate
-  ]
-  for (const c of componentes) {
-    await database.execute(
-      'INSERT INTO conjunto_componentes (conjunto_id, componente_id, cantidad) VALUES (?, ?, ?)',
-      [9, c.comp, c.cant]
-    )
-  }
-
-  // Movimientos demo para rotación
-  const movs = [
-    { prod: 1, tipo: 'salida', cant: 10 },
-    { prod: 2, tipo: 'salida', cant: 8  },
-    { prod: 5, tipo: 'salida', cant: 20 },
-    { prod: 6, tipo: 'salida', cant: 5  },
-    { prod: 7, tipo: 'salida', cant: 3  },
-  ]
-  for (const m of movs) {
-    await database.execute(
-      `INSERT INTO movimientos_stock (producto_id, tipo, cantidad, motivo, fecha, creado_en)
-       VALUES (?, ?, ?, 'demo', ?, ?)`,
-      [m.prod, m.tipo, m.cant, now, now]
-    )
-  }
-}
-
-async function seedProveedoresDemo(database: Db) {
-  const count = await database.select<{ count: number }[]>(
-    'SELECT COUNT(*) as count FROM proveedores'
-  )
-  if (count[0].count > 0) return
-
-  const now = new Date().toISOString()
-
-  const provs = [
-    {
-      nombre: 'Distribuidora Sur SA',
-      rubro: 'Alimentos y bebidas',
-      contacto: 'Roberto Méndez',
-      telefono: '011-4523-1100',
-      email: 'ventas@dissur.com.ar',
-      direccion: 'Av. San Martín 2200, GBA Sur',
-    },
-    {
-      nombre: 'TechImport SRL',
-      rubro: 'Electrónica',
-      contacto: 'Laura Ríos',
-      telefono: '011-5588-4400',
-      email: 'compras@techimport.com.ar',
-      direccion: 'Once, CABA',
-    },
-    {
-      nombre: 'Insumos del Norte',
-      rubro: 'Insumos generales',
-      contacto: 'Miguel Torres',
-      telefono: '011-4001-7700',
-      email: 'info@insumosnorte.com.ar',
-      direccion: 'Zona Norte, GBA',
-    },
-  ]
-
-  for (const p of provs) {
-    await database.execute(
-      `INSERT INTO proveedores
-       (nombre, rubro, contacto, telefono, email, direccion, activo, creado_en, actualizado_en)
-       VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?)`,
-      [p.nombre, p.rubro, p.contacto, p.telefono, p.email, p.direccion, now, now]
-    )
-  }
-
-  // Orden de compra demo en estado borrador
-  await database.execute(
-    `INSERT INTO ordenes_compra
-     (proveedor_id, estado, numero, notas, total, creado_en, actualizado_en)
-     VALUES (?, 'borrador', ?, ?, ?, ?, ?)`,
-    [1, 1, 'Pedido semanal de insumos', 2500, now, now]
-  )
-
-  await database.execute(
-    `INSERT INTO items_orden_compra (orden_id, producto_id, cantidad, precio_costo)
-     VALUES (?, ?, ?, ?)`,
-    [1, 1, 20, 80]  // Pan de hamburguesa x20
-  )
-  await database.execute(
-    `INSERT INTO items_orden_compra (orden_id, producto_id, cantidad, precio_costo)
-     VALUES (?, ?, ?, ?)`,
-    [1, 2, 15, 200] // Medallón x15
-  )
-}
-
-async function seedListaPreciosDemo(database: Db) {
-  const count = await database.select<{ count: number }[]>(
-    'SELECT COUNT(*) as count FROM listas_precios_snapshot'
-  )
-  if (count[0].count > 0) return
-
-  const now = new Date().toISOString()
-
-  const productos = await database.select<any[]>(
-    'SELECT id, nombre, precio FROM productos WHERE activo = 1'
-  )
-  const snapshot = JSON.stringify(
-    productos.map(p => ({ productoId: p.id, nombre: p.nombre, precio: p.precio }))
-  )
-
-  await database.execute(
-    `INSERT INTO listas_precios_snapshot
-     (nombre, descripcion, snapshot, creado_por, vigencia_desde, creado_en)
-     VALUES (?, ?, ?, ?, ?, ?)`,
-    ['Lista inicial', 'Precios de apertura del sistema', snapshot, 'Administrador', now, now]
-  )
-}
-
-async function seedPresupuestosDemo(database: Db) {
-  const count = await database.select<{ count: number }[]>(
-    'SELECT COUNT(*) as count FROM presupuestos'
-  )
-  if (count[0].count > 0) return
-
-  const now = new Date().toISOString()
-  const vigencia = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
-
-  // Presupuesto demo en estado enviado
-  await database.execute(
-    `INSERT INTO presupuestos
-     (numero, cliente_id, estado, descripcion, subtotal, total_final,
-      vigencia_dias, fecha_vigencia, creado_por, creado_en, actualizado_en)
-     VALUES (?, ?, 'enviado', ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [1, 1, 'Pedido de combos para el local', 5000, 5000, 7, vigencia, 'Administrador', now, now]
-  )
-
-  await database.execute(
-    `INSERT INTO items_presupuesto
-     (presupuesto_id, producto_id, tipo_item, nombre, cantidad, precio_unitario, subtotal)
-     VALUES (?, ?, 'conjunto', ?, ?, ?, ?)`,
-    [1, 9, 'Combo Hamburguesa', 2, 2500, 5000]
-  )
-
-  // Presupuesto rechazado demo
-  await database.execute(
-    `INSERT INTO presupuestos
-     (numero, cliente_id, estado, descripcion, subtotal, total_final,
-      motivo_rechazo, vigencia_dias, fecha_vigencia, creado_por, creado_en, actualizado_en)
-     VALUES (?, ?, 'rechazado', ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [2, 2, 'Pedido de bebidas', 1600, 1600, 'Precio muy alto', 7, vigencia, 'Administrador', now, now]
-  )
-
-  await database.execute(
-    `INSERT INTO items_presupuesto
-     (presupuesto_id, producto_id, tipo_item, nombre, cantidad, precio_unitario, subtotal)
-     VALUES (?, ?, 'simple', ?, ?, ?, ?)`,
-    [2, 5, 'Gaseosa 500ml', 4, 400, 1600]
-  )
-}
-
-async function seedOTsDemo(database: Db) {
-  const count = await database.select<{ count: number }[]>(
-    'SELECT COUNT(*) as count FROM ordenes_trabajo'
-  )
-  if (count[0].count > 0) return
-
-  const now = new Date().toISOString()
-
-  // Etiquetas demo
-  await database.execute(`INSERT INTO etiquetas_ot (nombre, color, creado_en) VALUES (?, ?, ?)`, ['Urgente', '#C0392B', now])
-  await database.execute(`INSERT INTO etiquetas_ot (nombre, color, creado_en) VALUES (?, ?, ?)`, ['Garantía', '#D4921A', now])
-  await database.execute(`INSERT INTO etiquetas_ot (nombre, color, creado_en) VALUES (?, ?, ?)`, ['Corporativo', '#4A7FA5', now])
-
-  // Plantilla demo
-  await database.execute(
-    `INSERT INTO plantillas_ot (nombre, descripcion, producto_id, tipo_item, creado_en) VALUES (?, ?, ?, ?, ?)`,
-    ['Combo estándar', 'Pedido habitual de combo hamburguesa', 9, 'conjunto', now]
-  )
-
-  const ots = [
-    { numero: 1, clienteId: 1, productoId: 9, tipoItem: 'conjunto', productoNombre: 'Combo Hamburguesa', estado: 'en_proceso', precio: 2500, totalFinal: 2500, descripcion: 'Pedido para el local' },
-    { numero: 2, clienteId: 2, productoId: 5, tipoItem: 'simple', productoNombre: 'Gaseosa 500ml', estado: 'recepcion', precio: 400, totalFinal: 400, descripcion: null },
-    { numero: 3, clienteId: 3, productoId: 7, tipoItem: 'simple', productoNombre: 'Cable USB-C', estado: 'finalizado', precio: 2500, totalFinal: 2500, descripcion: 'Cable de repuesto' },
-    { numero: 4, clienteId: 1, productoId: 9, tipoItem: 'conjunto', productoNombre: 'Combo Hamburguesa', estado: 'entregado', precio: 2500, totalFinal: 2500, descripcion: null },
-  ]
-
-  for (const ot of ots) {
-    await database.execute(
-      `INSERT INTO ordenes_trabajo
-       (numero, cliente_id, producto_id, tipo_item, producto_nombre, descripcion, estado, precio, total_final, creado_por, creado_en, actualizado_en)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'Administrador', ?, ?)`,
-      [ot.numero, ot.clienteId, ot.productoId, ot.tipoItem, ot.productoNombre, ot.descripcion, ot.estado, ot.precio, ot.totalFinal, now, now]
-    )
-  }
-
-  // Etiqueta urgente en OT 1
-  await database.execute(`INSERT INTO ot_etiquetas (ot_id, etiqueta_id) VALUES (1, 1)`, [])
-}
-
-async function seedCitasDemo(database: Db) {
-  const count = await database.select<{ count: number }[]>('SELECT COUNT(*) as count FROM citas')
-  if (count[0].count > 0) return
-
-  const now = new Date()
-  const hoy = now.toISOString().split('T')[0]
-
-  const citas = [
-    { titulo: 'Reunión con Restaurante El Rincón', clienteId: 1, empleadoId: 1, fechaInicio: `${hoy}T10:00:00`, fechaFin: `${hoy}T11:00:00`, color: '#4A7FA5' },
-    { titulo: 'Entrega pedido María González',     clienteId: 2, empleadoId: 2, fechaInicio: `${hoy}T14:00:00`, fechaFin: `${hoy}T14:30:00`, color: '#4CAF7D' },
-    { titulo: 'Revisión stock Distribuidora Norte', clienteId: 3, empleadoId: 1, fechaInicio: `${hoy}T16:00:00`, fechaFin: `${hoy}T17:00:00`, color: '#D4921A' },
-  ]
-
-  for (const c of citas) {
-    await database.execute(
-      `INSERT INTO citas (titulo, cliente_id, empleado_id, fecha_inicio, fecha_fin, color, creado_por, creado_en, actualizado_en)
-       VALUES (?, ?, ?, ?, ?, ?, 'Administrador', ?, ?)`,
-      [c.titulo, c.clienteId, c.empleadoId, c.fechaInicio, c.fechaFin, c.color, now.toISOString(), now.toISOString()]
-    )
-  }
-}
-
-async function seedCajaDemo(database: Db) {
-  const count = await database.select<{ count: number }[]>(
-    'SELECT COUNT(*) as count FROM gastos_operativos'
-  )
-  if (count[0].count > 0) return
-
-  const now = new Date().toISOString()
-
-  // Cobros demo (además de los que genera el POS)
-  const cobros = [
-    { monto: 2500, forma: 'efectivo',      concepto: 'OT #001 — Combo Hamburguesa' },
-    { monto: 2500, forma: 'transferencia', concepto: 'OT #003 — Cable USB-C' },
-    { monto: 400,  forma: 'tarjeta',       concepto: 'Venta POS — Gaseosa' },
-  ]
-  for (const c of cobros) {
-    await database.execute(
-      `INSERT INTO cobros_caja (fecha, monto, forma_pago, concepto, creado_en)
-       VALUES (?, ?, ?, ?, ?)`,
-      [now, c.monto, c.forma, c.concepto, now]
-    )
-  }
-
-  // Gastos demo
-  const gastos = [
-    { cat: 'Servicios',  desc: 'Internet del local',    monto: 3500 },
-    { cat: 'Insumos',    desc: 'Bolsas y envases',       monto: 1200 },
-    { cat: 'Transporte', desc: 'Envío de mercadería',    monto: 800  },
-  ]
-  for (const g of gastos) {
-    await database.execute(
-      `INSERT INTO gastos_operativos (fecha, monto, categoria, descripcion, creado_en)
-       VALUES (?, ?, ?, ?, ?)`,
-      [now, g.monto, g.cat, g.desc, now]
-    )
-  }
 }

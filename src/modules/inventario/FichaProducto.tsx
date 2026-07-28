@@ -7,7 +7,7 @@ import { Select } from '../../components/ui/Select'
 import { Input } from '../../components/ui/Input'
 import { Modal } from '../../components/ui/Modal'
 import { useInventarioStore } from '../../store/inventarioStore'
-import type { ComponenteConjunto } from '../../types/inventario'
+import { UNIDADES_MEDIDA, type ComponenteConjunto } from '../../types/inventario'
 import { StockBadge } from './components/StockBadge'
 import { ArrowLeft, Package, Boxes, ImageOff } from 'lucide-react'
 import { format } from 'date-fns'
@@ -17,6 +17,7 @@ interface FichaProductoProps {
 }
 
 const TIPO_MOV: Record<string, string> = { entrada: 'Entrada', salida: 'Salida', ajuste: 'Ajuste' }
+const LABEL_UNIDAD: Record<string, string> = Object.fromEntries(UNIDADES_MEDIDA.map(u => [u.value, u.label]))
 
 export const FichaProducto = ({ onVolver }: FichaProductoProps) => {
   const { productoSeleccionado, movimientos, cargarMovimientos, cargarComponentes, ajustarStock } = useInventarioStore()
@@ -74,9 +75,13 @@ export const FichaProducto = ({ onVolver }: FichaProductoProps) => {
           <span className="text-[11px] font-semibold uppercase tracking-wider text-[#606060]">Identificación y stock</span>
           <div className="grid grid-cols-2 gap-y-2 mt-3 text-sm">
             <span className="text-[#606060]">SKU</span><span className="text-white light:text-black text-right">{p.codigoSku || '—'}</span>
+            <span className="text-[#606060]">Unidad de medida</span>
+            <span className="text-white light:text-black text-right">{LABEL_UNIDAD[p.unidadMedida] ?? p.unidadMedida}</span>
             <span className="text-[#606060]">Stock</span>
             <span className="text-right flex items-center justify-end gap-2">
-              <span className="text-white light:text-black">{p.tipo === 'conjunto' ? '—' : p.stock}</span>
+              <span className="text-white light:text-black">
+                {p.tipo === 'conjunto' ? '—' : `${p.stock} ${LABEL_UNIDAD[p.unidadMedida] ?? ''}`}
+              </span>
               {p.tipo === 'simple' && <StockBadge stock={p.stock} stockMinimo={p.stockMinimo} />}
             </span>
           </div>
@@ -116,7 +121,7 @@ export const FichaProducto = ({ onVolver }: FichaProductoProps) => {
             {movimientos.map(m => (
               <tr key={m.id} className="border-t border-[#2A2A2A] light:border-[#E4E4E4]">
                 <td className="px-3 py-2.5 text-white light:text-black">{TIPO_MOV[m.tipo]}</td>
-                <td className="px-3 py-2.5 text-[#A0A0A0] light:text-[#404040]">{m.cantidad}</td>
+                <td className="px-3 py-2.5 text-[#A0A0A0] light:text-[#404040]">{m.cantidad} {LABEL_UNIDAD[p.unidadMedida] ?? ''}</td>
                 <td className="px-3 py-2.5 text-[#A0A0A0] light:text-[#404040]">{m.motivo || '—'}</td>
                 <td className="px-3 py-2.5 text-[#A0A0A0] light:text-[#404040]">{format(new Date(m.fecha), 'dd/MM/yyyy HH:mm')}</td>
               </tr>
