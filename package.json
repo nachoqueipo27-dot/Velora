@@ -9,6 +9,7 @@
     "preview": "vite preview",
     "tauri": "tauri",
     "deploy": "node scripts/deploy.mjs",
+    "release": "node scripts/release.mjs",
     "db:reset": "node scripts/db-reset.mjs"
   },
   "dependencies": {

@@ -1,0 +1,60 @@
+# Genera los instaladores de Windows (.exe NSIS) y macOS (.dmg universal: Intel + Apple Silicon)
+# y los adjunta a un Release en borrador de GitHub.
+# Se dispara al pushear un tag vX.Y.Z (ver "npm run release") o a mano desde la pestaña Actions.
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+jobs:
+  build:
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: windows-latest
+            args: ''
+            rust_targets: ''
+          - platform: macos-latest
+            args: '--target universal-apple-darwin'
+            rust_targets: 'aarch64-apple-darwin,x86_64-apple-darwin'
+    runs-on: ${{ matrix.platform }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.rust_targets }}
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+
+      - run: npm ci
+
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: v__VERSION__
+          releaseName: 'Velora v__VERSION__'
+          releaseBody: |
+            Instaladores de Velora v__VERSION__.
+
+            - Windows: `Velora_..._x64-setup.exe`
+            - macOS (Intel y Apple Silicon): `Velora_..._universal.dmg`
+
+            La app de macOS no está firmada: la primera vez abrila con clic derecho → Abrir.
+          releaseDraft: true
+          prerelease: false
+          args: ${{ matrix.args }}
