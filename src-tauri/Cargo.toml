@@ -1,6 +1,6 @@
 [package]
 name = "velora"
-version = "1.0.0"
+version = "1.1.0"
 description = "Velora — Sistema de gestión operativa para PyMEs"
 authors = ["you"]
 edition = "2021"

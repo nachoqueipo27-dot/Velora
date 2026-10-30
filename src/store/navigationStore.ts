@@ -35,8 +35,14 @@ export const MODULES: { id: ModuleId; label: string }[] = [
   { id: 'uso',             label: 'Uso' },
 ]
 
-// Grupo "Administración" — se muestran agrupados en el dropdown del Navbar.
-export const MODULOS_ADMINISTRACION: ModuleId[] = ['dashboard', 'reportes', 'empleados', 'configuracion']
+// Sub-secciones desplegables del menú de módulos del Navbar, en orden de aparición.
+// `abiertoPorDefecto`: estado con el que arranca cada vez que se abre el menú.
+export const GRUPOS_MENU: { id: string; label: string; modulos: ModuleId[]; abiertoPorDefecto?: boolean }[] = [
+  { id: 'general',       label: 'General',                modulos: ['punto-venta', 'inventario', 'caja-diaria'], abiertoPorDefecto: true },
+  { id: 'proveedores',   label: 'Proveedores y clientes', modulos: ['proveedores', 'clientes', 'agenda', 'presupuestos', 'ordenes-trabajo', 'lista-precios'] },
+  { id: 'configurables', label: 'Configurables',          modulos: ['pdfs', 'uso', 'empleados', 'configuracion'] },
+  { id: 'administracion', label: 'Administración',        modulos: ['dashboard', 'reportes'] },
+]
 
 // Módulos siempre visibles, independientes de funcionesHabilitadas.
 const SIEMPRE_VISIBLES: ModuleId[] = ['dashboard', 'reportes', 'configuracion', 'uso']

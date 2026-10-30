@@ -1,4 +1,5 @@
 import Database from '@tauri-apps/plugin-sql'
+import { respaldarSiCambioVersion, confirmarVersionInstalada } from './respaldoActualizacion'
 
 // Una única conexión SQLite fija — instalación single-tenant (un negocio, un local).
 // Guardamos la PROMESA (no la conexión resuelta) para que llamadas concurrentes
@@ -8,9 +9,12 @@ let dbPromise: Promise<Db> | null = null
 export function getDb(): Promise<Db> {
   if (!dbPromise) {
     dbPromise = (async () => {
+      // Si cambió la versión instalada, copiar las bases antes de abrirlas y migrarlas.
+      const respaldos = await respaldarSiCambioVersion()
       const database = await Database.load('sqlite:velora.db')
       await initSchema(database)
       await seedDemoData(database)
+      await confirmarVersionInstalada(database, respaldos)
       return database
     })()
   }

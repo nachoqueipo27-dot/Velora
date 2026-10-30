@@ -37,3 +37,6 @@ build-output.log
 
 # Clon suelto del remoto creado por error (repo anidado)
 /Velora/
+
+# Notas locales
+Funcion.txt

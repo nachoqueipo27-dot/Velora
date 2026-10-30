@@ -47,7 +47,7 @@ if (push.status !== 0) {
   fail(`\nNo se pudo pushear el tag ${tag} (ver el error de git arriba). Se borró el tag local; podés reintentar.`)
 }
 
-const remoto = runCapture('git remote get-url origin').replace(/\.git$/, '')
+const remoto = runCapture('git remote get-url origin').replace(/\.git$/, '').replace(/\/\/[^/@]+@/, '//')
 console.log(`\nTag ${tag} publicado. GitHub está compilando Windows y macOS (~15-20 min).`)
 console.log(`Progreso:   ${remoto}/actions`)
 console.log(`Instaladores (Release en borrador): ${remoto}/releases`)

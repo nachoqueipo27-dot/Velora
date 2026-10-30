@@ -1,30 +1,35 @@
-import { useNavigationStore, MODULES, MODULOS_ADMINISTRACION } from '../../store/navigationStore'
+import { useNavigationStore, MODULES, GRUPOS_MENU } from '../../store/navigationStore'
 import { useThemeStore } from '../../store/themeStore'
-import { useOnboardingStore } from '../../store/onboardingStore'
 import { cn } from '../../lib/utils'
 import { VeloraLogo } from '../ui/VeloraLogo'
-import { ArrowLeft, ChevronLeft, ChevronRight, Sun, Moon, Briefcase, Menu, X } from 'lucide-react'
+import { Sun, Moon, ChevronDown, Menu, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
-// Duración de la transición de apertura/cierre del dropdown.
-// Debe coincidir con la clase `duration-200` del panel para que el desmontaje
+// Duración de la transición de apertura/cierre del panel lateral de módulos.
+// Debe coincidir con la clase `duration-[250ms]` del panel para que el desmontaje
 // ocurra recién cuando terminó la animación de salida.
-const DURACION_DROPDOWN = 200
+const DURACION_PANEL = 250
 
 export const Navbar = () => {
-  const { activeModule, isDropdownOpen, modulosVisibles, history, setModule, nextModule, prevModule, goBack, toggleDropdown, closeDropdown } = useNavigationStore()
+  const { activeModule, isDropdownOpen, modulosVisibles, setModule, toggleDropdown, closeDropdown } = useNavigationStore()
   const { theme, toggleTheme } = useThemeStore()
-  const nombreNegocio = useOnboardingStore(s => s.data.nombreNegocio)
 
-  const modulos = modulosVisibles
-    .map(id => MODULES.find(m => m.id === id))
-    .filter((m): m is typeof MODULES[number] => !!m)
-  // "Administración" agrupa Resumen General / Reportes / Empleados / Configuración
-  // en el dropdown — el resto de los módulos operativos se listan sin agrupar.
-  const modulosOperativos = modulos.filter(m => !MODULOS_ADMINISTRACION.includes(m.id))
-  const modulosAdmin = MODULOS_ADMINISTRACION
-    .map(id => modulos.find(m => m.id === id))
-    .filter((m): m is typeof MODULES[number] => !!m)
+  // Sub-secciones con sólo sus módulos visibles; un grupo sin módulos no se muestra.
+  const grupos = GRUPOS_MENU
+    .map(g => ({
+      ...g,
+      modulos: g.modulos
+        .filter(id => modulosVisibles.includes(id))
+        .map(id => MODULES.find(m => m.id === id))
+        .filter((m): m is typeof MODULES[number] => !!m),
+    }))
+    .filter(g => g.modulos.length > 0)
+  // Orden del menú, para decidir hacia qué lado anima el título al cambiar de módulo.
+  const modulos = grupos.flatMap(g => g.modulos)
+  // Sub-secciones desplegadas; se reinicia a `abiertoPorDefecto` cada vez que se abre el menú.
+  const [abiertos, setAbiertos] = useState<string[]>([])
+  const toggleGrupo = (id: string) =>
+    setAbiertos(a => a.includes(id) ? a.filter(x => x !== id) : [...a, id])
   const dropdownRef = useRef<HTMLDivElement>(null)
   const hamburguesaRef = useRef<HTMLButtonElement>(null)
   const [displayModule, setDisplayModule] = useState(activeModule)
@@ -35,20 +40,12 @@ export const Navbar = () => {
   const [montado, setMontado] = useState(false)
   const [visible, setVisible] = useState(false)
 
-  const handleNext = () => {
-    setDirection('right')
-    triggerAnimation(() => nextModule())
-  }
-
-  const handlePrev = () => {
-    setDirection('left')
-    triggerAnimation(() => prevModule())
-  }
-
   const handleSelect = (id: typeof activeModule) => {
     const fromIdx = modulos.findIndex(m => m.id === activeModule)
     const toIdx   = modulos.findIndex(m => m.id === id)
     setDirection(toIdx > fromIdx ? 'right' : 'left')
+    // El panel se cierra en el acto; el cambio de módulo espera la animación del título.
+    closeDropdown()
     triggerAnimation(() => setModule(id))
   }
 
@@ -70,10 +67,11 @@ export const Navbar = () => {
   useEffect(() => {
     if (!isDropdownOpen) {
       setVisible(false)
-      const t = setTimeout(() => setMontado(false), DURACION_DROPDOWN)
+      const t = setTimeout(() => setMontado(false), DURACION_PANEL)
       return () => clearTimeout(t)
     }
     setMontado(true)
+    setAbiertos(GRUPOS_MENU.filter(g => g.abiertoPorDefecto).map(g => g.id))
     let raf2 = 0
     const raf1 = requestAnimationFrame(() => {
       raf2 = requestAnimationFrame(() => setVisible(true))
@@ -94,6 +92,35 @@ export const Navbar = () => {
     return () => document.removeEventListener('mousedown', handler)
   }, [closeDropdown])
 
+  useEffect(() => {
+    if (!isDropdownOpen) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') closeDropdown() }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [isDropdownOpen, closeDropdown])
+
+  const itemModulo = (mod: typeof MODULES[number]) => {
+    const activo = activeModule === mod.id
+    return (
+      <button
+        key={mod.id}
+        onClick={() => handleSelect(mod.id)}
+        aria-current={activo ? 'page' : undefined}
+        className={cn(
+          'w-full text-left px-6 py-2.5 text-sm border-l-2 transition-colors duration-150 outline-none',
+          activo
+            ? 'border-white text-white bg-white/[0.04] pl-[22px] light:border-black light:text-black light:bg-black/[0.03]'
+            : [
+                'border-transparent pl-[22px] text-[#A0A0A0] hover:text-white hover:bg-white/[0.06] focus-visible:text-white focus-visible:bg-white/[0.06]',
+                'light:text-[#404040] light:hover:text-black light:hover:bg-black/[0.04] light:focus-visible:text-black light:focus-visible:bg-black/[0.04]',
+              ],
+        )}
+      >
+        {mod.label}
+      </button>
+    )
+  }
+
   return (
     // `relative z-50` deja todo el Navbar (ambas filas + el dropdown) por encima
     // del overlay difuminado de Layout (z-40), así no se difumina a sí mismo y sus
@@ -103,34 +130,25 @@ export const Navbar = () => {
       'border-[#2A2A2A] bg-[#0A0A0A]',
       'light:border-[#E4E4E4] light:bg-[#FAFAFA]',
     )}>
-      {/* Fila 1 */}
-      <div className="flex items-center justify-between px-6 pt-3 pb-1">
-        <div className="flex items-center gap-2">
-          <button
-            onClick={goBack}
-            disabled={history.length === 0}
-            aria-label="Volver a la pantalla anterior"
-            title="Atrás"
+      {/* Una sola fila: título del módulo a la izquierda, acciones a la derecha.
+          `py-3` + botones de 28px dan 52px de alto, igual que la cabecera del panel
+          lateral: la hamburguesa y el botón de cierre quedan en el mismo punto. */}
+      <div className="flex items-center justify-between gap-6 px-6 py-3">
+        {/* Nombre del módulo — puramente informativo, no abre el menú */}
+        <div className="min-w-0 flex-1 overflow-hidden">
+          <h1
             className={cn(
-              'p-1.5 rounded-input transition-all duration-150',
-              history.length === 0
-                ? 'text-[#3A3A3A] light:text-[#D0D0D0] cursor-not-allowed'
-                : 'text-[#808080] hover:text-white hover:bg-white/10 light:text-[#707070] light:hover:text-black light:hover:bg-black/5',
+              'text-xl font-semibold tracking-tight truncate',
+              'text-white light:text-black',
+              animating && direction === 'right' && 'animate-slide-out-left',
+              animating && direction === 'left'  && 'animate-slide-out-right',
+              !animating && 'animate-slide-in',
             )}
           >
-            <ArrowLeft size={16} />
-          </button>
-          <VeloraLogo size={24} variant="auto" />
-          <span className="text-sm font-semibold tracking-widest uppercase text-white light:text-black">
-            Velora
-          </span>
-          {nombreNegocio && (
-            <span className="ml-1 pl-2 border-l border-[#2A2A2A] light:border-[#E4E4E4] text-[10px] text-[#808080] light:text-[#707070] tracking-wide truncate max-w-[140px]">
-              {nombreNegocio}
-            </span>
-          )}
+            {MODULES.find(m => m.id === displayModule)?.label}
+          </h1>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex shrink-0 items-center gap-3">
           <button
             onClick={toggleTheme}
             aria-label={theme === 'dark' ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro'}
@@ -147,7 +165,7 @@ export const Navbar = () => {
           <button
             ref={hamburguesaRef}
             onClick={toggleDropdown}
-            aria-haspopup="menu"
+            aria-haspopup="dialog"
             aria-expanded={isDropdownOpen}
             aria-label={isDropdownOpen ? 'Cerrar menú de módulos' : 'Abrir menú de módulos'}
             title="Módulos"
@@ -163,110 +181,94 @@ export const Navbar = () => {
         </div>
       </div>
 
-      {/* Fila 2 — navegación */}
-      <div className="relative flex flex-col items-center pb-3">
-        <div className="flex items-center gap-4">
-          <button
-            onClick={handlePrev}
-            aria-label="Módulo anterior"
-            className={cn(
-              'p-1.5 rounded-input transition-all duration-150',
-              'text-[#808080] hover:text-white hover:bg-white/10 hover:scale-110',
-              'light:text-[#707070] light:hover:text-black light:hover:bg-black/5',
-            )}
-          >
-            <ChevronLeft size={16} />
-          </button>
-
-          {/* Nombre del módulo — puramente informativo, ya no abre el menú */}
-          <div className="w-48 overflow-hidden rounded-input">
-            <div
-              className={cn(
-                'text-sm font-semibold text-center transition-all',
-                'text-white light:text-black',
-                animating && direction === 'right' && 'animate-slide-out-left',
-                animating && direction === 'left'  && 'animate-slide-out-right',
-                !animating && 'animate-slide-in',
-              )}
-            >
-              {MODULES.find(m => m.id === displayModule)?.label}
-            </div>
-          </div>
-
-          <button
-            onClick={handleNext}
-            aria-label="Módulo siguiente"
-            className={cn(
-              'p-1.5 rounded-input transition-all duration-150',
-              'text-[#808080] hover:text-white hover:bg-white/10 hover:scale-110',
-              'light:text-[#707070] light:hover:text-black light:hover:bg-black/5',
-            )}
-          >
-            <ChevronRight size={16} />
-          </button>
-        </div>
-
-      </div>
-
-      {/* Dropdown — anclado bajo el ícono hamburguesa (esquina superior derecha).
-          `right-6` lo alinea con el padding px-6 de la Fila 1. */}
+      {/* Panel lateral de módulos — entra desde el borde derecho y ocupa todo el alto
+          de la ventana (también tapa el Navbar de ese lado). Es `fixed` dentro del
+          stacking context z-50 del header, así queda por encima del overlay (z-40).
+          Su botón de cierre usa el mismo `px-6 pt-3` que la Fila 1: cae exactamente
+          donde estaba la hamburguesa, el menú se abre y se cierra desde el mismo punto. */}
       {montado && (
         <div
           ref={dropdownRef}
-          role="menu"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Módulos"
           className={cn(
-            'absolute right-6 top-full mt-2 w-56 z-50 rounded-card border shadow-lg overflow-hidden max-h-[80vh] overflow-y-auto',
+            'fixed inset-y-0 right-0 w-72 flex flex-col border-l',
             'border-[#2A2A2A] bg-[#141414]',
             'light:border-[#E4E4E4] light:bg-white',
-            'origin-top-right transition-all duration-200 ease-out',
-            visible
-              ? 'opacity-100 scale-100 translate-y-0'
-              : 'opacity-0 scale-95 -translate-y-2 pointer-events-none',
+            'transition-transform duration-[250ms] ease-out motion-reduce:transition-none',
+            visible ? 'translate-x-0' : 'translate-x-full pointer-events-none',
           )}
         >
-            {modulosOperativos.map(mod => (
-              <button
-                key={mod.id}
-                onClick={() => handleSelect(mod.id)}
-                className={cn(
-                  'w-full text-left px-4 py-2.5 text-sm transition-all duration-120',
-                  'text-[#A0A0A0] hover:text-white hover:bg-white/[0.06]',
-                  'light:text-[#404040] light:hover:text-black light:hover:bg-black/[0.04]',
-                  activeModule === mod.id && [
-                    'border-l-2 border-white text-white pl-[14px]',
-                    'light:border-black light:text-black',
-                  ]
-                )}
-              >
-                {mod.label}
-              </button>
-            ))}
+          <div className="flex items-center justify-between px-6 pt-3 pb-3 border-b border-[#2A2A2A] light:border-[#E4E4E4]">
+            <span className="text-sm font-semibold text-white light:text-black">Módulos</span>
+            <button
+              onClick={closeDropdown}
+              autoFocus
+              aria-label="Cerrar menú de módulos"
+              title="Cerrar"
+              className={cn(
+                'p-1.5 rounded-input transition-all duration-150 outline-none',
+                'text-white bg-white/10 hover:bg-white/15 focus-visible:ring-1 focus-visible:ring-white/40',
+                'light:text-black light:bg-black/5 light:hover:bg-black/10 light:focus-visible:ring-black/30',
+              )}
+            >
+              <X size={16} />
+            </button>
+          </div>
 
-            {modulosAdmin.length > 0 && (
-              <>
-                <div className="border-t border-[#2A2A2A] light:border-[#E4E4E4] my-1" />
-                <span className="flex items-center gap-1.5 px-4 pt-1.5 pb-1 text-[10px] font-semibold uppercase tracking-wider text-[#606060]">
-                  <Briefcase size={11} /> Administración
-                </span>
-                {modulosAdmin.map(mod => (
+          <nav className="flex-1 overflow-y-auto">
+            {grupos.map(g => {
+              const abierto = abiertos.includes(g.id)
+              // Con el grupo cerrado, un punto indica que el módulo activo está adentro.
+              const contieneActivo = g.modulos.some(m => m.id === activeModule)
+              return (
+                <section key={g.id} className="border-b border-[#2A2A2A] light:border-[#E4E4E4] last:border-b-0">
                   <button
-                    key={mod.id}
-                    onClick={() => handleSelect(mod.id)}
+                    onClick={() => toggleGrupo(g.id)}
+                    aria-expanded={abierto}
+                    aria-controls={`grupo-menu-${g.id}`}
                     className={cn(
-                      'w-full text-left px-4 py-2.5 text-sm transition-all duration-120',
-                      'text-[#A0A0A0] hover:text-white hover:bg-white/[0.06]',
-                      'light:text-[#404040] light:hover:text-black light:hover:bg-black/[0.04]',
-                      activeModule === mod.id && [
-                        'border-l-2 border-white text-white pl-[14px]',
-                        'light:border-black light:text-black',
-                      ]
+                      'w-full flex items-center justify-between gap-2 px-6 py-3 text-left outline-none transition-colors duration-150',
+                      'text-[12px] font-semibold text-[#808080] hover:text-white focus-visible:text-white focus-visible:bg-white/[0.04]',
+                      'light:text-[#707070] light:hover:text-black light:focus-visible:text-black light:focus-visible:bg-black/[0.03]',
                     )}
                   >
-                    {mod.label}
+                    <span className="flex items-center gap-2">
+                      {g.label}
+                      {!abierto && contieneActivo && (
+                        <span aria-hidden="true" className="w-1.5 h-1.5 rounded-full bg-white light:bg-black" />
+                      )}
+                    </span>
+                    <ChevronDown
+                      size={14}
+                      className={cn('shrink-0 transition-transform duration-200 motion-reduce:transition-none', !abierto && '-rotate-90')}
+                    />
                   </button>
-                ))}
-              </>
-          )}
+                  {/* grid 0fr → 1fr anima la altura sin medirla; `inert` saca del foco
+                      del teclado a los módulos de un grupo cerrado. */}
+                  <div
+                    id={`grupo-menu-${g.id}`}
+                    inert={!abierto}
+                    className={cn(
+                      'grid transition-[grid-template-rows] duration-200 ease-out motion-reduce:transition-none',
+                      abierto ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]',
+                    )}
+                  >
+                    <div className="overflow-hidden">
+                      <div className="pb-2">{g.modulos.map(itemModulo)}</div>
+                    </div>
+                  </div>
+                </section>
+              )
+            })}
+          </nav>
+
+          {/* Firma de la app al pie del panel, en tono apagado para no competir con la lista */}
+          <div className="flex shrink-0 items-center justify-center gap-2 py-5 border-t border-[#2A2A2A] light:border-[#E4E4E4] text-[#808080] light:text-[#707070]">
+            <VeloraLogo size={22} className="text-current dark:text-current light:text-current" />
+            <span className="text-[13px] font-semibold tracking-widest uppercase">Velora</span>
+          </div>
         </div>
       )}
     </header>

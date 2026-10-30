@@ -1,10 +1,13 @@
 import Database from '@tauri-apps/plugin-sql'
 import { hashPassword, verifyPassword, esBcrypt } from '../lib/crypto'
+import { respaldarSiCambioVersion } from './respaldoActualizacion'
 
 let masterDb: Awaited<ReturnType<typeof Database.load>> | null = null
 
 export async function getMasterDb() {
   if (!masterDb) {
+    // Mismo respaldo que velora.db: tiene que correr antes de abrir cualquiera de las dos.
+    await respaldarSiCambioVersion()
     masterDb = await Database.load('sqlite:velora_master.db')
     await initMasterSchema()
   }

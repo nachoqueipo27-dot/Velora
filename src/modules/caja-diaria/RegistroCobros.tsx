@@ -78,7 +78,7 @@ export const RegistroCobros = () => {
       )}
 
       {/* Tabla */}
-      <div className="rounded-card border border-[#2A2A2A] light:border-[#E4E4E4] overflow-hidden">
+      <div className="shrink-0 rounded-card border border-[#2A2A2A] light:border-[#E4E4E4] overflow-hidden">
         <table className="w-full text-[13px]">
           <thead>
             <tr className="text-left text-[11px] uppercase tracking-wider text-[#606060] border-b border-[#2A2A2A] light:border-[#E4E4E4]">
