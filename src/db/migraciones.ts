@@ -45,6 +45,7 @@ const MIGRACIONES: Migracion[] = [
   { id: '2026_12_centavos', sql: sqlCentavos },
   { id: '2026_12_hash_claves', sql: sqlHashClaves, antes: limpiarClavesLocalStorage },
   { id: '2026_12_codigos', sql: sqlCodigos },
+  { id: '2026_12_recepcion', sql: sqlRecepcion },
 ]
 
 /** true si la base todavía no tiene tablas de negocio (hay que llamarla ANTES de initSchema). */
@@ -313,3 +314,22 @@ function sqlCodigos(ahora: string): string {
 
 /** Solo para verificar el script fuera de la app (no se usa en runtime). */
 export const _sqlCodigosParaPruebas = sqlCodigos
+
+// ─── 2026_12_recepcion ───────────────────────────────────────────────────────
+// items_orden_compra.recibido era un sí/no (0/1). Pasa a ser la cantidad recibida
+// acumulada: donde era 1 (la orden se recibió entera) queda la cantidad pedida; donde era 0,
+// queda 0. Las órdenes ya recibidas siguen 'recibida'.
+
+function sqlRecepcion(ahora: string): string {
+  return [
+    'BEGIN;',
+    `INSERT INTO historial_actividad (usuario, modulo, accion, detalle, fecha, creado_en)
+      SELECT 'Sistema', 'Sistema', 'Pasó lo recibido de las órdenes de compra a cantidades',
+        'Migración 2026_12_recepcion. Ítems de órdenes marcados como recibidos: '
+        || (SELECT COUNT(*) FROM items_orden_compra WHERE recibido = 1) || ' (quedan con la cantidad pedida).',
+        '${ahora}', '${ahora}';`,
+    `UPDATE items_orden_compra SET recibido = cantidad WHERE recibido = 1;`,
+    `INSERT INTO _migraciones (id, aplicada_en) VALUES ('2026_12_recepcion', '${ahora}');`,
+    'COMMIT;',
+  ].join('\n')
+}

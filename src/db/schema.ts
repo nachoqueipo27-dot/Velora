@@ -226,7 +226,7 @@ export const proveedores = sqliteTable('proveedores', {
 export const ordenesCompra = sqliteTable('ordenes_compra', {
   id:             integer('id').primaryKey({ autoIncrement: true }),
   proveedorId:    integer('proveedor_id').notNull(),
-  estado:         text('estado').notNull().default('borrador'), // 'borrador'|'enviada'|'recibida'
+  estado:         text('estado').notNull().default('borrador'), // 'borrador'|'enviada'|'parcial'|'recibida'
   numero:         integer('numero').notNull(),
   notas:          text('notas'),
   total:          integer('total').default(0),
@@ -242,10 +242,37 @@ export const itemsOrdenCompra = sqliteTable('items_orden_compra', {
   productoId:  integer('producto_id').notNull(),
   cantidad:    real('cantidad').notNull(), // real: producto puede ser fraccionable
   precioCosto: integer('precio_costo').default(0),
-  recibido:    integer('recibido').default(0),
+  recibido:    real('recibido').default(0), // cantidad recibida acumulada (antes 0/1)
 })
 
 // ─── Lista de precios ──────────────────────────────────────────
+
+// Recepciones de mercadería (desde 1.5.0). estado: 'abierta' | 'confirmada' | 'descartada'.
+export const recepciones = sqliteTable('recepciones', {
+  id:             integer('id').primaryKey({ autoIncrement: true }),
+  numero:         integer('numero').notNull(), // "Recepción #0001"
+  ordenId:        integer('orden_id'),         // null = recepción directa
+  proveedorId:    integer('proveedor_id').notNull(),
+  estado:         text('estado').notNull().default('abierta'),
+  empleadoId:     integer('empleado_id'),
+  empleadoNombre: text('empleado_nombre'),
+  notas:          text('notas'),
+  totalCobrado:   integer('total_cobrado').default(0), // centavos
+  creadoEn:       text('creado_en').notNull(),
+  confirmadoEn:   text('confirmado_en'),
+})
+
+// Una fila por producto y estado ('ok' entra al stock; 'danado' / 'vencido' quedan para devolver).
+export const itemsRecepcion = sqliteTable('items_recepcion', {
+  id:           integer('id').primaryKey({ autoIncrement: true }),
+  recepcionId:  integer('recepcion_id').notNull(),
+  productoId:   integer('producto_id').notNull(),
+  cantidad:     real('cantidad').notNull(),
+  costoPactado: integer('costo_pactado'), // centavos; null si no estaba en la orden
+  costoCobrado: integer('costo_cobrado'), // centavos, por unidad
+  estado:       text('estado').notNull().default('ok'),
+  nota:         text('nota'),
+})
 
 export const historialPrecios = sqliteTable('historial_precios', {
   id:             integer('id').primaryKey({ autoIncrement: true }),
@@ -254,6 +281,7 @@ export const historialPrecios = sqliteTable('historial_precios', {
   precioNuevo:    integer('precio_nuevo').notNull(),
   porcentaje:     real('porcentaje'),
   motivo:         text('motivo'),
+  tipo:           text('tipo').default('precio'), // 'precio' (venta) | 'costo'
   aplicadoPor:    text('aplicado_por').notNull(),
   fecha:          text('fecha').notNull(),
   creadoEn:       text('creado_en').notNull(),

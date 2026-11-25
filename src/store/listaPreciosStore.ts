@@ -127,10 +127,12 @@ export const useListaPreciosStore = create<ListaPreciosStore>((set, get) => ({
     const rows = productoId
       ? await db.select<any[]>(
           `SELECT h.*, p.nombre as producto_nombre FROM historial_precios h
-           JOIN productos p ON h.producto_id = p.id WHERE h.producto_id = ? ORDER BY h.fecha DESC`, [productoId])
+           JOIN productos p ON h.producto_id = p.id
+           WHERE h.producto_id = ? AND COALESCE(h.tipo, 'precio') = 'precio' ORDER BY h.fecha DESC`, [productoId])
       : await db.select<any[]>(
           `SELECT h.*, p.nombre as producto_nombre FROM historial_precios h
-           JOIN productos p ON h.producto_id = p.id ORDER BY h.fecha DESC`)
+           JOIN productos p ON h.producto_id = p.id
+           WHERE COALESCE(h.tipo, 'precio') = 'precio' ORDER BY h.fecha DESC`) // los cambios de costo (recepciones) no son precios de venta
     set({
       historial: rows.map(r => ({
         id: r.id,

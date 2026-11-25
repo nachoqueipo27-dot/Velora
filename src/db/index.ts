@@ -309,11 +309,46 @@ async function initSchema(database: Db) {
       producto_id  INTEGER NOT NULL,
       cantidad     REAL NOT NULL,
       precio_costo INTEGER DEFAULT 0,
-      recibido     INTEGER DEFAULT 0,
+      recibido     REAL DEFAULT 0, -- cantidad recibida acumulada (desde 1.5.0; antes 0/1)
       FOREIGN KEY (orden_id)    REFERENCES ordenes_compra(id),
       FOREIGN KEY (producto_id) REFERENCES productos(id)
     )
   `)
+
+  // Recepciones de mercadería por escaneo (contra una orden o directas). Una abierta por
+  // usuario; el stock y los costos cambian recién al confirmar (motivo 'Recepción #0001').
+  await database.execute(`
+    CREATE TABLE IF NOT EXISTS recepciones (
+      id              INTEGER PRIMARY KEY AUTOINCREMENT,
+      numero          INTEGER NOT NULL,
+      orden_id        INTEGER,
+      proveedor_id    INTEGER NOT NULL,
+      estado          TEXT NOT NULL DEFAULT 'abierta',
+      empleado_id     INTEGER,
+      empleado_nombre TEXT,
+      notas           TEXT,
+      total_cobrado   INTEGER DEFAULT 0,
+      creado_en       TEXT NOT NULL,
+      confirmado_en   TEXT,
+      FOREIGN KEY (orden_id)     REFERENCES ordenes_compra(id),
+      FOREIGN KEY (proveedor_id) REFERENCES proveedores(id)
+    )
+  `)
+  await database.execute(`
+    CREATE TABLE IF NOT EXISTS items_recepcion (
+      id            INTEGER PRIMARY KEY AUTOINCREMENT,
+      recepcion_id  INTEGER NOT NULL,
+      producto_id   INTEGER NOT NULL,
+      cantidad      REAL NOT NULL,
+      costo_pactado INTEGER,
+      costo_cobrado INTEGER,
+      estado        TEXT NOT NULL DEFAULT 'ok',
+      nota          TEXT,
+      FOREIGN KEY (recepcion_id) REFERENCES recepciones(id),
+      FOREIGN KEY (producto_id)  REFERENCES productos(id)
+    )
+  `)
+  await database.execute(`CREATE INDEX IF NOT EXISTS ix_items_recepcion_recepcion ON items_recepcion(recepcion_id)`)
 
   await database.execute(`
     CREATE TABLE IF NOT EXISTS historial_precios (
@@ -323,6 +358,7 @@ async function initSchema(database: Db) {
       precio_nuevo    INTEGER NOT NULL,
       porcentaje      REAL,
       motivo          TEXT,
+      tipo            TEXT DEFAULT 'precio',
       aplicado_por    TEXT NOT NULL,
       fecha           TEXT NOT NULL,
       creado_en       TEXT NOT NULL,
@@ -700,6 +736,12 @@ async function initSchema(database: Db) {
   // Migración: borrador en productos (alta desde el punto de venta sin nombre ni precio).
   try {
     await database.execute(`ALTER TABLE productos ADD COLUMN borrador INTEGER DEFAULT 0`)
+  } catch { /* la columna ya existe */ }
+
+  // Migración: el historial de precios también registra cambios de costo (recepciones).
+  // 'precio' = precio de venta (lo que muestra Lista de precios); 'costo' = costo.
+  try {
+    await database.execute(`ALTER TABLE historial_precios ADD COLUMN tipo TEXT DEFAULT 'precio'`)
   } catch { /* la columna ya existe */ }
 
   // Migración: código escaneado en los ítems vendidos ("Producto X" no tiene producto).
