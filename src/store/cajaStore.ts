@@ -6,7 +6,7 @@ import { registrarActividad } from '../lib/registrarActividad'
 import { exigirEditar } from '../lib/permisos'
 import type {
   CobroCaja, GastoOperativo, ResumenCaja, CierreCaja, CierreMes, ResumenMes,
-  DatosComparativo, FormaPago,
+  DatosComparativo, FormaPago, ItemVentaCaja,
 } from '../types/caja'
 
 const hoyISO = () => new Date().toISOString().split('T')[0] // YYYY-MM-DD (UTC, consistente con POS)
@@ -36,6 +36,31 @@ const mapCierreMes = (r: any): CierreMes => ({
   productoMasVendido: r.producto_mas_vendido ?? null, empleadoDestacado: r.empleado_destacado ?? null,
   cerradoPor: r.cerrado_por, creadoEn: r.creado_en,
 })
+
+/** Ítems de las ventas del POS indicadas, agrupados por venta (para desplegarlos en la caja). */
+export async function itemsDeVentas(ventaIds: number[]): Promise<Record<number, ItemVentaCaja[]>> {
+  const porVenta: Record<number, ItemVentaCaja[]> = {}
+  if (ventaIds.length === 0) return porVenta
+  const db = await getDb()
+  const filas = await db.select<any[]>(
+    `SELECT i.id, i.venta_id, i.nombre, i.cantidad, i.precio_unitario, i.subtotal, i.codigo, i.tipo_item,
+            COALESCE(p.unidad_medida, 'unidad') AS unidad_medida
+       FROM items_venta_pos i LEFT JOIN productos p ON p.id = i.producto_id
+      WHERE i.venta_id IN (${ventaIds.map(() => '?').join(', ')})
+      ORDER BY i.id ASC`,
+    ventaIds
+  )
+  for (const r of filas) {
+    const libre = r.tipo_item === 'libre'
+    ;(porVenta[r.venta_id] ??= []).push({
+      id: r.id, ventaId: r.venta_id, nombre: r.nombre, cantidad: r.cantidad,
+      unidadMedida: libre ? 'unidad' : r.unidad_medida,
+      precioUnitario: r.precio_unitario, subtotal: r.subtotal,
+      codigo: libre ? (r.codigo ?? null) : null, libre,
+    })
+  }
+  return porVenta
+}
 
 interface AgregarCobroData { monto: number; formaPago: FormaPago; concepto: string }
 interface GastoData { monto: number; categoria: string; descripcion?: string; fecha?: string; comprobante?: string }

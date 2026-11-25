@@ -1,4 +1,20 @@
+import type { UnidadMedida } from './inventario'
+
 export type FormaPago = 'efectivo' | 'transferencia' | 'tarjeta'
+
+/** Ítem de una venta del POS, para ver desde la caja qué se vendió. */
+export interface ItemVentaCaja {
+  id: number
+  ventaId: number
+  nombre: string
+  cantidad: number
+  unidadMedida: UnidadMedida
+  precioUnitario: number
+  subtotal: number
+  /** Solo "Producto X": el código escaneado, si lo hubo. */
+  codigo: string | null
+  libre: boolean
+}
 
 export interface CobroCaja {
   id: number

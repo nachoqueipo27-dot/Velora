@@ -1,17 +1,32 @@
-import { useState } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 import { cn } from '../../lib/utils'
-import { useCajaStore } from '../../store/cajaStore'
+import { useCajaStore, itemsDeVentas } from '../../store/cajaStore'
 import { Badge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
 import { Modal } from '../../components/ui/Modal'
-import { FORMAS_PAGO_CAJA, type CobroCaja, type FormaPago } from '../../types/caja'
-import { Plus, Trash2 } from 'lucide-react'
+import { FORMAS_PAGO_CAJA, type CobroCaja, type FormaPago, type ItemVentaCaja } from '../../types/caja'
+import { UNIDAD_ABREVIADA } from '../../types/inventario'
+import { Plus, Trash2, ChevronDown, ChevronRight } from 'lucide-react'
 import { aCentavos, formatearPesos } from '../../lib/dinero'
 import { useEdicion } from '../../lib/permisos'
 
 // Montos en centavos → "$ 1.234,56"
 const money = formatearPesos
 const hora = (iso: string) => new Date(iso).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })
+
+// Cantidad legible: "× 2" para unidades, "0,5 kg" para lo fraccionable.
+const cantidadDe = (i: ItemVentaCaja) => {
+  const n = i.cantidad.toLocaleString('es-AR', { maximumFractionDigits: 3 })
+  return i.unidadMedida === 'unidad' ? `× ${n}` : `${n} ${UNIDAD_ABREVIADA[i.unidadMedida]}`
+}
+
+// Lo que se vendió, en una línea: "Pan 0,5 kg, Coca 500 × 2 y 3 más".
+const resumenVenta = (items: ItemVentaCaja[] | undefined) => {
+  if (!items) return '…'
+  if (items.length === 0) return 'Venta sin detalle'
+  const partes = items.slice(0, 2).map(i => `${i.nombre} ${cantidadDe(i)}`).join(', ')
+  return items.length > 2 ? `${partes} y ${items.length - 2} más` : partes
+}
 
 const origenDe = (c: CobroCaja): { label: string; variant: 'default' | 'success' | 'info' } => {
   if (c.otId != null) return { label: 'OT', variant: 'info' }
@@ -26,6 +41,24 @@ export const RegistroCobros = () => {
   const [formaPago, setFormaPago] = useState<FormaPago>('efectivo')
   const [concepto, setConcepto] = useState('')
   const [aEliminar, setAEliminar] = useState<CobroCaja | null>(null)
+  const [itemsPorVenta, setItemsPorVenta] = useState<Record<number, ItemVentaCaja[]>>({})
+  const [abiertos, setAbiertos] = useState<Set<number>>(new Set())
+
+  // Qué se vendió en cada cobro del POS (se despliega tocando la fila).
+  useEffect(() => {
+    let vigente = true
+    const ids = cobrosHoy.map(c => c.ventaPosId).filter((id): id is number => id != null)
+    itemsDeVentas(ids)
+      .then(items => { if (vigente) setItemsPorVenta(items) })
+      .catch(e => console.error('caja: no se pudieron leer los ítems de las ventas', e))
+    return () => { vigente = false }
+  }, [cobrosHoy])
+
+  const alternar = (id: number) => setAbiertos(prev => {
+    const s = new Set(prev)
+    if (s.has(id)) s.delete(id); else s.add(id)
+    return s
+  })
 
   const montoNum = aCentavos(Number(monto) || 0) // el input es en pesos; se guarda en centavos
   const valido = montoNum > 0 && !diaYaCerrado && !ed.disabled
@@ -101,10 +134,24 @@ export const RegistroCobros = () => {
             {cobrosHoy.map(c => {
               const o = origenDe(c)
               const manual = c.otId == null && c.ventaPosId == null
+              const venta = c.ventaPosId != null
+              const items = venta ? itemsPorVenta[c.ventaPosId!] : undefined
+              const abierto = venta && abiertos.has(c.id)
               return (
-                <tr key={c.id} className="border-b border-[#1C1C1C] light:border-[#F0F0F0] last:border-0 hover:bg-white/[0.02] light:hover:bg-black/[0.02]">
+                <Fragment key={c.id}>
+                <tr onClick={venta ? () => alternar(c.id) : undefined}
+                  className={cn('border-b border-[#1C1C1C] light:border-[#F0F0F0] last:border-0 hover:bg-white/[0.02] light:hover:bg-black/[0.02]',
+                    venta && 'cursor-pointer')}>
                   <td className="px-4 py-2.5 text-[#A0A0A0] light:text-[#404040] tabular-nums">{hora(c.fecha)}</td>
-                  <td className="px-4 py-2.5 text-white light:text-black">{c.concepto || '—'}</td>
+                  <td className="px-4 py-2.5 text-white light:text-black">
+                    {venta ? (
+                      <button type="button" aria-expanded={abierto} title={abierto ? 'Ocultar lo vendido' : 'Ver lo vendido'}
+                        className="flex items-center gap-1.5 text-left">
+                        {abierto ? <ChevronDown size={14} className="shrink-0 text-[#606060]" /> : <ChevronRight size={14} className="shrink-0 text-[#606060]" />}
+                        <span className="line-clamp-1">{resumenVenta(items)}</span>
+                      </button>
+                    ) : (c.concepto || '—')}
+                  </td>
                   <td className="px-4 py-2.5 text-[#A0A0A0] light:text-[#404040] capitalize">{c.formaPago}</td>
                   <td className="px-4 py-2.5"><Badge label={o.label} variant={o.variant} /></td>
                   <td className="px-4 py-2.5 text-right font-semibold text-[#4CAF7D] tabular-nums">{money(c.monto)}</td>
@@ -116,6 +163,53 @@ export const RegistroCobros = () => {
                     )}
                   </td>
                 </tr>
+                {abierto && (
+                  <tr className="border-b border-[#1C1C1C] light:border-[#F0F0F0] bg-white/[0.02] light:bg-black/[0.02]">
+                    <td></td>
+                    <td colSpan={5} className="px-4 pb-3 pt-1">
+                      {!items ? (
+                        <span className="text-[12px] text-[#606060]">Cargando…</span>
+                      ) : items.length === 0 ? (
+                        <span className="text-[12px] text-[#606060]">Esta venta no tiene ítems guardados.</span>
+                      ) : (
+                        <table className="w-full text-[12px]">
+                          <thead>
+                            <tr className="text-left text-[10px] uppercase tracking-wider text-[#606060]">
+                              <th className="font-medium py-1.5">Producto</th>
+                              <th className="font-medium py-1.5 text-right">Cantidad</th>
+                              <th className="font-medium py-1.5 text-right">Precio unit.</th>
+                              <th className="font-medium py-1.5 text-right">Subtotal</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {items.map(i => (
+                              <tr key={i.id}>
+                                <td className="py-1 text-white light:text-black">
+                                  {i.nombre}
+                                  {i.libre && <span className="ml-2 text-[11px] text-[#606060]">Producto X{i.codigo ? ` · ${i.codigo}` : ''}</span>}
+                                </td>
+                                <td className="py-1 text-right tabular-nums text-[#A0A0A0] light:text-[#404040]">{cantidadDe(i)}</td>
+                                <td className="py-1 text-right tabular-nums text-[#A0A0A0] light:text-[#404040]">{money(i.precioUnitario)}</td>
+                                <td className="py-1 text-right tabular-nums text-white light:text-black">{money(i.subtotal)}</td>
+                              </tr>
+                            ))}
+                            {(() => {
+                              // Descuento general de la venta: lo que no llegó al cobro.
+                              const descuento = items.reduce((t, i) => t + i.subtotal, 0) - c.monto
+                              return descuento > 0 && (
+                                <tr>
+                                  <td colSpan={3} className="py-1 text-[#606060]">Descuento</td>
+                                  <td className="py-1 text-right tabular-nums text-[#A0A0A0] light:text-[#404040]">− {money(descuento)}</td>
+                                </tr>
+                              )
+                            })()}
+                          </tbody>
+                        </table>
+                      )}
+                    </td>
+                  </tr>
+                )}
+                </Fragment>
               )
             })}
           </tbody>
