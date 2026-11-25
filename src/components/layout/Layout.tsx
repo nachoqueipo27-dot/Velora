@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { Navbar } from './Navbar'
 import { StatusBar } from './StatusBar'
+import { AvisoActualizacion } from './AvisoActualizacion'
 import { useNavigationStore } from '../../store/navigationStore'
 import { useOnboardingStore } from '../../store/onboardingStore'
 import { useInitDb } from '../../hooks/useInitDb'
@@ -75,6 +76,7 @@ export const Layout = () => {
       'bg-[#0A0A0A] text-white',
       'light:bg-[#FAFAFA] light:text-[#0A0A0A]',
     )}>
+      <AvisoActualizacion />
       <Navbar />
       <main className="flex-1 overflow-hidden">
         <ActiveComponent />

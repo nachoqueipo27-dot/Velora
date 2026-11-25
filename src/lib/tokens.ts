@@ -30,6 +30,11 @@ export const tokens = {
       error:   '#C0392B',
       info:    '#4A7FA5',
     },
+    // Barra de avisos del sistema (ej. actualización disponible) — terracota del rediseño.
+    aviso: {
+      fondo: '#FBEAE3',
+      texto: '#8A3214',
+    },
   },
   typography: {
     display:    { size: '24px', weight: '700' },

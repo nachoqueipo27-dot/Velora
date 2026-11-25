@@ -38,6 +38,10 @@ export default {
         'state-warning':  '#D4921A',
         'state-error':    '#C0392B',
         'state-info':     '#4A7FA5',
+
+        // AVISOS DEL SISTEMA (terracota del rediseño) — ver tokens.colors.aviso
+        'aviso-fondo':    '#FBEAE3',
+        'aviso-texto':    '#8A3214',
       },
       borderRadius: {
         'card': '10px',

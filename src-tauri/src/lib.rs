@@ -25,6 +25,10 @@ pub fn run() {
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_shell::init())
+        // Actualizador automático: busca latest.json en los Releases de GitHub.
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        // Para reiniciar la app después de instalar una actualización.
+        .plugin(tauri_plugin_process::init())
         .invoke_handler(tauri::generate_handler![greet, hash_password, verify_password])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
