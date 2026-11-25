@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { cn } from '../../lib/utils'
 import { Button } from '../../components/ui/Button'
 import { Badge } from '../../components/ui/Badge'
-import { Modal } from '../../components/ui/Modal'
+import { toast } from '../../store/toastStore'
 import { useProveedoresStore } from '../../store/proveedoresStore'
 import { useInventarioStore } from '../../store/inventarioStore'
 import { permiteDecimales } from '../../types/inventario'
@@ -13,18 +13,25 @@ import { useEdicion, usePermiso } from '../../lib/permisos'
 
 interface RecepcionMercaderiaProps {
   onVolver: () => void
+  /** Abre la recepción por escaneo de esta orden. */
+  onRecibir: () => void
 }
 
 // Montos en centavos → "$ 1.234,56"
 const money = formatearPesos
 const numFmt = (n: number) => `#${String(n).padStart(3, '0')}`
 
-export const RecepcionMercaderia = ({ onVolver }: RecepcionMercaderiaProps) => {
+export const RecepcionMercaderia = ({ onVolver, onRecibir }: RecepcionMercaderiaProps) => {
   const { ordenSeleccionada, items, cargarItemsOrden, actualizarEstadoOrden, agregarItemOrden, actualizarCantidadItem, eliminarItemOrden } = useProveedoresStore()
   const ed = useEdicion('proveedores')
   const verCostos = usePermiso('proveedores') === 'editar'
   const { productos, cargarProductos } = useInventarioStore()
-  const [confirmRecibir, setConfirmRecibir] = useState(false)
+  const { pasarPendienteANuevaOrden } = useProveedoresStore()
+  const pasarPendiente = async () => {
+    if (!o) return
+    try { const n = await pasarPendienteANuevaOrden(o.id); toast.success(`Lo pendiente pasó a la Orden #${String(n).padStart(4, '0')}`); onVolver() }
+    catch (e) { toast.error(e instanceof Error ? e.message : 'No se pudo crear la orden') }
+  }
   const [busqueda, setBusqueda] = useState('')
   // Buffer local del valor tipeado por item, para no atarlo directo al store en cada
   // tecla (evita que un refetch a mitad de escritura le "coma" el "." de un decimal).
@@ -76,14 +83,15 @@ export const RecepcionMercaderia = ({ onVolver }: RecepcionMercaderiaProps) => {
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-2">
               <h2 className="text-xl font-semibold text-white light:text-black">Orden {numFmt(o.numero)}</h2>
-              {o.estado === 'recibida' ? <Badge label="Recibida" variant="success" /> : o.estado === 'enviada' ? <Badge label="Enviada" variant="info" /> : <Badge label="Borrador" variant="default" />}
+              {o.estado === 'recibida' ? <Badge label="Recibida" variant="success" /> : o.estado === 'parcial' ? <Badge label="Parcial" variant="warning" /> : o.estado === 'enviada' ? <Badge label="Enviada" variant="info" /> : <Badge label="Borrador" variant="default" />}
             </div>
             <span className="text-[11px] text-[#606060]">{o.proveedorNombre}</span>
           </div>
         </div>
         <div className="flex items-center gap-2">
           {o.estado === 'borrador' && <Button size="sm" variant="secondary" onClick={() => actualizarEstadoOrden(o.id, 'enviada')} {...ed}><Send size={14} className="mr-1.5" /> Marcar como enviada</Button>}
-          {o.estado === 'enviada' && <Button size="sm" onClick={() => setConfirmRecibir(true)} {...ed}><PackageCheck size={14} className="mr-1.5" /> Confirmar recepción</Button>}
+          {o.estado === 'parcial' && <Button size="sm" variant="secondary" onClick={() => void pasarPendiente()} {...ed}>Pasar lo pendiente a una orden nueva</Button>}
+          {(o.estado === 'enviada' || o.estado === 'parcial') && <Button size="sm" onClick={onRecibir} {...ed}><PackageCheck size={14} className="mr-1.5" /> Recibir</Button>}
         </div>
       </div>
 
@@ -167,17 +175,6 @@ export const RecepcionMercaderia = ({ onVolver }: RecepcionMercaderiaProps) => {
 
       {o.notas && <p className="mt-4 text-[13px] text-[#A0A0A0] light:text-[#404040]"><span className="text-[#606060]">Notas: </span>{o.notas}</p>}
 
-      <Modal
-        open={confirmRecibir}
-        onClose={() => setConfirmRecibir(false)}
-        title="Confirmar recepción"
-        footer={<>
-          <Button variant="ghost" onClick={() => setConfirmRecibir(false)}>Cancelar</Button>
-          <Button onClick={() => { actualizarEstadoOrden(o.id, 'recibida'); setConfirmRecibir(false) }}>Confirmar recepción</Button>
-        </>}
-      >
-        <p className="text-sm text-[#A0A0A0] light:text-[#404040] pb-2">¿Confirmar recepción? Esto sumará los productos al stock.</p>
-      </Modal>
     </div>
   )
 }

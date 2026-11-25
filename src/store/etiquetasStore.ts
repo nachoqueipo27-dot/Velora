@@ -39,7 +39,7 @@ async function escribirKV(db: Db, clave: string, valor: unknown) {
 export type DestinoEtiquetas = 'etiquetas' | 'mostrador'
 
 /** Producto pedido; `codigo` elige uno puntual (ej. el del pack). Sin él, el principal. */
-export interface PedidoItem { productoId: number; codigo?: string }
+export interface PedidoItem { productoId: number; codigo?: string; copias?: number }
 export interface PedidoEtiquetas { destino: DestinoEtiquetas; items: PedidoItem[] }
 
 interface EtiquetasStore {

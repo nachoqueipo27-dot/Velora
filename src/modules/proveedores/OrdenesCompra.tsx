@@ -3,7 +3,6 @@ import { cn } from '../../lib/utils'
 import { Button } from '../../components/ui/Button'
 import { Badge } from '../../components/ui/Badge'
 import { Select } from '../../components/ui/Select'
-import { Modal } from '../../components/ui/Modal'
 import { useProveedoresStore } from '../../store/proveedoresStore'
 import type { OrdenCompra, EstadoOrdenCompra } from '../../types/proveedores'
 import { ModalOrdenCompra } from './ModalOrdenCompra'
@@ -14,6 +13,8 @@ import { useEdicion, usePermiso } from '../../lib/permisos'
 
 interface OrdenesCompraProps {
   onVerDetalle: (o: OrdenCompra) => void
+  /** Abre la recepción por escaneo de la orden (enviada o parcial). */
+  onRecibir: (o: OrdenCompra) => void
 }
 
 // Montos en centavos → "$ 1.234,56"
@@ -23,17 +24,17 @@ const numFmt = (n: number) => `#${String(n).padStart(3, '0')}`
 const estadoBadge = (e: EstadoOrdenCompra) => {
   if (e === 'enviada') return <Badge label="Enviada" variant="info" />
   if (e === 'recibida') return <Badge label="Recibida" variant="success" />
+  if (e === 'parcial') return <Badge label="Parcial" variant="warning" />
   return <Badge label="Borrador" variant="default" />
 }
 
-export const OrdenesCompra = ({ onVerDetalle }: OrdenesCompraProps) => {
+export const OrdenesCompra = ({ onVerDetalle, onRecibir }: OrdenesCompraProps) => {
   const { ordenes, proveedores, loading, cargarOrdenes, cargarProveedores, actualizarEstadoOrden, eliminarOrden } = useProveedoresStore()
   const ed = useEdicion('proveedores')
   const verCostos = usePermiso('proveedores') === 'editar'
   const [filtroEstado, setFiltroEstado] = useState('Todos')
   const [filtroProv, setFiltroProv] = useState('Todos')
   const [modalNueva, setModalNueva] = useState(false)
-  const [confirmRecibir, setConfirmRecibir] = useState<OrdenCompra | null>(null)
   const [confirmEliminar, setConfirmEliminar] = useState<number | null>(null)
 
   useEffect(() => { cargarOrdenes(); cargarProveedores() }, [cargarOrdenes, cargarProveedores])
@@ -51,6 +52,7 @@ export const OrdenesCompra = ({ onVerDetalle }: OrdenesCompraProps) => {
           <option value="Todos" className="bg-[#141414] light:bg-white">Todos los estados</option>
           <option value="borrador" className="bg-[#141414] light:bg-white">Borrador</option>
           <option value="enviada" className="bg-[#141414] light:bg-white">Enviada</option>
+          <option value="parcial" className="bg-[#141414] light:bg-white">Parcial</option>
           <option value="recibida" className="bg-[#141414] light:bg-white">Recibida</option>
         </Select></div>
         <div className="w-52"><Select value={filtroProv} onChange={e => setFiltroProv(e.target.value)}>
@@ -103,8 +105,8 @@ export const OrdenesCompra = ({ onVerDetalle }: OrdenesCompraProps) => {
                             <IconBtn title="Eliminar" danger onClick={() => setConfirmEliminar(o.id)} {...ed}><Trash2 size={14} /></IconBtn>
                           </>
                         )}
-                        {o.estado === 'enviada' && (
-                          <IconBtn title="Marcar como recibida" onClick={() => setConfirmRecibir(o)} {...ed}><PackageCheck size={14} /></IconBtn>
+                        {(o.estado === 'enviada' || o.estado === 'parcial') && (
+                          <IconBtn title="Recibir (escanear lo que llegó)" onClick={() => onRecibir(o)} {...ed}><PackageCheck size={14} /></IconBtn>
                         )}
                       </div>
                     )}
@@ -118,19 +120,6 @@ export const OrdenesCompra = ({ onVerDetalle }: OrdenesCompraProps) => {
 
       <ModalOrdenCompra open={modalNueva} onClose={() => setModalNueva(false)} />
 
-      <Modal
-        open={confirmRecibir !== null}
-        onClose={() => setConfirmRecibir(null)}
-        title="Confirmar recepción"
-        footer={<>
-          <Button variant="ghost" onClick={() => setConfirmRecibir(null)}>Cancelar</Button>
-          <Button onClick={() => { if (confirmRecibir) actualizarEstadoOrden(confirmRecibir.id, 'recibida'); setConfirmRecibir(null) }}>Confirmar recepción</Button>
-        </>}
-      >
-        <p className="text-sm text-[#A0A0A0] light:text-[#404040] pb-2">
-          ¿Confirmar recepción de la orden {confirmRecibir && numFmt(confirmRecibir.numero)}? Esto sumará los productos al stock.
-        </p>
-      </Modal>
     </div>
   )
 }

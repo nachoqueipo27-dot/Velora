@@ -3,6 +3,7 @@ import { porCantidad } from '../lib/dinero'
 import { getDb } from '../db'
 import type { Proveedor, OrdenCompra, ItemOrdenCompra, EstadoOrdenCompra } from '../types/proveedores'
 import { exigirEditar } from '../lib/permisos'
+import { registrarActividad } from '../lib/registrarActividad'
 
 export interface ItemOrdenInput {
   productoId: number
@@ -36,7 +37,8 @@ interface ProveedoresStore {
   cargarOrdenes: () => Promise<void>
   crearOrden: (proveedorId: number, items: ItemOrdenInput[], notas: string) => Promise<void>
   actualizarEstadoOrden: (id: number, estado: EstadoOrdenCompra) => Promise<void>
-  recepcionarMercaderia: (ordenId: number) => Promise<void>
+  /** Orden parcial: lo pendiente va a una orden borrador nueva y esta queda recibida. Devuelve el número nuevo. */
+  pasarPendienteANuevaOrden: (ordenId: number) => Promise<number>
   cargarItemsOrden: (ordenId: number) => Promise<void>
   agregarItemOrden: (ordenId: number, productoId: number, cantidad: number, precioCosto: number) => Promise<void>
   actualizarCantidadItem: (itemId: number, cantidad: number) => Promise<void>
@@ -181,10 +183,8 @@ export const useProveedoresStore = create<ProveedoresStore>((set, get) => ({
     const now = new Date().toISOString()
     if (estado === 'enviada') {
       await db.execute('UPDATE ordenes_compra SET estado=?, fecha_envio=?, actualizado_en=? WHERE id=?', [estado, now, now, id])
-    } else if (estado === 'recibida') {
-      await db.execute('UPDATE ordenes_compra SET estado=?, fecha_recepcion=?, actualizado_en=? WHERE id=?', [estado, now, now, id])
-      await get().recepcionarMercaderia(id)
     } else {
+      // 'parcial' y 'recibida' los pone la recepción por escaneo (recepcionStore), que suma el stock.
       await db.execute('UPDATE ordenes_compra SET estado=?, actualizado_en=? WHERE id=?', [estado, now, id])
     }
     await get().cargarOrdenes()
@@ -192,21 +192,27 @@ export const useProveedoresStore = create<ProveedoresStore>((set, get) => ({
     if (sel && sel.id === id) set({ ordenSeleccionada: get().ordenes.find(o => o.id === id) ?? null })
   },
 
-  recepcionarMercaderia: async (ordenId) => {
+  pasarPendienteANuevaOrden: async (ordenId) => {
     exigirEditar('proveedores')
     const db = await getDb()
     const now = new Date().toISOString()
-    const orden = get().ordenes.find(o => o.id === ordenId)
-    const items = await db.select<any[]>('SELECT * FROM items_orden_compra WHERE orden_id = ?', [ordenId])
-    for (const it of items) {
-      await db.execute('UPDATE productos SET stock = stock + ?, actualizado_en = ? WHERE id = ?', [it.cantidad, now, it.producto_id])
-      await db.execute(
-        `INSERT INTO movimientos_stock (producto_id, tipo, cantidad, motivo, referencia_id, fecha, creado_en)
-         VALUES (?, 'entrada', ?, ?, ?, ?, ?)`,
-        [it.producto_id, it.cantidad, `Recepción OC #${String(orden?.numero ?? ordenId).padStart(3, '0')}`, ordenId, now, now]
-      )
-      await db.execute('UPDATE items_orden_compra SET recibido = 1 WHERE id = ?', [it.id])
-    }
+    const orden = (await db.select<any[]>('SELECT * FROM ordenes_compra WHERE id = ?', [ordenId]))[0]
+    if (!orden || orden.estado !== 'parcial') throw new Error('Solo una orden parcial tiene pendientes para pasar.')
+    const pendientes = (await db.select<any[]>('SELECT * FROM items_orden_compra WHERE orden_id = ?', [ordenId]))
+      .map(i => ({ productoId: i.producto_id, cantidad: Math.round((i.cantidad - (i.recibido ?? 0)) * 1000) / 1000, precioCosto: i.precio_costo ?? 0 }))
+      .filter(i => i.cantidad > 0)
+    if (pendientes.length === 0) throw new Error('No quedó nada pendiente en esta orden.')
+    const antes = new Set((await db.select<{ id: number }[]>('SELECT id FROM ordenes_compra')).map(o => o.id))
+    await get().crearOrden(orden.proveedor_id, pendientes, `Pendiente de la Orden #${String(orden.numero).padStart(4, '0')}`)
+    const nueva = (await db.select<any[]>('SELECT id, numero FROM ordenes_compra ORDER BY id DESC LIMIT 5')).find(o => !antes.has(o.id))
+    const nota = `Pendiente pasado a la Orden #${String(nueva?.numero ?? 0).padStart(4, '0')}`
+    await db.execute(
+      `UPDATE ordenes_compra SET estado = 'recibida', fecha_recepcion = ?, notas = TRIM(COALESCE(notas, '') || ? || ?), actualizado_en = ? WHERE id = ?`,
+      [now, orden.notas ? ' · ' : '', nota, now, ordenId]
+    )
+    await registrarActividad({ modulo: 'Proveedores', accion: 'Pasó lo pendiente a una orden nueva', detalle: `Orden #${String(orden.numero).padStart(4, '0')} → ${nota}` })
+    await get().cargarOrdenes()
+    return nueva?.numero ?? 0
   },
 
   cargarItemsOrden: async (ordenId) => {

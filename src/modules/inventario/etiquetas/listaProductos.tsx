@@ -22,14 +22,14 @@ export interface ItemLista {
   copias: number
 }
 
-async function armarItem(p: Producto, codigoPedido?: string): Promise<ItemLista> {
+async function armarItem(p: Producto, codigoPedido?: string, copias = 1): Promise<ItemLista> {
   const codigos = await cargarCodigos(p.id)
   const codigo = codigoPedido && codigos.some(c => c.codigo === codigoPedido)
     ? codigoPedido
     : (codigos.find(c => c.tipo === 'unidad') ?? codigos[0])?.codigo ?? null
   return {
     productoId: p.id, nombre: p.nombre, precio: p.precio, stock: p.stock, unidadMedida: p.unidadMedida,
-    codigo, codigoNuevo: false, copias: 1,
+    codigo, codigoNuevo: false, copias: Math.max(0, Math.round(copias)),
   }
 }
 
@@ -45,7 +45,7 @@ export function useListaProductos(inicial: PedidoItem[]) {
     const nuevos: ItemLista[] = []
     for (const ped of pedidos) {
       const p = lista.find(x => x.id === ped.productoId)
-      if (p) nuevos.push(await armarItem(p, ped.codigo))
+      if (p) nuevos.push(await armarItem(p, ped.codigo, ped.copias))
     }
     setItems(prev => {
       // Si el producto ya estaba con el mismo código, no se duplica.
