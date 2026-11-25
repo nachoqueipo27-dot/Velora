@@ -42,6 +42,11 @@ jobs:
 
       - run: npm ci
 
+      # Suma al Cargo.lock los crates nuevos (sin Rust local no se regenera en la PC).
+      # tauri-plugin-updater pide tauri ^2.12: así el lock queda a la par de @tauri-apps/api
+      # y tauri-action no frena por "version mismatched Tauri packages".
+      - run: cargo fetch --manifest-path src-tauri/Cargo.toml
+
       - uses: tauri-apps/tauri-action@v0
         env:
           # Los Releases se publican en este mismo repo (público): de ahí descarga el actualizador.
