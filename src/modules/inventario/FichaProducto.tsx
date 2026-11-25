@@ -9,6 +9,7 @@ import { Modal } from '../../components/ui/Modal'
 import { useInventarioStore } from '../../store/inventarioStore'
 import { UNIDADES_MEDIDA, type ComponenteConjunto } from '../../types/inventario'
 import { StockBadge } from './components/StockBadge'
+import { CodigosDibujados } from './components/CodigosDibujados'
 import { ArrowLeft, Package, Boxes, ImageOff } from 'lucide-react'
 import { format } from 'date-fns'
 import { formatearPesos } from '../../lib/dinero'
@@ -92,6 +93,11 @@ export const FichaProducto = ({ onVolver }: FichaProductoProps) => {
             </span>
           </div>
         </Card>
+      </div>
+
+      {/* Códigos de barras dibujados (escaneables desde la pantalla) */}
+      <div className="mb-4">
+        <CodigosDibujados productoId={p.id} version={p.actualizadoEn} />
       </div>
 
       {/* Componentes (conjunto) */}

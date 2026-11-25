@@ -3,6 +3,8 @@ import { cn } from '../../../lib/utils'
 import { useCapturaEscaneo } from '../../../lib/escaneo'
 import { codigoEnUso, normalizarCodigo, avisarSiVerificadorInvalido, type CodigoProducto } from '../../../lib/codigos'
 import { Plus, X } from 'lucide-react'
+import { CodigoBarras } from '../../../components/barras/CodigoBarras'
+import { detectarTipo } from '../../../lib/barras'
 
 interface SeccionCodigosProps {
   /** Producto que se edita (null si es nuevo): sus propios códigos no cuentan como "en uso". */
@@ -52,7 +54,8 @@ export const SeccionCodigos = ({ productoId, value, onChange, disabled }: Seccio
       </p>
 
       {value.map(c => (
-        <div key={c.codigo} className="flex items-center gap-2 rounded-control border border-borde px-2 py-1.5">
+        <div key={c.codigo} className="flex flex-col gap-1.5 rounded-control border border-borde px-2 py-1.5">
+        <div className="flex items-center gap-2">
           <span className="flex-1 min-w-0 truncate font-mono text-[13px]">{c.codigo}</span>
           <div className="flex rounded-control bg-superficie-suave p-0.5">
             {(['unidad', 'pack'] as const).map(t => (
@@ -78,6 +81,8 @@ export const SeccionCodigos = ({ productoId, value, onChange, disabled }: Seccio
             className="p-1 rounded-control text-texto-3 hover:text-error hover:bg-error/10">
             <X size={14} />
           </button>
+        </div>
+        <CodigoBarras valor={c.codigo} alto={36} modulo={detectarTipo(c.codigo) === 'itf14' ? 1.2 : 1.5} />
         </div>
       ))}
 
