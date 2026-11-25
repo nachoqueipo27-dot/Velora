@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Conectores · carga en progreso</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+body{margin:0;background:#EFEDE8}
+@keyframes vlr-scan{0%{top:0}100%{top:calc(100% - 3px)}}
+@keyframes vlr-pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.5);opacity:.4}}
+@keyframes vlr-in{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+.vlr-beam{position:absolute;left:0;right:0;height:3px;background:#D9572B;animation:vlr-scan 1.6s ease-in-out infinite alternate}
+.vlr-dot{animation:vlr-pulse 1s ease-in-out infinite}
+.vlr-row{animation:vlr-in .25s ease-out}
+@media (prefers-reduced-motion: reduce){.vlr-beam,.vlr-dot,.vlr-row{animation:none}}
+</style>
+</helmet>
+<div style="display: flex; flex-wrap: wrap; min-height: 900px; background: #EFEDE8; font-family: 'Geist', system-ui, sans-serif; color: #1A1915">
+  <dc-import name="Sidebar" active="Configuración" hint-size="240px,900px"></dc-import>
+  <main style="flex: 999 1 560px; min-width: 0; padding: 20px 20px 20px 4px; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px">
+    <header style="display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; padding: 8px 4px 0">
+      <div>
+        <div style="font-family: 'Geist Mono', monospace; font-size: 11px; letter-spacing: 0.08em; color: #6E6A62">CONFIGURACIÓN · CONECTORES</div>
+        <h1 style="margin: 4px 0 0; font-size: 26px; font-weight: 600; letter-spacing: -0.02em">{{title}}</h1>
+      </div>
+      <div role="tablist" aria-label="Conector" style="display: flex; gap: 4px; background: #E3E0D9; border-radius: 12px; padding: 4px; flex-wrap: wrap">
+        <sc-for list="{{tabs}}" as="t" hint-placeholder-count="4">
+          <button type="button" role="tab" aria-selected="{{t.sel}}" onClick="{{t.pick}}" style="{{t.style}}">{{t.l}}</button>
+        </sc-for>
+      </div>
+    </header>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start">
+      <section style="flex: 999 1 520px; min-width: 0; background: #FFFFFF; border: 1px solid #E3E0D9; border-radius: 16px; padding: 22px; display: flex; flex-direction: column; gap: 18px">
+        <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap">
+          <div aria-live="polite"><div style="font-size: 17px; font-weight: 600">{{stepNow}}</div><div style="font-size: 13px; color: #6B6860; margin-top: 3px">{{sub}}</div></div>
+          <div style="font-size: 34px; font-weight: 600; letter-spacing: -0.02em; font-variant-numeric: tabular-nums">{{pct}}%</div>
+        </div>
+        <div role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{p}}" aria-label="Progreso" style="height: 8px; background: #F2EFEA; border-radius: 8px; overflow: hidden">
+          <div style="height: 8px; width: {{barW}}; background: {{barC}}; border-radius: 8px; transition: width 120ms linear"></div>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 13px; color: #55524B; font-variant-numeric: tabular-nums"><span>{{countLabel}}</span><span>{{eta}}</span></div>
+
+        <div style="position: relative; border: 1px solid #ECE9E3; border-radius: 12px; overflow: hidden; background: #FBFAF7">
+          <sc-if value="{{running}}" hint-placeholder-val="{{true}}"><div class="vlr-beam" aria-hidden="true"></div></sc-if>
+          <sc-for list="{{feed}}" as="f" hint-placeholder-count="6">
+            <div class="vlr-row" style="display: flex; align-items: center; gap: 12px; padding: 11px 14px; border-bottom: 1px solid #F1EEE9; font-size: 13px; background: #FFFFFF">
+              <span style="width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; background: {{f.bg}}; color: {{f.fg}}; flex-shrink: 0">{{f.icon}}</span>
+              <span style="flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis"><span style="font-weight: 500">{{f.n}}</span> <span style="color: #6B6860">· {{f.d}}</span></span>
+              <span style="font-family: 'Geist Mono', monospace; font-size: 11px; color: #6E6A62">{{f.ref}}</span>
+            </div>
+          </sc-for>
+          <sc-if value="{{empty}}" hint-placeholder-val="{{false}}"><div style="padding: 28px; text-align: center; font-size: 13px; color: #6B6860">Preparando…</div></sc-if>
+        </div>
+
+        <sc-if value="{{done}}" hint-placeholder-val="{{false}}">
+          <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px">
+            <sc-for list="{{summary}}" as="s" hint-placeholder-count="3">
+              <div style="background: {{s.bg}}; border-radius: 12px; padding: 14px"><div style="font-size: 22px; font-weight: 600; color: {{s.fg}}">{{s.v}}</div><div style="font-size: 12px; color: #3D3A34; margin-top: 2px">{{s.l}}</div></div>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap">
+          <span style="font-size: 13px; color: #55524B">{{footNote}}</span>
+          <div style="display: flex; gap: 8px">
+            <sc-if value="{{running}}" hint-placeholder-val="{{true}}"><button type="button" onClick="{{cancel}}" style="height: 38px; padding: 0 16px; border-radius: 999px; border: 1px solid #D8D4CC; background: #FFFFFF; font: inherit; font-size: 13px; color: #1A1915">Cancelar</button></sc-if>
+            <sc-if value="{{notRunning}}" hint-placeholder-val="{{false}}"><button type="button" onClick="{{restart}}" style="height: 38px; padding: 0 16px; border-radius: 999px; border: 1px solid #D8D4CC; background: #FFFFFF; font: inherit; font-size: 13px; color: #1A1915">Ver de nuevo</button></sc-if>
+            <sc-if value="{{done}}" hint-placeholder-val="{{false}}"><button type="button" style="height: 38px; padding: 0 16px; border-radius: 999px; border: 0; background: #1A1915; color: #FFFFFF; font: inherit; font-size: 13px; font-weight: 500">{{doneCta}}</button></sc-if>
+          </div>
+        </div>
+      </section>
+
+      <aside style="flex: 1 1 300px; min-width: 0; max-width: 360px; background: #FFFFFF; border: 1px solid #E3E0D9; border-radius: 16px; padding: 20px">
+        <div style="font-family: 'Geist Mono', monospace; font-size: 11px; letter-spacing: 0.08em; color: #6E6A62; margin-bottom: 10px">PASOS</div>
+        <ol style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px">
+          <sc-for list="{{steps}}" as="s" hint-placeholder-count="5">
+            <li style="display: flex; gap: 12px; align-items: center; padding: 8px 0; font-size: 14px; color: {{s.fg}}; font-weight: {{s.w}}">
+              <span style="width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; flex-shrink: 0">
+                <sc-if value="{{s.ok}}" hint-placeholder-val="{{false}}"><span style="width: 22px; height: 22px; border-radius: 50%; background: #1A1915; color: #FFFFFF; font-size: 12px; display: flex; align-items: center; justify-content: center">✓</span></sc-if>
+                <sc-if value="{{s.cur}}" hint-placeholder-val="{{false}}"><span class="vlr-dot" style="width: 10px; height: 10px; border-radius: 50%; background: #D9572B"></span></sc-if>
+                <sc-if value="{{s.next}}" hint-placeholder-val="{{true}}"><span style="width: 10px; height: 10px; border-radius: 50%; border: 2px solid #C9C5BC"></span></sc-if>
+              </span>
+              {{s.t}}
+            </li>
+          </sc-for>
+        </ol>
+        <div style="display: flex; gap: 8px; align-items: flex-start; background: #F7F5F1; border-radius: 10px; padding: 10px 12px; font-size: 12.5px; line-height: 1.5; color: #4A4740; margin-top: 14px">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6B6860" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="flex-shrink: 0; margin-top: 2px"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.5"/></svg>
+          <span>{{help}}</span>
+        </div>
+      </aside>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1000}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { tab: 'xl', p: 0, status: 'run' }; }
+  componentDidMount() { this.start(); }
+  componentWillUnmount() { clearInterval(this.timer); }
+  start() {
+    clearInterval(this.timer);
+    this.setState({ p: 0, status: 'run' });
+    this.timer = setInterval(() => {
+      const p = Math.min(100, this.state.p + 0.6 + Math.random() * 1.4);
+      if (p >= 100) { clearInterval(this.timer); this.setState({ p: 100, status: 'done' }); }
+      else this.setState({ p });
+    }, 90);
+  }
+  renderVals() {
+    const st = this.state, p = st.p, running = st.status === 'run', done = st.status === 'done';
+    const OK = ['✓', '#E5F2EA', '#1F5E39'], WARN = ['!', '#F8EDD8', '#7A4A06'], ERR = ['×', '#F9E6EA', '#8E1C36'], INFO = ['·', '#EDEBE6', '#4A4740'];
+    const C = {
+      mp: { l: 'Mercado Pago', title: 'Conectando Mercado Pago', unit: 'pasos', total: 4,
+        steps: ['Autorizar en Mercado Pago', 'Verificar la cuenta', 'Crear la caja del local', 'Generar el QR de la caja', 'Listo'],
+        feed: [['Autorización recibida', 'cuenta de Almacén La Esquina', 'OK', OK], ['Alias detectado', 'almacen.esquina.mp', 'OK', OK], ['Local creado', 'Almacén La Esquina', 'POS', OK], ['Caja 1 creada', 'para el punto de venta', 'CAJA-1', OK], ['QR de la caja generado', 'listo para imprimir', 'QR', OK], ['Cobro de prueba', 'se puede hacer desde Conectores', '—', INFO]],
+        summary: [['✓', 'Cuenta conectada', OK], ['1', 'Caja con QR', OK], ['3', 'Opciones activas', INFO]], cta: 'Imprimir QR de la caja',
+        help: 'Mercado Pago se abre en tu navegador para que autorices la conexión con tu usuario. Velora nunca ve tu contraseña.' },
+      tn: { l: 'Tiendanube', title: 'Leyendo tu tienda de Tiendanube', unit: 'productos', total: 612,
+        steps: ['Conectar la tienda', 'Leer productos', 'Vincular por código', 'Comparar stock', 'Listo'],
+        feed: [['Yerba mate 1 kg', 'vinculado por código', '7790070012340', OK], ['Aceite de girasol 1,5 L', 'vinculado por SKU', 'ACE-15', OK], ['Remera estampada', 'sin código: revisar', 'TN-4412', WARN], ['Leche entera 1 L', 'stock distinto: 42 en Velora, 45 online', '7790080054321', WARN], ['Galletitas de agua', 'vinculado por código', '7790040011223', OK], ['Arroz largo fino 1 kg', 'vinculado por código', '7790123400011', OK], ['Dulce de leche 400 g', 'vinculado por código', '7791234567890', OK]],
+        summary: [['584', 'Vinculados', OK], ['21', 'Sin código: revisar', WARN], ['7', 'Con stock distinto', WARN]], cta: 'Revisar 28 productos',
+        help: 'No se cambia nada en tu tienda hasta que revises los productos sin vincular y confirmes. Podés seguir vendiendo mientras tanto.' },
+      ml: { l: 'Mercado Libre', title: 'Leyendo tus publicaciones de Mercado Libre', unit: 'publicaciones', total: 318,
+        steps: ['Conectar la cuenta', 'Leer publicaciones', 'Vincular por código', 'Comparar stock', 'Listo'],
+        feed: [['Yerba mate 1 kg · pack x3', 'pack: descuenta 3 unidades', 'MLA1428', OK], ['Aceite de girasol 1,5 L', 'vinculado por código', 'MLA1430', OK], ['Kit mate completo', 'combo: revisar componentes', 'MLA1502', WARN], ['Cinta aisladora negra', 'publicación pausada', 'MLA1517', INFO], ['Azúcar 1 kg', 'vinculado por código', 'MLA1533', OK], ['Galletitas de agua x12', 'pack: descuenta 12 unidades', 'MLA1540', OK]],
+        summary: [['296', 'Vinculadas', OK], ['14', 'Combos o packs: revisar', WARN], ['8', 'Pausadas', INFO]], cta: 'Revisar 22 publicaciones',
+        help: 'Los packs y combos se vinculan a sus productos sueltos: si vendés un pack de 3 online, Velora descuenta 3 unidades del local.' },
+      xl: { l: 'Excel', title: 'Importando productos_almacen.xlsx', unit: 'filas', total: 1482,
+        steps: ['Leer el archivo', 'Revisar cada fila', 'Copia de seguridad', 'Importar productos', 'Listo'],
+        feed: [['Yerba mate 1 kg', 'ya existía: precio actualizado', 'FILA 2', OK], ['Leche entera 1 L', 'nuevo producto', 'FILA 3', OK], ['Azúcar 1 kg', 'stock "veinte" no es un número: se saltea', 'FILA 4', ERR], ['Fideos tirabuzón 500 g', 'nuevo producto', 'FILA 5', OK], ['Arroz largo fino 1 kg', 'ya existía: stock actualizado', 'FILA 6', OK], ['Pan lactal grande', 'sin código: se puede generar uno', 'FILA 7', WARN], ['Gaseosa cola 1,5 L', 'nuevo producto', 'FILA 8', OK]],
+        summary: [['1.388', 'Productos nuevos', OK], ['88', 'Actualizados', INFO], ['6', 'Con errores: ver', ERR]], cta: 'Ver los 6 con errores',
+        help: 'Antes de importar se guarda una copia de seguridad. Si algo no te convence, la restaurás desde Configuración → Copias de seguridad.' }
+    }[st.tab];
+    const nSteps = C.steps.length - 1;
+    const stepIdx = done ? nSteps : Math.min(nSteps - 1, Math.floor(p / 100 * nSteps));
+    const steps = C.steps.map((t, i) => ({ t, ok: i < stepIdx || done, cur: !done && i === stepIdx, next: !done && i > stepIdx,
+      fg: i <= stepIdx || done ? '#1A1915' : '#6E6A62', w: !done && i === stepIdx ? '600' : '400' }));
+    const shown = Math.min(C.feed.length, Math.floor(p / 100 * (C.feed.length + 1)));
+    const feed = C.feed.slice(0, shown).reverse().slice(0, 6).map(([n, d, ref, k]) => ({ n, d, ref, icon: k[0], bg: k[1], fg: k[2] }));
+    const count = Math.round(C.total * p / 100);
+    const left = Math.max(1, Math.round((100 - p) / 12));
+    const fmt = (n) => n.toLocaleString('es-AR');
+    const tabStyle = (on) => 'height: 32px; padding: 0 14px; border-radius: 9px; font: inherit; font-size: 13px; cursor: pointer; ' + (on ? 'border: 1px solid #DDD9D1; background: #FFFFFF; color: #1A1915; font-weight: 500' : 'border: 1px solid transparent; background: transparent; color: #4A4740');
+    return {
+      title: C.title, p: Math.round(p), pct: Math.floor(p), barW: p + '%', barC: done ? '#2F7D4F' : '#1A1915',
+      stepNow: done ? 'Listo' : (st.status === 'cancel' ? 'Cancelado' : C.steps[stepIdx] + '…'),
+      sub: done ? 'Todo quedó registrado en el historial de actividad.' : (st.status === 'cancel' ? 'No se guardó ningún cambio.' : 'Esto puede tardar un poco. No cierres Velora.'),
+      countLabel: fmt(count) + ' de ' + fmt(C.total) + ' ' + C.unit,
+      eta: done ? 'Terminado' : (running ? 'Quedan unos ' + left + ' segundos' : ''),
+      running, notRunning: !running, done, empty: feed.length === 0, feed, steps,
+      summary: C.summary.map(([v, l, k]) => ({ v, l, bg: k[1], fg: k[2] })),
+      doneCta: C.cta, help: C.help,
+      footNote: running ? 'Podés seguir usando Velora: te avisamos al terminar.' : (done ? 'Listo para revisar.' : ''),
+      cancel: () => { clearInterval(this.timer); this.setState({ status: 'cancel' }); },
+      restart: () => this.start(),
+      tabs: [['mp', 'Mercado Pago'], ['tn', 'Tiendanube'], ['ml', 'Mercado Libre'], ['xl', 'Excel']].map(([id, l]) => ({ l, sel: st.tab === id ? 'true' : 'false', style: tabStyle(st.tab === id), pick: () => { this.setState({ tab: id }); setTimeout(() => this.start(), 0); } }))
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Presupuestos</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+body{margin:0;background:#EFEDE8}
+</style>
+</helmet>
+<div style="display: flex; flex-wrap: wrap; min-height: 900px; background: #EFEDE8; font-family: 'Geist', system-ui, sans-serif; color: #1A1915">
+  <dc-import name="Sidebar" active="Presupuestos" hint-size="240px,900px"></dc-import>
+  <main style="flex: 999 1 560px; min-width: 0; padding: 20px 20px 20px 4px; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px">
+    <header style="display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding: 8px 4px 0">
+      <div>
+        <h1 style="margin: 0; font-size: 26px; font-weight: 600; letter-spacing: -0.02em">Presupuestos</h1>
+        <p style="margin: 4px 0 0; font-size: 14px; color: #6B6860">Este mes: 14 enviados · 6 aprobados · tasa de aprobación 43%</p>
+      </div>
+      <button type="button" style="height: 40px; padding: 0 16px; border-radius: 999px; border: 0; background: #1A1915; color: #FFFFFF; font: inherit; font-size: 13px; font-weight: 500">Nuevo presupuesto</button>
+    </header>
+    <section style="background: #FFFFFF; border: 1px solid #E3E0D9; border-radius: 16px; overflow: hidden">
+      <div style="overflow-x: auto">
+        <table style="width: 100%; border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums; min-width: 760px">
+          <thead>
+            <tr style="font-family: 'Geist Mono', monospace; font-size: 11px; letter-spacing: 0.06em; color: #6E6A62; text-align: left; border-bottom: 1px solid #ECE9E3">
+              <th style="padding: 14px 18px; font-weight: 400">NÚMERO</th>
+              <th style="padding: 14px 8px; font-weight: 400">CLIENTE</th>
+              <th style="padding: 14px 8px; font-weight: 400">ESTADO</th>
+              <th style="padding: 14px 8px; font-weight: 400">VIGENCIA</th>
+              <th style="padding: 14px 8px; font-weight: 400; text-align: right">TOTAL</th>
+              <th style="padding: 14px 18px; font-weight: 400; text-align: right">ACCIÓN</th>
+            </tr>
+          </thead>
+          <tbody>
+            <sc-for list="{{rows}}" as="r" hint-placeholder-count="7">
+              <tr style="border-bottom: 1px solid #F1EEE9">
+                <td style="padding: 13px 18px; font-family: 'Geist Mono', monospace; font-size: 13px">#{{r.num}}</td>
+                <td style="padding: 13px 8px"><div style="font-weight: 500">{{r.c}}</div><div style="font-size: 12px; color: #6B6860; margin-top: 2px">{{r.d}}</div></td>
+                <td style="padding: 13px 8px"><span style="font-size: 12px; font-weight: 500; border-radius: 999px; padding: 4px 10px; background: {{r.bg}}; color: {{r.fg}}">{{r.st}}</span></td>
+                <td style="padding: 13px 8px; min-width: 150px">
+                  <div style="font-size: 12px; color: {{r.vc}}">{{r.v}}</div>
+                  <div style="height: 4px; background: #F2EFEA; border-radius: 4px; margin-top: 6px"><div style="height: 4px; width: {{r.pct}}; background: {{r.vc}}; border-radius: 4px"></div></div>
+                </td>
+                <td style="padding: 13px 8px; text-align: right; font-weight: 600">{{r.t}}</td>
+                <td style="padding: 13px 18px; text-align: right"><button type="button" style="height: 32px; padding: 0 12px; border-radius: 999px; border: 1px solid #D8D4CC; background: #FFFFFF; font: inherit; font-size: 12px; color: #1A1915">{{r.a}}</button></td>
+              </tr>
+            </sc-for>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const S = {
+      env: ['Enviado', '#E8EEF8', '#24457A'], apr: ['Aprobado', '#E5F2EA', '#1F5E39'],
+      bor: ['Borrador', '#EDEBE6', '#4A4740'], ven: ['Vencido', '#F9E6EA', '#8E1C36'], rech: ['Rechazado', '#EDEBE6', '#4A4740']
+    };
+    const r = (num, c, d, s, v, pct, t, a, warn) => ({ num, c, d, st: S[s][0], bg: S[s][1], fg: S[s][2], v, pct, t, a, vc: warn ? '#9A5B0B' : (s === 'ven' ? '#9E1F3C' : '#55524B') });
+    return {
+      rows: [
+        r('0034', 'Escuela N.º 14', 'Cámaras y cableado', 'env', 'Vence en 2 días', '85%', '$ 520.000', 'Recordar por WhatsApp', true),
+        r('0033', 'Taller Rodríguez', 'Service anual de compresores', 'env', 'Vence en 4 días', '70%', '$ 186.000', 'Recordar por WhatsApp', true),
+        r('0032', 'Lorena Paz', 'Repuestos impresora', 'apr', 'Aprobado el 22/11', '100%', '$ 48.500', 'Pasar a orden'),
+        r('0031', 'Marta Giménez', 'Armado de PC de oficina', 'apr', 'Aprobado el 05/11', '100%', '$ 92.000', 'Ver orden #0082'),
+        r('0030', 'Julián Ferreyra', 'Pantalla notebook', 'bor', 'Sin enviar', '0%', '$ 64.000', 'Enviar'),
+        r('0029', 'Carla Benítez', 'Placa madre', 'ven', 'Venció el 18/11', '100%', '$ 138.000', 'Renovar con precios de hoy'),
+        r('0028', 'Diego Sosa', 'Mantenimiento', 'rech', 'Rechazado el 12/11', '100%', '$ 22.000', 'Duplicar')
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

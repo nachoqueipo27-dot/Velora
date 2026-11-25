@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Ficha de producto</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+body{margin:0;background:#EFEDE8}
+a{color:#55524B}a:hover{color:#1A1915}
+</style>
+</helmet>
+<div style="display: flex; flex-wrap: wrap; min-height: 900px; background: #EFEDE8; font-family: 'Geist', system-ui, sans-serif; color: #1A1915">
+  <dc-import name="Sidebar" active="Inventario" hint-size="240px,900px"></dc-import>
+  <main style="flex: 999 1 560px; min-width: 0; padding: 20px 20px 20px 4px; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px">
+    <header style="display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding: 8px 4px 0">
+      <div>
+        <a href="Inventario.dc.html" style="font-size: 13px; text-decoration: none">← Inventario</a>
+        <h1 style="margin: 6px 0 0; font-size: 26px; font-weight: 600; letter-spacing: -0.02em">Yerba mate 1 kg</h1>
+        <p style="margin: 4px 0 0; font-size: 14px; color: #6B6860">Almacén · se vende por unidad</p>
+      </div>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap">
+        <button type="button" style="height: 40px; padding: 0 16px; border-radius: 999px; border: 1px solid #D8D4CC; background: #FFFFFF; font: inherit; font-size: 13px; color: #1A1915">Imprimir etiqueta</button>
+        <button type="button" style="height: 40px; padding: 0 16px; border-radius: 999px; border: 0; background: #1A1915; color: #FFFFFF; font: inherit; font-size: 13px; font-weight: 500">Editar</button>
+      </div>
+    </header>
+
+    <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px">
+      <div style="background: #FFFFFF; border: 1px solid #E3E0D9; border-radius: 14px; padding: 16px"><div style="font-family: 'Geist Mono', monospace; font-size: 11px; letter-spacing: 0.08em; color: #6E6A62">STOCK</div><div style="font-size: 26px; font-weight: 600; margin-top: 8px">56</div><div style="font-size: 12px; color: #6B6860; margin-top: 4px">Mínimo 10</div></div>
+      <div style="background: #FFFFFF; border: 1px solid #E3E0D9; border-radius: 14px; padding: 16px"><div style="font-family: 'Geist Mono', monospace; font-size: 11px; letter-spacing: 0.08em; color: #6E6A62">PRECIO</div><div style="font-size: 26px; font-weight: 600; margin-top: 8px">$ 4.800</div><div style="font-size: 12px; color: #6B6860; margin-top: 4px">Actualizado el 20/11</div></div>
+      <div style="background: #FFFFFF; border: 1px solid #E3E0D9; border-radius: 14px; padding: 16px"><div style="font-family: 'Geist Mono', monospace; font-size: 11px; letter-spacing: 0.08em; color: #6E6A62">COSTO</div><div style="font-size: 26px; font-weight: 600; margin-top: 8px">$ 3.380</div><div style="font-size: 12px; color: #9E1F3C; margin-top: 4px">↑ 9% en la última recepción</div></div>
+      <div style="background: #FFFFFF; border: 1px solid #E3E0D9; border-radius: 14px; padding: 16px"><div style="font-family: 'Geist Mono', monospace; font-size: 11px; letter-spacing: 0.08em; color: #6E6A62">MARGEN</div><div style="font-size: 26px; font-weight: 600; margin-top: 8px">29,6%</div><div style="font-size: 12px; color: #6B6860; margin-top: 4px">Era 35,4%</div></div>
+    </div>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start">
+      <section style="flex: 999 1 520px; min-width: 0; background: #FFFFFF; border: 1px solid #E3E0D9; border-radius: 16px; overflow: hidden">
+        <h2 style="margin: 0; padding: 16px 18px; font-size: 15px; font-weight: 600; border-bottom: 1px solid #ECE9E3">Movimientos de stock</h2>
+        <sc-for list="{{moves}}" as="m" hint-placeholder-count="6">
+          <div style="border-bottom: 1px solid #F1EEE9">
+            <div style="display: flex; align-items: center; gap: 14px; padding: 12px 18px; font-size: 14px; background: {{m.bg}}">
+              <span style="font-family: 'Geist Mono', monospace; font-size: 12px; color: #6B6860; width: 92px">{{m.when}}</span>
+              <span style="flex: 1; min-width: 0">
+                <sc-if value="{{m.link}}" hint-placeholder-val="{{false}}"><a href="Caja.dc.html" style="color: #1A1915; font-weight: 500">{{m.what}}</a></sc-if>
+                <sc-if value="{{m.plain}}" hint-placeholder-val="{{true}}"><span style="font-weight: 500">{{m.what}}</span></sc-if>
+              </span>
+              <span style="width: 64px; text-align: right; font-weight: 600; color: {{m.fg}}; font-variant-numeric: tabular-nums">{{m.q}}</span>
+              <span style="width: 56px; text-align: right; color: #6B6860; font-variant-numeric: tabular-nums">{{m.after}}</span>
+            </div>
+            <sc-if value="{{m.open}}" hint-placeholder-val="{{false}}">
+              <div style="padding: 4px 18px 14px 124px; background: #FBFAF7; font-size: 13px; color: #55524B; line-height: 1.6">
+                Gaseosa cola 1,5 L ×2 · Pan lactal grande ×1 · Jamón cocido 0,25 kg · <strong style="color: #1A1915; font-weight: 500">Yerba mate 1 kg ×1</strong><br>
+                Total $ 17.300 · Efectivo · Lucía
+              </div>
+            </sc-if>
+          </div>
+        </sc-for>
+      </section>
+
+      <aside style="flex: 1 1 320px; min-width: 0; max-width: 400px; display: flex; flex-direction: column; gap: 12px">
+        <div style="background: #FFFFFF; border: 1px solid #E3E0D9; border-radius: 16px; padding: 18px">
+          <div style="display: flex; justify-content: space-between; align-items: center">
+            <div style="font-family: 'Geist Mono', monospace; font-size: 11px; letter-spacing: 0.08em; color: #6E6A62">CÓDIGOS DE BARRAS</div>
+            <button type="button" style="height: 30px; padding: 0 12px; border-radius: 999px; border: 1px solid #D8D4CC; background: #FFFFFF; font: inherit; font-size: 12px; color: #1A1915">Agregar</button>
+          </div>
+          <sc-for list="{{codes}}" as="k" hint-placeholder-count="3">
+            <div style="padding: 14px 0; border-top: {{k.bt}}; display: flex; flex-direction: column; gap: 8px">
+              <div style="display: flex; justify-content: space-between; gap: 8px; font-size: 13px"><span style="font-weight: 500">{{k.label}}</span><span style="color: #6B6860">{{k.fmt}}</span></div>
+              <div style="background: #FFFFFF; border: 1px solid #ECE9E3; border-radius: 10px; padding: 12px 12px 8px; display: flex; flex-direction: column; align-items: center; gap: 4px">
+                <div role="img" aria-label="Código de barras {{k.code}}" style="display: flex; height: {{k.h}}"><sc-for list="{{k.bars}}" as="b" hint-placeholder-count="40"><span style="width: {{b.w}}; background: {{b.c}}"></span></sc-for></div>
+                <div style="font-family: 'Geist Mono', monospace; font-size: 13px; letter-spacing: 0.12em">{{k.code}}</div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="background: #FFFFFF; border: 1px solid #E3E0D9; border-radius: 16px; padding: 18px; font-size: 14px; display: flex; flex-direction: column; gap: 10px">
+          <div style="font-family: 'Geist Mono', monospace; font-size: 11px; letter-spacing: 0.08em; color: #6E6A62">PROVEEDOR</div>
+          <div style="font-weight: 500">Distribuidora Norte</div>
+          <div style="color: #55524B">Última compra 25/11 · 24 unidades a $ 3.380</div>
+        </div>
+      </aside>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const runs = (bits, mw) => { const out = []; let i = 0; while (i < bits.length) { let j = i; while (j < bits.length && bits[j] === bits[i]) j++; out.push({ w: ((j - i) * mw) + 'px', c: bits[i] === '1' ? '#1A1915' : '#FFFFFF' }); i = j; } return out; };
+    const ean13 = (code) => {
+      const L = ['0001101','0011001','0010011','0111101','0100011','0110001','0101111','0111011','0110111','0001011'];
+      const G = ['0100111','0110011','0011011','0100001','0011101','0111001','0000101','0010001','0001001','0010111'];
+      const R = ['1110010','1100110','1101100','1000010','1011100','1001110','1010000','1000100','1001000','1110100'];
+      const P = ['LLLLLL','LLGLGG','LLGGLG','LLGGGL','LGLLGG','LGGLLG','LGGGLL','LGLGLG','LGLGGL','LGGLGL'];
+      const d = code.split('').map(Number), par = P[d[0]];
+      let bits = '101';
+      for (let i = 1; i <= 6; i++) bits += (par[i - 1] === 'L' ? L : G)[d[i]];
+      bits += '01010';
+      for (let i = 7; i <= 12; i++) bits += R[d[i]];
+      return bits + '101';
+    };
+    const itf14 = (code) => {
+      const W = ['nnwwn','wnnnw','nwnnw','wwnnn','nnwnw','wnwnn','nwwnn','nnnww','wnnwn','nwnwn'];
+      let bits = '1010';
+      for (let i = 0; i < code.length; i += 2) {
+        const a = W[+code[i]], b = W[+code[i + 1]];
+        for (let k = 0; k < 5; k++) { bits += (a[k] === 'w' ? '111' : '1') + (b[k] === 'w' ? '000' : '0'); }
+      }
+      return bits + '11101';
+    };
+    const codes = [
+      { label: 'Unidad · principal', code: '7790070012340', fmt: 'EAN-13', bars: runs(ean13('7790070012340'), 2), h: '56px', bt: '0' },
+      { label: 'Unidad · otro proveedor', code: '7790070012906', fmt: 'EAN-13', bars: runs(ean13('7790070012906'), 2), h: '44px', bt: '1px solid #F1EEE9' },
+      { label: 'Pack × 10', code: '17790070012347', fmt: 'ITF-14 · caja', bars: runs(itf14('17790070012347'), 1.4), h: '44px', bt: '1px solid #F1EEE9' }
+    ];
+    const m = (when, what, q, after, kind, open) => ({ when, what, q, after, link: kind === 'venta', plain: kind !== 'venta', open: !!open,
+      fg: q.startsWith('+') ? '#1F5E39' : '#1A1915', bg: open ? '#FBFAF7' : '#FFFFFF' });
+    return {
+      codes,
+      moves: [
+        m('25/11 14:32', 'Venta #0142', '−1', '56', 'venta', true),
+        m('25/11 13:55', 'Venta #0140', '−1', '57', 'venta'),
+        m('25/11 10:42', 'Recepción OC #0027 · Distribuidora Norte', '+24', '58', 'rec'),
+        m('25/11 09:15', 'Ingreso #0043 por escaneo', '+24', '34', 'rec'),
+        m('24/11 18:20', 'Venta #0131', '−2', '10', 'venta'),
+        m('22/11 11:05', 'Ajuste manual · conteo', '−1', '12', 'ajuste')
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

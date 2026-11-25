@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Agregar stock por escaneo</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500&amp;display=swap">
+<style>
+body{margin:0;background:#EFEDE8}
+a{color:#55524B}a:hover{color:#1A1915}
+</style>
+</helmet>
+<div style="display: flex; flex-wrap: wrap; min-height: 900px; background: #EFEDE8; font-family: 'Geist', system-ui, sans-serif; color: #1A1915">
+  <dc-import name="Sidebar" active="Inventario" hint-size="240px,900px"></dc-import>
+  <main style="flex: 999 1 560px; min-width: 0; padding: 20px 20px 20px 4px; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px; position: relative">
+    <header style="display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding: 8px 4px 0">
+      <div>
+        <div style="font-family: 'Geist Mono', monospace; font-size: 11px; letter-spacing: 0.08em; color: #6E6A62">INVENTARIO · INGRESO #0043</div>
+        <h1 style="margin: 4px 0 0; font-size: 26px; font-weight: 600; letter-spacing: -0.02em">Agregar stock</h1>
+        <p style="margin: 4px 0 0; font-size: 14px; color: #6B6860">Escaneá cada producto. El stock cambia recién al confirmar el ingreso.</p>
+      </div>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap">
+        <button type="button" style="height: 40px; padding: 0 16px; border-radius: 999px; border: 1px solid #D8D4CC; background: #FFFFFF; font: inherit; font-size: 13px; color: #1A1915; cursor: pointer">Guardar y seguir después</button>
+        <button type="button" style="height: 40px; padding: 0 16px; border-radius: 999px; border: 0; background: #1A1915; color: #FFFFFF; font: inherit; font-size: 13px; font-weight: 500; cursor: pointer">Confirmar ingreso</button>
+      </div>
+    </header>
+
+    <label style="display: flex; align-items: center; gap: 10px; background: #FFFFFF; border: 1px solid #E3E0D9; border-radius: 14px; padding: 0 14px; height: 52px">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6B6860" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 6v12M7 6v12M10 6v12M14 6v12M17 6v12M20 6v12"></path></svg>
+      <span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Escanear o buscar producto</span>
+      <input type="text" placeholder="Esperando escaneo…" style="flex: 1; border: 0; outline: none; font: inherit; font-size: 15px; background: transparent; color: #1A1915; min-width: 0">
+      <span style="font-family: 'Geist Mono', monospace; font-size: 11px; letter-spacing: 0.08em; color: #2F7D4F">● LECTOR LISTO</span>
+    </label>
+
+    <section style="background: #FFFFFF; border: 1px solid #E3E0D9; border-radius: 16px; overflow: hidden">
+      <div style="overflow-x: auto">
+        <table style="width: 100%; border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums; min-width: 640px">
+          <thead>
+            <tr style="font-family: 'Geist Mono', monospace; font-size: 11px; letter-spacing: 0.06em; color: #6E6A62; text-align: left; border-bottom: 1px solid #ECE9E3">
+              <th style="padding: 14px 18px; font-weight: 400">PRODUCTO</th>
+              <th style="padding: 14px 8px; font-weight: 400; text-align: right">STOCK ACTUAL</th>
+              <th style="padding: 14px 8px; font-weight: 400; text-align: center">INGRESA</th>
+              <th style="padding: 14px 18px; font-weight: 400; text-align: right">QUEDA EN</th>
+            </tr>
+          </thead>
+          <tbody>
+            <sc-for list="{{rows}}" as="r" hint-placeholder-count="6">
+              <tr style="border-bottom: 1px solid #F1EEE9; background: {{r.bg}}">
+                <td style="padding: 12px 18px">
+                  <div style="font-weight: 500">{{r.name}}</div>
+                  <div style="font-family: 'Geist Mono', monospace; font-size: 11px; color: #6E6A62; margin-top: 2px">{{r.code}}</div>
+                </td>
+                <td style="padding: 12px 8px; text-align: right; color: #55524B">{{r.stock}}</td>
+                <td style="padding: 12px 8px">
+                  <div style="display: flex; align-items: center; justify-content: center">
+                    <div style="display: flex; align-items: center; border: 1px solid #E3E0D9; border-radius: 999px; height: 32px">
+                      <button type="button" aria-label="Restar" style="width: 32px; height: 32px; border: 0; background: transparent; font: inherit; font-size: 16px; color: #3D3A34; cursor: pointer">−</button>
+                      <span style="min-width: 56px; text-align: center; font-size: 13px; font-weight: 500; color: #2F7D4F">+{{r.add}}</span>
+                      <button type="button" aria-label="Sumar" style="width: 32px; height: 32px; border: 0; background: transparent; font: inherit; font-size: 16px; color: #3D3A34; cursor: pointer">+</button>
+                    </div>
+                  </div>
+                </td>
+                <td style="padding: 12px 18px; text-align: right; font-weight: 600">{{r.after}}</td>
+              </tr>
+            </sc-for>
+          </tbody>
+        </table>
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; padding: 14px 18px; background: #FBFAF7">
+        <span style="font-size: 13px; color: #55524B">Sesión guardada automáticamente · 10:42</span>
+        <span style="font-size: 15px; font-weight: 600">6 productos · +86 unidades + 5 kg</span>
+      </div>
+    </section>
+
+    <div style="position: absolute; inset: 0; background: rgba(26, 25, 21, 0.28); display: flex; align-items: center; justify-content: center; padding: 24px">
+      <div role="dialog" aria-modal="true" aria-labelledby="q-title" style="width: 420px; max-width: 100%; background: #FFFFFF; border: 1px solid #E3E0D9; border-radius: 18px; padding: 22px; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px">
+        <div>
+          <div style="font-family: 'Geist Mono', monospace; font-size: 11px; letter-spacing: 0.08em; color: #6E6A62">ESCANEADO · 7790387000123</div>
+          <h2 id="q-title" style="margin: 6px 0 0; font-size: 20px; font-weight: 600; letter-spacing: -0.01em">¿Cuántas unidades de Aceite de girasol 1,5 L?</h2>
+          <p style="margin: 6px 0 0; font-size: 13px; color: #6B6860">Stock actual: 7. Ya sumaste 12 en este ingreso.</p>
+        </div>
+        <label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #55524B">
+          Cantidad
+          <input type="number" value="1" style="height: 56px; border: 2px solid #1A1915; border-radius: 12px; padding: 0 16px; font: inherit; font-size: 28px; font-weight: 600; color: #1A1915; background: #FFFFFF; font-variant-numeric: tabular-nums">
+        </label>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap">
+          
+          
+          
+        </div>
+        <div style="display: flex; gap: 8px; justify-content: flex-end">
+          <button type="button" style="height: 44px; padding: 0 18px; border-radius: 999px; border: 1px solid #D8D4CC; background: #FFFFFF; font: inherit; font-size: 14px; color: #1A1915">Cancelar <span style="font-family: 'Geist Mono', monospace; font-size: 11px; color: #6E6A62">Esc</span></button>
+          <button type="button" style="height: 44px; padding: 0 18px; border-radius: 999px; border: 0; background: #1A1915; color: #FFFFFF; font: inherit; font-size: 14px; font-weight: 500">Sumar <span style="font-family: 'Geist Mono', monospace; font-size: 11px; color: #C9C5BC">Enter</span></button>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      rows: [
+        { name: 'Aceite de girasol 1,5 L', code: '7790387000123', stock: '7', add: '12', after: '19', bg: '#FBF6F3' },
+        { name: 'Yerba mate 1 kg', code: '7790070012340', stock: '32', add: '24', after: '56', bg: '#FFFFFF' },
+        { name: 'Leche entera 1 L', code: '7790080054321', stock: '18', add: '24', after: '42', bg: '#FFFFFF' },
+        { name: 'Pan lactal grande', code: '7790040099887', stock: '4', add: '10', after: '14', bg: '#FFFFFF' },
+        { name: 'Galletitas de agua', code: '7790040011223', stock: '3', add: '16', after: '19', bg: '#FFFFFF' },
+        { name: 'Jamón cocido · por kg', code: 'BALANZA 20-00412', stock: '3,2 kg', add: '5 kg', after: '8,2 kg', bg: '#FFFFFF' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Configuración del ticket</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+body{margin:0;background:#EFEDE8}
+a{color:#55524B}a:hover{color:#1A1915}
+input[type=checkbox]{accent-color:#1A1915;width:18px;height:18px;margin:0}
+</style>
+</helmet>
+<div style="display: flex; flex-wrap: wrap; min-height: 900px; background: #EFEDE8; font-family: 'Geist', system-ui, sans-serif; color: #1A1915">
+  <dc-import name="Sidebar" active="Configuración" hint-size="240px,900px"></dc-import>
+  <main style="flex: 999 1 560px; min-width: 0; padding: 20px 20px 20px 4px; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px">
+    <header style="display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding: 8px 4px 0">
+      <div>
+        <div style="font-family: 'Geist Mono', monospace; font-size: 11px; letter-spacing: 0.08em; color: #6E6A62">CONFIGURACIÓN</div>
+        <h1 style="margin: 4px 0 0; font-size: 26px; font-weight: 600; letter-spacing: -0.02em">Ticket de venta</h1>
+      </div>
+      <button type="button" style="height: 40px; padding: 0 16px; border-radius: 999px; border: 1px solid #D8D4CC; background: #FFFFFF; font: inherit; font-size: 13px; color: #1A1915; cursor: pointer">Imprimir prueba</button>
+    </header>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start">
+      <div style="flex: 999 1 420px; min-width: 0; display: flex; flex-direction: column; gap: 16px">
+        <section style="background: #FFFFFF; border: 1px solid #E3E0D9; border-radius: 16px; padding: 18px 20px; display: flex; flex-direction: column; gap: 14px">
+          <h2 style="margin: 0; font-size: 15px; font-weight: 600">Impresora</h2>
+          <div style="display: flex; gap: 16px; flex-wrap: wrap; align-items: center">
+            <div style="font-size: 13px; color: #55524B">Ancho del papel</div>
+            <div role="radiogroup" aria-label="Ancho del papel" style="display: flex; gap: 4px; background: #F2EFEA; border-radius: 12px; padding: 4px">
+              <button type="button" role="radio" aria-checked="{{w58}}" onClick="{{set58}}" style="{{s58}}">58 mm</button>
+              <button type="button" role="radio" aria-checked="{{w80}}" onClick="{{set80}}" style="{{s80}}">80 mm</button>
+            </div>
+          </div>
+          <div style="display: flex; gap: 8px; align-items: flex-start; background: #F7F5F1; border-radius: 10px; padding: 10px 12px; font-size: 12.5px; line-height: 1.5; color: #4A4740"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6B6860" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="flex-shrink: 0; margin-top: 2px"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.5"/></svg><span>Es el ancho del rollo de tu impresora térmica. Si no sabés cuál tenés, medí el rollo: 58 mm es el chico (como el del posnet) y 80 mm el más común en comercios. Si elegís mal, el ticket sale cortado o con mucho margen.</span></div>
+          <label style="display: flex; gap: 12px; align-items: flex-start; font-size: 14px; cursor: pointer">
+            <input type="checkbox" checked="{{cajon}}" onChange="{{tCajon}}">
+            <span><span style="display: block; font-weight: 500">Abrir el cajón de dinero al cobrar en efectivo</span><span style="display: block; font-size: 13px; color: #6B6860; margin-top: 2px">Solo si hay un cajón conectado a la impresora.</span></span>
+          </label>
+          <div style="display: flex; gap: 8px; align-items: flex-start; background: #F7F5F1; border-radius: 10px; padding: 10px 12px; font-size: 12.5px; line-height: 1.5; color: #4A4740"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6B6860" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="flex-shrink: 0; margin-top: 2px"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.5"/></svg><span>Si tu cajón de dinero está enchufado a la impresora, Velora le manda una señal para que se abra solo cuando cobrás en efectivo. Con tarjeta o transferencia queda cerrado. Si no tenés cajón, dejalo apagado.</span></div>
+        </section>
+
+        <section style="background: #FFFFFF; border: 1px solid #E3E0D9; border-radius: 16px; padding: 18px 20px; display: flex; flex-direction: column; gap: 12px">
+          <h2 style="margin: 0; font-size: 15px; font-weight: 600">Siempre incluido</h2>
+          <div style="display: flex; flex-wrap: wrap; gap: 8px">
+            <sc-for list="{{base}}" as="b" hint-placeholder-count="6">
+              <span style="font-size: 12px; color: #3D3A34; background: #F2EFEA; border-radius: 999px; padding: 5px 11px">{{b}}</span>
+            </sc-for>
+          </div>
+          <div style="display: flex; gap: 8px; align-items: flex-start; background: #F7F5F1; border-radius: 10px; padding: 10px 12px; font-size: 12.5px; line-height: 1.5; color: #4A4740"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6B6860" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="flex-shrink: 0; margin-top: 2px"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.5"/></svg><span>Estos datos salen en todos los tickets y no se pueden quitar. La leyenda "Documento no válido como factura" es obligatoria porque Velora no emite facturas de ARCA.</span></div>
+          <label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #55524B; margin-top: 4px">
+            Mensaje del día
+            <input type="text" value="Este sábado abrimos de 9 a 13" style="height: 40px; border: 1px solid #DDD9D1; border-radius: 10px; padding: 0 12px; font: inherit; font-size: 14px; color: #1A1915; background: #FFFFFF">
+          </label>
+          <div style="display: flex; gap: 8px; align-items: flex-start; background: #F7F5F1; border-radius: 10px; padding: 10px 12px; font-size: 12.5px; line-height: 1.5; color: #4A4740"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6B6860" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="flex-shrink: 0; margin-top: 2px"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.5"/></svg><span>Una línea que se imprime al pie de cada ticket hasta que la cambies. Sirve para avisar horarios especiales, promociones o un saludo para las fiestas.</span></div>
+        </section>
+
+        <section style="background: #FFFFFF; border: 1px solid #E3E0D9; border-radius: 16px; padding: 6px 20px">
+          <h2 style="margin: 12px 0 4px; font-size: 15px; font-weight: 600">Opcionales</h2>
+          <sc-for list="{{opts}}" as="o" hint-placeholder-count="5">
+            <div style="padding: 14px 0; border-top: 1px solid #F1EEE9; display: flex; flex-direction: column; gap: 10px">
+              <label style="display: flex; gap: 12px; align-items: flex-start; font-size: 14px; cursor: pointer">
+                <input type="checkbox" checked="{{o.on}}" onChange="{{o.toggle}}">
+                <span style="flex: 1"><span style="display: block; font-weight: 500">{{o.title}}</span><span style="display: block; font-size: 13px; color: #6B6860; margin-top: 2px">{{o.desc}}</span></span>
+              </label>
+              <div style="display: flex; gap: 8px; align-items: flex-start; background: #F7F5F1; border-radius: 10px; padding: 10px 12px; font-size: 12.5px; line-height: 1.5; color: #4A4740; margin-left: 30px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6B6860" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="flex-shrink: 0; margin-top: 2px"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.5"/></svg><span>{{o.help}}</span></div>
+            </div>
+          </sc-for>
+        </section>
+      </div>
+
+      <aside aria-label="Vista previa" style="flex: 1 1 360px; min-width: 0; background: #E6E3DC; border-radius: 16px; padding: 24px; display: flex; flex-direction: column; align-items: center; gap: 12px; box-sizing: border-box">
+        <div style="font-family: 'Geist Mono', monospace; font-size: 11px; letter-spacing: 0.08em; color: #5F5B53">VISTA PREVIA · {{widthLabel}}</div>
+        <div style="width: {{paperW}}; background: #FFFFFF; padding: 18px 16px 22px; box-sizing: border-box; font-family: 'Geist Mono', monospace; font-size: 11px; line-height: 1.55; color: #1A1915">
+          <div style="text-align: center; font-family: 'Geist', sans-serif; font-size: 15px; font-weight: 600">Almacén La Esquina</div>
+          <div style="text-align: center; color: #55524B">Av. Rivadavia 4520 · CABA</div>
+          <div style="border-top: 1px dashed #B8B3A9; margin: 10px 0"></div>
+          <div>VENTA #0142 · 25/11 14:32</div>
+          <div>CAJERO: LUCÍA</div>
+          <div style="border-top: 1px dashed #B8B3A9; margin: 10px 0"></div>
+          <sc-for list="{{lines}}" as="l" hint-placeholder-count="4">
+            <div style="display: flex; justify-content: space-between; gap: 8px"><span>{{l.q}} {{l.n}}</span><span>{{l.p}}</span></div>
+          </sc-for>
+          <sc-if value="{{garantia}}" hint-placeholder-val="{{false}}">
+            <div style="color: #55524B; padding-left: 10px">Serie A82-4417 · garantía hasta 25/05/2027</div>
+          </sc-if>
+          <div style="border-top: 1px dashed #B8B3A9; margin: 10px 0"></div>
+          <div style="display: flex; justify-content: space-between; font-size: 13px; font-weight: 500"><span>TOTAL</span><span>$ 17.300</span></div>
+          <div style="display: flex; justify-content: space-between"><span>EFECTIVO</span><span>$ 20.000</span></div>
+          <div style="display: flex; justify-content: space-between"><span>VUELTO</span><span>$ 2.700</span></div>
+          <div style="display: flex; justify-content: center; height: 34px; margin: 14px 0 4px" aria-hidden="true">
+            <sc-for list="{{bars}}" as="w" hint-placeholder-count="30"><span style="width: {{w.w}}; background: {{w.c}}"></span></sc-for>
+          </div>
+          <div style="text-align: center; color: #55524B">Escaneá para cambios o devoluciones</div>
+          <sc-if value="{{cupon}}" hint-placeholder-val="{{false}}">
+            <div style="border: 1px dashed #1A1915; margin-top: 12px; padding: 8px; text-align: center"><div style="font-size: 13px; font-weight: 500">10% EN TU PRÓXIMA COMPRA</div><div>CÓDIGO VLR-8K2Q · VENCE 25/12</div></div>
+          </sc-if>
+          <sc-if value="{{qr}}" hint-placeholder-val="{{false}}">
+            <div style="display: flex; align-items: center; gap: 10px; margin-top: 12px">
+              <svg width="48" height="48" viewBox="0 0 7 7" aria-hidden="true" shape-rendering="crispEdges"><path fill="#1A1915" d="M0 0h3v3H0zM4 0h3v3H4zM0 4h3v3H0zM4 4h1v1H4zM6 4h1v1H6zM5 5h1v1H5zM4 6h1v1H4zM6 6h1v1H6z"/><path fill="#FFFFFF" d="M1 1h1v1H1zM5 1h1v1H5zM1 5h1v1H1z"/></svg>
+              <span>¿Te atendimos bien? Dejanos tu reseña en Google</span>
+            </div>
+          </sc-if>
+          <div style="text-align: center; margin-top: 12px">Este sábado abrimos de 9 a 13</div>
+          <div style="text-align: center; margin-top: 10px; font-weight: 500">DOCUMENTO NO VÁLIDO COMO FACTURA</div>
+        </div>
+        <sc-if value="{{regalo}}" hint-placeholder-val="{{false}}">
+          <div style="width: {{paperW}}; background: #FFFFFF; padding: 14px 16px 18px; box-sizing: border-box; font-family: 'Geist Mono', monospace; font-size: 11px; line-height: 1.55; color: #1A1915">
+            <div style="text-align: center; font-size: 13px; font-weight: 500">TICKET DE CAMBIO</div>
+            <div style="text-align: center; color: #55524B">Venta #0142 · válido 30 días</div>
+            <div style="border-top: 1px dashed #B8B3A9; margin: 10px 0"></div>
+            <sc-for list="{{lines}}" as="l" hint-placeholder-count="4"><div>{{l.q}} {{l.n}}</div></sc-for>
+          </div>
+        </sc-if>
+      </aside>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1500}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { w: 80, cajon: false, regalo: false, garantia: false, cupon: true, qr: true, cierre: false }; }
+  renderVals() {
+    const st = this.state;
+    const seg = (on) => 'height: 32px; padding: 0 14px; border-radius: 9px; font: inherit; font-size: 13px; cursor: pointer; ' + (on ? 'border: 1px solid #E3E0D9; background: #FFFFFF; color: #1A1915; font-weight: 500' : 'border: 1px solid transparent; background: transparent; color: #55524B');
+    const flip = (k) => () => this.setState({ [k]: !st[k] });
+    const defs = [
+      ['regalo', 'Ticket de cambio o regalo', 'Imprime una copia sin precios para quien recibe el regalo.', 'Al cobrar sale un segundo ticket con los productos pero sin precios. Por ejemplo, alguien compra un perfume para regalar: el regalo va con este ticket y quien lo recibe puede cambiarlo sin ver cuánto costó.'],
+      ['garantia', 'Garantía impresa', 'Para productos con número de serie: muestra la serie y el vencimiento.', 'Solo aparece en productos que tienen número de serie cargado. Si el cliente vuelve con un reclamo, escaneás el ticket y ves al instante si la garantía sigue vigente.'],
+      ['cupon', 'Cupón para la próxima compra', '10% con vigencia de 30 días y código escaneable.', 'Imprime un descuento con código para que el cliente vuelva. En su próxima compra escaneás el cupón en el punto de venta y el descuento se aplica solo. Cada cupón se usa una sola vez y vence a los 30 días.'],
+      ['qr', 'QR para reseña en Google', 'Usa el link de tu negocio en Google.', 'Imprime un QR que lleva a la página de tu negocio en Google para dejar una reseña. Más reseñas te ayudan a aparecer primero en Google Maps. Antes cargá el link en Datos del negocio.'],
+      ['cierre', 'Ticket de cierre de caja', 'Imprime el resumen del día al cerrar la caja.', 'Al cerrar la caja se imprime un resumen: ventas por forma de pago, gastos, efectivo que debería haber y diferencias. Sirve para guardarlo junto con la plata o dejárselo al dueño.']
+    ];
+    const pattern = [2,1,1,3,1,2,1,1,2,3,1,1,2,1,3,1,2,1,1,2,1,3,2,1,1,2,1,1,3,1,2,1,2,1,1,3,1,2];
+    return {
+      w58: st.w === 58 ? 'true' : 'false', w80: st.w === 80 ? 'true' : 'false',
+      s58: seg(st.w === 58), s80: seg(st.w === 80),
+      set58: () => this.setState({ w: 58 }), set80: () => this.setState({ w: 80 }),
+      paperW: st.w === 58 ? '232px' : '300px', widthLabel: st.w + ' MM',
+      cajon: st.cajon, tCajon: flip('cajon'),
+      regalo: st.regalo, garantia: st.garantia, cupon: st.cupon, qr: st.qr,
+      opts: defs.map(([k, title, desc, help]) => ({ title, desc, help, on: st[k], toggle: flip(k) })),
+      base: ['Datos del negocio', 'Productos y totales', 'Forma de pago y vuelto', 'Código para cambios', 'Mensaje del día', 'No válido como factura'],
+      lines: [
+        { q: '2', n: 'Gaseosa cola 1,5 L', p: '$ 6.000' },
+        { q: '1', n: 'Pan lactal grande', p: '$ 2.500' },
+        { q: '0,25', n: 'Jamón cocido kg', p: '$ 4.000' },
+        { q: '1', n: 'Yerba mate 1 kg', p: '$ 4.800' }
+      ],
+      bars: pattern.map((n, i) => ({ w: n + 'px', c: i % 2 ? '#FFFFFF' : '#1A1915' }))
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Pantalla de bloqueo</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+body{margin:0;background:#EFEDE8}
+a{color:#1A1915}
+</style>
+</helmet>
+<div style="min-height: 900px; background: #EFEDE8; font-family: 'Geist', system-ui, sans-serif; color: #1A1915; display: flex; flex-direction: column; padding: 32px 40px; box-sizing: border-box; gap: 28px">
+  <header style="display: flex; justify-content: space-between; align-items: center">
+    <div style="display: flex; align-items: center; gap: 8px">
+      <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="#C24A22" stroke-width="2.4" stroke-linecap="round"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6L5.6 18.4"/></svg>
+      <span style="font-size: 18px; font-weight: 600">Almacén La Esquina</span>
+    </div>
+    <div style="text-align: right"><div style="font-size: 28px; font-weight: 600; letter-spacing: -0.02em; font-variant-numeric: tabular-nums">14:32</div><div style="font-size: 13px; color: #55524B">Miércoles 25 de noviembre · caja abierta</div></div>
+  </header>
+  <div style="flex: 1; display: flex; flex-wrap: wrap; gap: 32px; align-items: center; justify-content: center">
+    <section style="flex: 1 1 460px; max-width: 560px">
+      <h1 style="margin: 0 0 16px; font-size: 26px; font-weight: 600; letter-spacing: -0.02em">¿Quién está atendiendo?</h1>
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px">
+        <sc-for list="{{users}}" as="u" hint-placeholder-count="4">
+          <button type="button" onClick="{{u.pick}}" aria-pressed="{{u.pressed}}" style="{{u.style}}">
+            <span style="width: 44px; height: 44px; border-radius: 50%; background: {{u.av}}; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 600; color: {{u.avc}}; flex-shrink: 0">{{u.ini}}</span>
+            <span style="text-align: left"><span style="display: block; font-size: 15px; font-weight: 600">{{u.n}}</span><span style="display: block; font-size: 12px; color: #6B6860; margin-top: 2px">{{u.r}}</span></span>
+          </button>
+        </sc-for>
+      </div>
+      <label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #55524B; margin-top: 16px">¿No aparecés? Escribí tu DNI
+        <input type="text" inputmode="numeric" placeholder="30123456" style="height: 44px; border: 1px solid #DDD9D1; border-radius: 12px; padding: 0 14px; font-family: 'Geist Mono', monospace; font-size: 15px; color: #1A1915; background: #FFFFFF">
+      </label>
+    </section>
+    <section aria-label="Ingresar PIN" style="flex: 0 1 340px; background: #FFFFFF; border: 1px solid #E3E0D9; border-radius: 20px; padding: 28px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; gap: 18px">
+      <div style="text-align: center"><div style="font-size: 17px; font-weight: 600">Hola, {{name}}</div><div style="font-size: 13px; color: #6B6860; margin-top: 4px">Ingresá tu PIN secreto</div></div>
+      <div style="display: flex; gap: 12px" aria-live="polite">
+        <sc-for list="{{dots}}" as="d" hint-placeholder-count="4"><span style="width: 14px; height: 14px; border-radius: 50%; border: 2px solid #1A1915; background: {{d}}"></span></sc-for>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(3, 72px); gap: 10px">
+        <sc-for list="{{keys}}" as="k" hint-placeholder-count="12">
+          <button type="button" onClick="{{k.press}}" aria-label="{{k.aria}}" style="{{k.style}}">{{k.l}}</button>
+        </sc-for>
+      </div>
+      <div style="font-size: 12px; color: #6B6860; text-align: center">Al entrar se registra tu fichaje de entrada.</div>
+    </section>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { sel: 'MV', pin: '' }; }
+  renderVals() {
+    const st = this.state;
+    const people = [['LR', 'Lucía Romero', 'Administradora'], ['MV', 'Martín Vega', 'Cajero'], ['MR', 'Matías Ruiz', 'Técnico'], ['SL', 'Sofía Luna', 'Técnica · de vacaciones']];
+    const users = people.map(([ini, n, r]) => {
+      const on = st.sel === ini;
+      return { ini, n, r, pressed: on ? 'true' : 'false', av: on ? '#D9572B' : '#F2EFEA', avc: on ? '#FFFFFF' : '#3D3A34',
+        style: 'display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 16px; font: inherit; color: #1A1915; cursor: pointer; background: #FFFFFF; ' + (on ? 'border: 2px solid #1A1915' : 'border: 2px solid #E3E0D9'),
+        pick: () => this.setState({ sel: ini, pin: '' }) };
+    });
+    const name = people.find((p) => p[0] === st.sel)[1].split(' ')[0];
+    const keyStyle = 'height: 56px; border-radius: 14px; border: 1px solid #E3E0D9; background: #FBFAF7; font: inherit; font-size: 20px; font-weight: 500; color: #1A1915; cursor: pointer';
+    const add = (d) => () => this.setState({ pin: (st.pin + d).slice(0, 6) });
+    const keys = ['1','2','3','4','5','6','7','8','9'].map((d) => ({ l: d, aria: d, press: add(d), style: keyStyle }));
+    keys.push({ l: '←', aria: 'Borrar', press: () => this.setState({ pin: st.pin.slice(0, -1) }), style: keyStyle + '; font-size: 16px' });
+    keys.push({ l: '0', aria: '0', press: add('0'), style: keyStyle });
+    keys.push({ l: 'Entrar', aria: 'Entrar', press: () => this.setState({ pin: '' }), style: 'height: 56px; border-radius: 14px; border: 0; background: #1A1915; font: inherit; font-size: 14px; font-weight: 500; color: #FFFFFF; cursor: pointer' });
+    const n = Math.max(4, st.pin.length);
+    const dots = Array.from({ length: n }, (_, i) => i < st.pin.length ? '#1A1915' : 'transparent');
+    return { users, name, keys, dots };
+  }
+}
+</script>
+</body>
+</html>

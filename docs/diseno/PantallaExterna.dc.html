@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Pantalla externa</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+body{margin:0;background:#EFEDE8}
+input[type=checkbox]{accent-color:#1A1915;width:18px;height:18px;margin:0}
+</style>
+</helmet>
+<div style="display: flex; flex-wrap: wrap; min-height: 900px; background: #EFEDE8; font-family: 'Geist', system-ui, sans-serif; color: #1A1915">
+  <dc-import name="Sidebar" active="Configuración" hint-size="240px,900px"></dc-import>
+  <main style="flex: 999 1 560px; min-width: 0; padding: 20px 20px 20px 4px; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px">
+    <header style="display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; padding: 8px 4px 0">
+      <div>
+        <div style="font-family: 'Geist Mono', monospace; font-size: 11px; letter-spacing: 0.08em; color: #6E6A62">CONFIGURACIÓN · VENTA</div>
+        <h1 style="margin: 4px 0 0; font-size: 26px; font-weight: 600; letter-spacing: -0.02em">Pantalla externa</h1>
+        <p style="margin: 4px 0 0; font-size: 14px; color: #6B6860">3 pantallas detectadas · se revisa sola cada pocos segundos</p>
+      </div>
+      <button type="button" style="height: 40px; padding: 0 16px; border-radius: 999px; border: 1px solid #D8D4CC; background: #FFFFFF; font: inherit; font-size: 13px; color: #1A1915">Identificar pantallas</button>
+    </header>
+
+    <section aria-label="Pantallas conectadas" style="background: #E6E3DC; border-radius: 16px; padding: 22px; display: flex; gap: 18px; align-items: flex-end; justify-content: center; flex-wrap: wrap">
+      <sc-for list="{{mons}}" as="m" hint-placeholder-count="3">
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 8px">
+          <div style="width: {{m.w}}; height: {{m.h}}; border-radius: 8px; border: 3px solid #1A1915; background: {{m.bg}}; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px">
+            <span style="font-size: 30px; font-weight: 600; color: {{m.fg}}">{{m.n}}</span>
+            <span style="font-size: 11px; font-weight: 500; color: {{m.fg}}">{{m.roleLabel}}</span>
+          </div>
+          <div style="width: 14px; height: 10px; background: #1A1915"></div>
+          <div style="font-size: 12px; color: #3D3A34; text-align: center">{{m.name}}<br><span style="color: #6B6860">{{m.res}}</span></div>
+        </div>
+      </sc-for>
+    </section>
+
+    <div style="display: flex; gap: 8px; align-items: flex-start; background: #FFFFFF; border: 1px solid #E3E0D9; border-radius: 12px; padding: 12px 14px; font-size: 13px; line-height: 1.5; color: #3D3A34">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6B6860" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="flex-shrink: 0; margin-top: 3px"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.5"/></svg>
+      <span>En Windows, las pantallas tienen que estar en modo <strong style="font-weight: 600">Extender</strong> (Windows + P). "Duplicar venta" en Velora no es el "Duplicar" de Windows: muestra solo la venta en curso, nunca lo que ve el cajero.</span>
+    </div>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start">
+      <section style="flex: 1 1 440px; min-width: 0; display: flex; flex-direction: column; gap: 12px">
+        <div style="display: flex; align-items: center; gap: 10px; padding: 0 4px"><span style="width: 10px; height: 10px; border-radius: 3px; background: #D9572B"></span><h2 style="margin: 0; font-size: 15px; font-weight: 600">Pagos</h2><span style="font-size: 13px; color: #6B6860">· muestran la venta al cliente</span></div>
+        <sc-for list="{{pagos}}" as="m" hint-placeholder-count="1">
+          <article style="background: #FFFFFF; border: 1px solid #E3E0D9; border-radius: 16px; padding: 6px 18px 12px">
+            <div style="display: flex; align-items: center; gap: 12px; padding: 12px 0; flex-wrap: wrap">
+              <span style="flex: 1 1 160px"><span style="display: block; font-size: 15px; font-weight: 600">{{m.name}}</span><span style="display: block; font-size: 12px; color: #6B6860; margin-top: 2px">{{m.res}} · {{m.dupText}}</span></span>
+              <div role="radiogroup" aria-label="Uso de {{m.name}}" style="display: flex; gap: 2px; background: #F2EFEA; border-radius: 10px; padding: 3px"><sc-for list="{{m.roles}}" as="r" hint-placeholder-count="3"><button type="button" role="radio" aria-checked="{{r.sel}}" onClick="{{r.pick}}" style="{{r.style}}">{{r.l}}</button></sc-for></div>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0; border-top: 1px solid #F1EEE9; flex-wrap: wrap">
+              <span style="font-size: 14px; font-weight: 500">Duplicar venta en esta pantalla</span>
+              <button type="button" onClick="{{m.toggleDup}}" aria-pressed="{{m.dupPressed}}" style="{{m.dupStyle}}">{{m.dupBtn}}</button>
+            </div>
+            <div style="display: flex; gap: 8px; align-items: flex-start; background: #F7F5F1; border-radius: 10px; padding: 10px 12px; font-size: 12.5px; line-height: 1.5; color: #4A4740"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6B6860" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="flex-shrink: 0; margin-top: 2px"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.5"/></svg><span>El cliente ve cada producto que escaneás, el total, el QR de Mercado Pago al cobrar y el vuelto. Nunca muestra costos, márgenes ni datos de la caja.</span></div>
+            <sc-for list="{{pagoOpts}}" as="o" hint-placeholder-count="3">
+              <label style="display: flex; gap: 12px; align-items: center; padding: 12px 0 0; font-size: 14px"><input type="checkbox" checked="{{o.on}}"><span>{{o.t}}</span></label>
+            </sc-for>
+            <div style="display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap">
+              <a href="ClienteEscaneando.dc.html" style="display: inline-flex; align-items: center; height: 36px; padding: 0 14px; border-radius: 999px; border: 1px solid #D8D4CC; background: #FFFFFF; font-size: 13px; color: #1A1915; text-decoration: none">Probar con una venta de ejemplo</a>
+              <select aria-label="Orientación" style="height: 36px; border: 1px solid #DDD9D1; border-radius: 999px; padding: 0 12px; font: inherit; font-size: 13px; color: #1A1915; background: #FFFFFF"><option>Horizontal</option><option>Vertical</option></select>
+            </div>
+          </article>
+        </sc-for>
+        <sc-if value="{{noPagos}}" hint-placeholder-val="{{false}}"><div style="border: 1.5px dashed #C9C5BC; border-radius: 16px; padding: 22px; text-align: center; font-size: 13px; color: #55524B">Ninguna pantalla para pagos. Elegí "Pagos" en una pantalla para mostrarle la venta al cliente.</div></sc-if>
+      </section>
+
+      <div style="width: 1px; align-self: stretch; background: #D8D4CC" aria-hidden="true"></div>
+
+      <section style="flex: 1 1 440px; min-width: 0; display: flex; flex-direction: column; gap: 12px">
+        <div style="display: flex; align-items: center; gap: 10px; padding: 0 4px"><span style="width: 10px; height: 10px; border-radius: 3px; background: #24457A"></span><h2 style="margin: 0; font-size: 15px; font-weight: 600">Videos</h2><span style="font-size: 13px; color: #6B6860">· pasan contenido sin parar</span></div>
+        <sc-for list="{{videos}}" as="m" hint-placeholder-count="1">
+          <article style="background: #FFFFFF; border: 1px solid #E3E0D9; border-radius: 16px; padding: 6px 18px 12px">
+            <div style="display: flex; align-items: center; gap: 12px; padding: 12px 0; flex-wrap: wrap">
+              <span style="flex: 1 1 160px"><span style="display: block; font-size: 15px; font-weight: 600">{{m.name}}</span><span style="display: block; font-size: 12px; color: #6B6860; margin-top: 2px">{{m.res}} · reproduciendo "Promos de noviembre"</span></span>
+              <div role="radiogroup" aria-label="Uso de {{m.name}}" style="display: flex; gap: 2px; background: #F2EFEA; border-radius: 10px; padding: 3px"><sc-for list="{{m.roles}}" as="r" hint-placeholder-count="3"><button type="button" role="radio" aria-checked="{{r.sel}}" onClick="{{r.pick}}" style="{{r.style}}">{{r.l}}</button></sc-for></div>
+            </div>
+            <div style="border-top: 1px solid #F1EEE9; padding-top: 6px">
+              <sc-for list="{{playlist}}" as="v" hint-placeholder-count="3">
+                <div style="display: flex; align-items: center; gap: 12px; padding: 9px 0; font-size: 13px">
+                  <span style="width: 52px; height: 30px; border-radius: 6px; background: {{v.bg}}; display: flex; align-items: center; justify-content: center; color: #FFFFFF; font-size: 11px">{{v.icon}}</span>
+                  <span style="flex: 1; min-width: 0"><span style="display: block; font-weight: 500">{{v.n}}</span><span style="display: block; color: #6B6860; font-size: 12px">{{v.d}}</span></span>
+                  <span style="font-family: 'Geist Mono', monospace; font-size: 12px; color: #55524B">{{v.t}}</span>
+                </div>
+              </sc-for>
+              <button type="button" style="height: 34px; padding: 0 14px; border-radius: 999px; border: 1px solid #D8D4CC; background: #FFFFFF; font: inherit; font-size: 13px; color: #1A1915; margin: 6px 0 10px">Agregar video o imagen</button>
+            </div>
+            <div style="display: flex; gap: 8px; align-items: flex-start; background: #F7F5F1; border-radius: 10px; padding: 10px 12px; font-size: 12.5px; line-height: 1.5; color: #4A4740"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6B6860" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="flex-shrink: 0; margin-top: 2px"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.5"/></svg><span>Los videos e imágenes se copian a la PC y se reproducen en bucle, sin internet. Ideal para promociones, productos nuevos o tu marca en una tele del local.</span></div>
+            <label style="display: flex; gap: 12px; align-items: center; padding: 12px 0 0; font-size: 14px"><input type="checkbox" checked><span>Repetir en bucle</span></label>
+            <label style="display: flex; gap: 12px; align-items: center; padding: 12px 0 0; font-size: 14px"><input type="checkbox" checked><span>Sin sonido</span></label>
+          </article>
+        </sc-for>
+        <sc-if value="{{noVideos}}" hint-placeholder-val="{{false}}"><div style="border: 1.5px dashed #C9C5BC; border-radius: 16px; padding: 22px; text-align: center; font-size: 13px; color: #55524B">Ninguna pantalla con videos. Elegí "Videos" en una pantalla para pasar contenido.</div></sc-if>
+        <sc-if value="{{hasUnused}}" hint-placeholder-val="{{false}}">
+          <div style="background: #FFFFFF; border: 1px solid #E3E0D9; border-radius: 16px; padding: 14px 18px; display: flex; flex-direction: column; gap: 10px">
+            <div style="font-family: 'Geist Mono', monospace; font-size: 11px; letter-spacing: 0.08em; color: #6E6A62">SIN USAR</div>
+            <sc-for list="{{unused}}" as="m" hint-placeholder-count="1">
+              <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap"><span style="flex: 1; font-size: 14px; font-weight: 500">{{m.name}} <span style="color: #6B6860; font-weight: 400">· {{m.res}}</span></span><div role="radiogroup" aria-label="Uso de {{m.name}}" style="display: flex; gap: 2px; background: #F2EFEA; border-radius: 10px; padding: 3px"><sc-for list="{{m.roles}}" as="r" hint-placeholder-count="3"><button type="button" role="radio" aria-checked="{{r.sel}}" onClick="{{r.pick}}" style="{{r.style}}">{{r.l}}</button></sc-for></div></div>
+            </sc-for>
+          </div>
+        </sc-if>
+      </section>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1250}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { role: { 2: 'pagos', 3: 'videos' }, dup: { 2: true, 3: true } }; }
+  renderVals() {
+    const st = this.state;
+    const base = [{ id: 2, name: 'Pantalla 2', res: 'Monitor 22" · 1920 × 1080', w: '150px', h: '90px' }, { id: 3, name: 'Pantalla 3', res: 'TV 43" · 3840 × 2160', w: '190px', h: '110px' }];
+    const L = { pagos: 'Pagos', videos: 'Videos', off: 'Sin usar' };
+    const segStyle = (on) => 'height: 28px; padding: 0 10px; border-radius: 8px; font: inherit; font-size: 12px; cursor: pointer; ' + (on ? 'border: 1px solid #DDD9D1; background: #FFFFFF; color: #1A1915; font-weight: 500' : 'border: 1px solid transparent; background: transparent; color: #4A4740');
+    const full = base.map((m) => {
+      const role = st.role[m.id], dup = !!st.dup[m.id];
+      return { ...m, role,
+        roles: ['pagos', 'videos', 'off'].map((r) => ({ l: L[r], sel: r === role ? 'true' : 'false', style: segStyle(r === role), pick: () => this.setState({ role: { ...st.role, [m.id]: r } }) })),
+        dupText: dup ? 'duplicando la venta' : 'en pausa', dupPressed: dup ? 'true' : 'false', dupBtn: dup ? 'Duplicando' : 'Duplicar',
+        dupStyle: 'height: 36px; padding: 0 16px; border-radius: 999px; font: inherit; font-size: 13px; font-weight: 500; cursor: pointer; ' + (dup ? 'border: 0; background: #1A1915; color: #FFFFFF' : 'border: 1px solid #D8D4CC; background: #FFFFFF; color: #1A1915'),
+        toggleDup: () => this.setState({ dup: { ...st.dup, [m.id]: !dup } }) };
+    });
+    const tint = { pagos: ['#FBEAE3', '#8A3214'], videos: ['#E8EEF8', '#24457A'], off: ['#FFFFFF', '#6E6A62'] };
+    const mons = [{ n: '1', name: 'Pantalla 1', res: 'Principal · la del cajero', w: '170px', h: '100px', bg: '#1A1915', fg: '#FFFFFF', roleLabel: 'Cajero' }]
+      .concat(full.map((m) => ({ n: String(m.id), name: m.name, res: m.res, w: m.w, h: m.h, bg: tint[m.role][0], fg: tint[m.role][1], roleLabel: L[m.role] })));
+    const pagos = full.filter((m) => m.role === 'pagos'), videos = full.filter((m) => m.role === 'videos'), unused = full.filter((m) => m.role === 'off');
+    return {
+      mons, pagos, videos, unused, noPagos: pagos.length === 0, noVideos: videos.length === 0, hasUnused: unused.length > 0,
+      pagoOpts: [{ t: 'Mostrar el QR de Mercado Pago grande al cobrar', on: true }, { t: 'Mostrar cupón y QR de reseña al terminar', on: true }, { t: 'Letra grande (pantalla lejos del mostrador)', on: false }],
+      playlist: [
+        { n: 'promo_navidad.mp4', d: 'Video', t: '0:30', icon: '▶', bg: '#3D3A34' },
+        { n: '2x1 en galletitas', d: 'Imagen · 10 segundos', t: '0:10', icon: 'IMG', bg: '#8A3214' },
+        { n: 'nuevos_productos.mp4', d: 'Video', t: '1:15', icon: '▶', bg: '#24457A' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

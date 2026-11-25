@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Copias de seguridad</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+body{margin:0;background:#EFEDE8}
+input[type=checkbox]{accent-color:#1A1915;width:18px;height:18px;margin:0}
+</style>
+</helmet>
+<div style="display: flex; flex-wrap: wrap; min-height: 900px; background: #EFEDE8; font-family: 'Geist', system-ui, sans-serif; color: #1A1915">
+  <dc-import name="Sidebar" active="Configuración" hint-size="240px,900px"></dc-import>
+  <main style="flex: 999 1 560px; min-width: 0; padding: 20px 20px 20px 4px; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px">
+    <header style="display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding: 8px 4px 0">
+      <div>
+        <div style="font-family: 'Geist Mono', monospace; font-size: 11px; letter-spacing: 0.08em; color: #6E6A62">CONFIGURACIÓN</div>
+        <h1 style="margin: 4px 0 0; font-size: 26px; font-weight: 600; letter-spacing: -0.02em">Copias de seguridad</h1>
+      </div>
+      <button type="button" style="height: 40px; padding: 0 16px; border-radius: 999px; border: 0; background: #1A1915; color: #FFFFFF; font: inherit; font-size: 13px; font-weight: 500">Hacer una copia ahora</button>
+    </header>
+    <div style="background: #FFFFFF; border: 1px solid #E3E0D9; border-radius: 14px; padding: 14px 16px; display: flex; align-items: center; gap: 10px; font-size: 14px">
+      <span style="width: 10px; height: 10px; border-radius: 50%; background: #2F7D4F"></span>
+      <span><strong style="font-weight: 600">Última copia: anoche a las 20:41</strong> · 14,1 MB · guardada en dos lugares</span>
+    </div>
+    <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start">
+      <section style="flex: 999 1 460px; min-width: 0; background: #FFFFFF; border: 1px solid #E3E0D9; border-radius: 16px; padding: 6px 20px 10px">
+        <sc-for list="{{opts}}" as="o" hint-placeholder-count="4">
+          <div style="padding: 14px 0; border-top: 1px solid {{o.bt}}; display: flex; flex-direction: column; gap: 10px">
+            <label style="display: flex; gap: 12px; align-items: flex-start; font-size: 14px; cursor: pointer"><input type="checkbox" checked="{{o.on}}"><span><span style="display: block; font-weight: 500">{{o.t}}</span><span style="display: block; font-size: 13px; color: #6B6860; margin-top: 2px">{{o.d}}</span></span></label>
+            <div style="display: flex; gap: 8px; align-items: flex-start; background: #F7F5F1; border-radius: 10px; padding: 10px 12px; font-size: 12.5px; line-height: 1.5; color: #4A4740; margin-left: 30px">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6B6860" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="flex-shrink: 0; margin-top: 2px"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.5"/></svg>
+              <span>{{o.h}}</span>
+            </div>
+          </div>
+        </sc-for>
+      </section>
+      <section style="flex: 1 1 340px; min-width: 0; max-width: 420px; background: #FFFFFF; border: 1px solid #E3E0D9; border-radius: 16px; padding: 18px 20px">
+        <h2 style="margin: 0 0 6px; font-size: 15px; font-weight: 600">Copias guardadas</h2>
+        <sc-for list="{{list}}" as="b" hint-placeholder-count="5">
+          <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 0; border-top: 1px solid #F1EEE9; font-size: 13px">
+            <span><span style="display: block; font-weight: 500">{{b.d}}</span><span style="display: block; color: #6B6860; margin-top: 2px">{{b.s}}</span></span>
+            <button type="button" style="height: 30px; padding: 0 12px; border-radius: 999px; border: 1px solid #D8D4CC; background: #FFFFFF; font: inherit; font-size: 12px; color: #1A1915">Restaurar</button>
+          </div>
+        </sc-for>
+      </section>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1000}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      opts: [
+        { t: 'Copia automática todos los días', d: 'Al cerrar la caja o a las 21:00, lo que pase primero', on: true, bt: 'transparent', h: 'Velora guarda una copia de todos tus datos (ventas, stock, clientes, finanzas) sin que tengas que acordarte. Si la computadora se rompe o se borra algo, recuperás todo hasta el último día.' },
+        { t: 'Guardar también en otra carpeta', d: 'C:\\Users\\Lucía\\Google Drive\\Velora', on: true, bt: '#F1EEE9', h: 'Elegí una carpeta que se sincronice con la nube (Google Drive, OneDrive o Dropbox de escritorio) o un pendrive. Así la copia sobrevive aunque se pierda la computadora.' },
+        { t: 'Conservar las últimas 30 copias', d: 'Las más viejas se borran solas', on: true, bt: '#F1EEE9', h: 'Te deja volver a cualquier día del último mes, por ejemplo si te das cuenta tarde de que se borró un producto. Cada copia ocupa unos 15 MB.' },
+        { t: 'Avisar si pasan 3 días sin copia', d: 'Aparece un aviso en el Inicio', on: true, bt: '#F1EEE9', h: 'Si la carpeta de destino no está disponible (por ejemplo, el pendrive no está conectado), Velora te avisa para que no te quedes sin respaldo sin saberlo.' }
+      ],
+      list: [
+        { d: 'Ayer, 24/11 · 20:41', s: 'Al cerrar la caja · 14,1 MB' },
+        { d: '23/11 · 21:00', s: 'Automática · 14,0 MB' },
+        { d: '22/11 · 13:12', s: 'Manual, antes de actualizar precios · 13,9 MB' },
+        { d: '21/11 · 21:00', s: 'Automática · 13,9 MB' },
+        { d: '20/11 · 21:00', s: 'Automática · 13,8 MB' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

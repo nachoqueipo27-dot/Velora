@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Agenda</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+body{margin:0;background:#EFEDE8}
+</style>
+</helmet>
+<div style="display: flex; flex-wrap: wrap; min-height: 900px; background: #EFEDE8; font-family: 'Geist', system-ui, sans-serif; color: #1A1915">
+  <dc-import name="Sidebar" active="Agenda" hint-size="240px,900px"></dc-import>
+  <main style="flex: 999 1 560px; min-width: 0; padding: 20px 20px 20px 4px; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px">
+    <header style="display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding: 8px 4px 0">
+      <div>
+        <h1 style="margin: 0; font-size: 26px; font-weight: 600; letter-spacing: -0.02em">Agenda</h1>
+        <p style="margin: 4px 0 0; font-size: 14px; color: #6B6860">Semana del 23 al 28 de noviembre · 14 citas</p>
+      </div>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center">
+        <button type="button" aria-label="Semana anterior" style="width: 40px; height: 40px; border-radius: 999px; border: 1px solid #D8D4CC; background: #FFFFFF; font: inherit; color: #1A1915">←</button>
+        <button type="button" style="height: 40px; padding: 0 14px; border-radius: 999px; border: 1px solid #D8D4CC; background: #FFFFFF; font: inherit; font-size: 13px; color: #1A1915">Hoy</button>
+        <button type="button" aria-label="Semana siguiente" style="width: 40px; height: 40px; border-radius: 999px; border: 1px solid #D8D4CC; background: #FFFFFF; font: inherit; color: #1A1915">→</button>
+        <button type="button" style="height: 40px; padding: 0 16px; border-radius: 999px; border: 0; background: #1A1915; color: #FFFFFF; font: inherit; font-size: 13px; font-weight: 500">Nueva cita</button>
+      </div>
+    </header>
+    <div style="background: #FFFFFF; border: 1px solid #F0D58E; border-radius: 14px; padding: 12px 16px; font-size: 14px"><strong style="font-weight: 600">Superposición:</strong> Matías tiene dos citas que se pisan el jueves entre las 12:00 y las 12:30.</div>
+    <section style="background: #FFFFFF; border: 1px solid #E3E0D9; border-radius: 16px; padding: 12px 12px 16px; overflow-x: auto">
+      <div style="display: grid; grid-template-columns: 52px repeat(6, minmax(110px, 1fr)); min-width: 760px">
+        <div></div>
+        <sc-for list="{{days}}" as="d" hint-placeholder-count="6">
+          <div style="padding: 8px; text-align: center; border-bottom: 1px solid #ECE9E3">
+            <div style="font-family: 'Geist Mono', monospace; font-size: 11px; letter-spacing: 0.08em; color: #6E6A62">{{d.n}}</div>
+            <div style="font-size: 18px; font-weight: 600; margin-top: 2px; color: {{d.c}}">{{d.num}}</div>
+          </div>
+        </sc-for>
+        <div style="display: flex; flex-direction: column">
+          <sc-for list="{{hours}}" as="h" hint-placeholder-count="10"><div style="height: 56px; font-family: 'Geist Mono', monospace; font-size: 11px; color: #6E6A62; padding-top: 4px">{{h}}</div></sc-for>
+        </div>
+        <sc-for list="{{days}}" as="d" hint-placeholder-count="6">
+          <div style="position: relative; height: 560px; border-left: 1px solid #F1EEE9; background: {{d.bg}}">
+            <sc-for list="{{d.ev}}" as="e" hint-placeholder-count="2">
+              <div style="position: absolute; left: 4px; right: 4px; top: {{e.top}}; height: {{e.h}}; background: {{e.bg}}; border-left: 3px solid {{e.bd}}; border-radius: 0; padding: 6px 8px; box-sizing: border-box; overflow: hidden; font-size: 12px; line-height: 1.35">
+                <div style="font-weight: 500">{{e.t}}</div>
+                <div style="color: #55524B">{{e.time}} · {{e.who}}</div>
+              </div>
+            </sc-for>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const ev = (t, start, dur, who, kind) => {
+      const top = (start - 9) * 56, h = dur * 56 - 4;
+      const k = { r: ['#F2EFEA', '#6E6A62'], v: ['#FBEAE3', '#D9572B'], w: ['#FBF0F2', '#9E1F3C'] }[kind || 'r'];
+      const hh = Math.floor(start), mm = Math.round((start - hh) * 60);
+      return { t, who, time: hh + ':' + String(mm).padStart(2, '0'), top: top + 'px', h: h + 'px', bg: k[0], bd: k[1] };
+    };
+    const d = (n, num, list, today) => ({ n, num, ev: list, c: today ? '#C24A22' : '#1A1915', bg: today ? '#FBFAF7' : '#FFFFFF' });
+    return {
+      hours: ['9', '10', '11', '12', '13', '14', '15', '16', '17', '18'],
+      days: [
+        d('LUN', '23', [ev('Entrega OT #0080', 10, 1, 'Lucía'), ev('Visita técnica', 15, 2, 'Matías')]),
+        d('MAR', '24', [ev('Retiro de equipo', 9.5, 1, 'Lucía'), ev('Instalación', 13, 3, 'Sofía')]),
+        d('MIÉ', '25', [ev('Diagnóstico notebook', 11, 1, 'Matías', 'v'), ev('Reunión proveedor', 15.5, 1, 'Lucía', 'v')], true),
+        d('JUE', '26', [ev('Service compresor', 11, 1.5, 'Matías', 'w'), ev('Visita Escuela 14', 12, 1.5, 'Matías', 'w'), ev('Entrega OT #0087', 16, 1, 'Lucía')]),
+        d('VIE', '27', [ev('Instalación cámaras', 9, 4, 'Sofía')]),
+        d('SÁB', '28', [ev('Atención en local', 9, 4, 'Lucía')])
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

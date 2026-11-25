@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Empleados</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+body{margin:0;background:#EFEDE8}
+</style>
+</helmet>
+<div style="display: flex; flex-wrap: wrap; min-height: 900px; background: #EFEDE8; font-family: 'Geist', system-ui, sans-serif; color: #1A1915">
+  <dc-import name="Sidebar" active="Empleados" hint-size="240px,900px"></dc-import>
+  <main style="flex: 999 1 560px; min-width: 0; padding: 20px 20px 20px 4px; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px">
+    <header style="display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding: 8px 4px 0">
+      <div>
+        <h1 style="margin: 0; font-size: 26px; font-weight: 600; letter-spacing: -0.02em">Empleados</h1>
+        <p style="margin: 4px 0 0; font-size: 14px; color: #6B6860">4 personas · 3 fichadas hoy · 1 de vacaciones</p>
+      </div>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap">
+        <button type="button" style="height: 40px; padding: 0 16px; border-radius: 999px; border: 1px solid #D8D4CC; background: #FFFFFF; font: inherit; font-size: 13px; color: #1A1915">Cargar ausencia</button>
+        <button type="button" style="height: 40px; padding: 0 16px; border-radius: 999px; border: 0; background: #1A1915; color: #FFFFFF; font: inherit; font-size: 13px; font-weight: 500">Nuevo empleado</button>
+      </div>
+    </header>
+    <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px">
+      <sc-for list="{{people}}" as="p" hint-placeholder-count="4">
+        <article style="background: #FFFFFF; border: 1px solid #E3E0D9; border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 12px">
+          <div style="display: flex; align-items: center; gap: 10px">
+            <span style="width: 40px; height: 40px; border-radius: 50%; background: #F2EFEA; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; color: #3D3A34">{{p.ini}}</span>
+            <div><div style="font-size: 15px; font-weight: 600">{{p.n}}</div><div style="font-size: 12px; color: #6B6860">{{p.rol}}</div></div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; color: {{p.sc}}"><span style="width: 8px; height: 8px; border-radius: 50%; background: {{p.sc}}"></span>{{p.st}}</div>
+          <div style="display: flex; flex-direction: column; font-size: 13px">
+            <div style="display: flex; justify-content: space-between; padding: 8px 0; border-top: 1px solid #F1EEE9"><span style="color: #55524B">Horas esta semana</span><span style="font-weight: 500">{{p.h}}</span></div>
+            <div style="display: flex; justify-content: space-between; padding: 8px 0; border-top: 1px solid #F1EEE9"><span style="color: #55524B">Horas extra</span><span style="font-weight: 500">{{p.x}}</span></div>
+            <div style="display: flex; justify-content: space-between; padding: 8px 0; border-top: 1px solid #F1EEE9"><span style="color: #55524B">{{p.ml}}</span><span style="font-weight: 500">{{p.mv}}</span></div>
+          </div>
+        </article>
+      </sc-for>
+    </div>
+    <section style="background: #FFFFFF; border: 1px solid #E3E0D9; border-radius: 16px; padding: 18px 20px">
+      <h2 style="margin: 0 0 6px; font-size: 15px; font-weight: 600">Fichajes de hoy</h2>
+      <sc-for list="{{log}}" as="l" hint-placeholder-count="5">
+        <div style="display: flex; gap: 14px; padding: 10px 0; border-top: 1px solid #F1EEE9; font-size: 14px"><span style="font-family: 'Geist Mono', monospace; font-size: 12px; color: #6B6860; width: 48px; padding-top: 2px">{{l.t}}</span><span>{{l.e}}</span></div>
+      </sc-for>
+    </section>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const on = '#2F7D4F', off = '#6E6A62', away = '#9A5B0B';
+    return {
+      people: [
+        { n: 'Lucía Romero', ini: 'LR', rol: 'Cajera · encargada', st: 'Trabajando desde 9:02', sc: on, h: '27 h', x: '1,5 h', ml: 'Ventas cobradas hoy', mv: '24' },
+        { n: 'Martín Vega', ini: 'MV', rol: 'Cajero', st: 'Trabajando desde 13:00', sc: on, h: '22 h', x: '0 h', ml: 'Ventas cobradas hoy', mv: '14' },
+        { n: 'Matías Ruiz', ini: 'MR', rol: 'Técnico', st: 'Trabajando desde 10:15', sc: on, h: '30 h', x: '4 h', ml: 'Órdenes terminadas en el mes', mv: '11' },
+        { n: 'Sofía Luna', ini: 'SL', rol: 'Instaladora', st: 'Vacaciones hasta el 30/11', sc: away, h: '0 h', x: '0 h', ml: 'Órdenes terminadas en el mes', mv: '6' }
+      ],
+      log: [
+        { t: '13:00', e: 'Martín Vega fichó la entrada' },
+        { t: '12:58', e: 'Lucía Romero salió a almorzar (vuelve 13:30)' },
+        { t: '10:15', e: 'Matías Ruiz fichó la entrada · 15 minutos tarde' },
+        { t: '09:02', e: 'Lucía Romero fichó la entrada y abrió la caja' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

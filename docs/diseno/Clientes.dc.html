@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Clientes</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+body{margin:0;background:#EFEDE8}
+</style>
+</helmet>
+<div style="display: flex; flex-wrap: wrap; min-height: 900px; background: #EFEDE8; font-family: 'Geist', system-ui, sans-serif; color: #1A1915">
+  <dc-import name="Sidebar" active="Clientes" hint-size="240px,900px"></dc-import>
+  <main style="flex: 999 1 560px; min-width: 0; padding: 20px 20px 20px 4px; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px">
+    <header style="display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding: 8px 4px 0">
+      <div>
+        <h1 style="margin: 0; font-size: 26px; font-weight: 600; letter-spacing: -0.02em">Clientes</h1>
+        <p style="margin: 4px 0 0; font-size: 14px; color: #6B6860">186 clientes · 41 compraron este mes</p>
+      </div>
+      <button type="button" style="height: 40px; padding: 0 16px; border-radius: 999px; border: 0; background: #1A1915; color: #FFFFFF; font: inherit; font-size: 13px; font-weight: 500">Nuevo cliente</button>
+    </header>
+    <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start">
+      <section style="flex: 999 1 480px; min-width: 0; background: #FFFFFF; border: 1px solid #E3E0D9; border-radius: 16px; overflow: hidden">
+        <div style="padding: 14px 18px; border-bottom: 1px solid #ECE9E3">
+          <label style="display: flex; align-items: center; height: 38px; border: 1px solid #E3E0D9; border-radius: 10px; padding: 0 12px">
+            <span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Buscar cliente</span>
+            <input type="text" placeholder="Nombre, teléfono o DNI" style="border: 0; outline: none; font: inherit; font-size: 13px; flex: 1; min-width: 0; background: transparent">
+          </label>
+        </div>
+        <sc-for list="{{list}}" as="c" hint-placeholder-count="7">
+          <div style="display: flex; align-items: center; gap: 12px; padding: 12px 18px; border-bottom: 1px solid #F1EEE9; background: {{c.bg}}">
+            <span style="width: 36px; height: 36px; border-radius: 50%; background: #F2EFEA; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 500; color: #3D3A34; flex-shrink: 0">{{c.ini}}</span>
+            <span style="flex: 1; min-width: 0"><span style="display: block; font-size: 14px; font-weight: 500">{{c.n}}</span><span style="display: block; font-size: 12px; color: #6B6860; margin-top: 2px">{{c.last}}</span></span>
+            <span style="font-size: 12px; color: #55524B; border: 1px solid #E3E0D9; border-radius: 999px; padding: 3px 10px">{{c.cat}}</span>
+            <span style="width: 96px; text-align: right; font-size: 14px; font-weight: 500; font-variant-numeric: tabular-nums">{{c.total}}</span>
+          </div>
+        </sc-for>
+      </section>
+      <aside style="flex: 1 1 360px; min-width: 0; max-width: 440px; background: #FFFFFF; border: 1px solid #E3E0D9; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 14px">
+        <div style="display: flex; align-items: center; gap: 12px">
+          <span style="width: 48px; height: 48px; border-radius: 50%; background: #FBEAE3; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 600; color: #8A3214">MG</span>
+          <div><div style="font-size: 18px; font-weight: 600">Marta Giménez</div><div style="font-size: 13px; color: #6B6860">Cliente frecuente · desde marzo 2025</div></div>
+        </div>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap">
+          <button type="button" style="height: 36px; padding: 0 14px; border-radius: 999px; border: 1px solid #D8D4CC; background: #FFFFFF; font: inherit; font-size: 13px; color: #1A1915">WhatsApp</button>
+          <button type="button" style="height: 36px; padding: 0 14px; border-radius: 999px; border: 1px solid #D8D4CC; background: #FFFFFF; font: inherit; font-size: 13px; color: #1A1915">Nuevo presupuesto</button>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+          <div style="background: #F2EFEA; border-radius: 12px; padding: 12px"><div style="font-size: 20px; font-weight: 600">$ 386.200</div><div style="font-size: 12px; color: #55524B">Comprado en 2026</div></div>
+          <div style="background: #F2EFEA; border-radius: 12px; padding: 12px"><div style="font-size: 20px; font-weight: 600">cada 9 días</div><div style="font-size: 12px; color: #55524B">Frecuencia de compra</div></div>
+        </div>
+        <div style="font-family: 'Geist Mono', monospace; font-size: 11px; letter-spacing: 0.08em; color: #6E6A62; margin-top: 4px">HISTORIAL</div>
+        <sc-for list="{{hist}}" as="h" hint-placeholder-count="4">
+          <div style="border-top: 1px solid #F1EEE9">
+            <sc-if value="{{h.isSale}}" hint-placeholder-val="{{true}}">
+              <button type="button" onClick="{{h.toggle}}" aria-expanded="{{h.expanded}}" style="width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 0; border: 0; background: transparent; font: inherit; font-size: 13px; color: #1A1915; text-align: left; cursor: pointer">
+                <span><span style="display: block; font-weight: 500; text-decoration: underline; text-decoration-color: #C9C5BC; text-underline-offset: 3px">{{h.t}}</span><span style="display: block; color: #6B6860; margin-top: 2px">{{h.d}}</span></span>
+                <span style="display: flex; align-items: center; gap: 8px"><span style="font-weight: 500; font-variant-numeric: tabular-nums">{{h.v}}</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6B6860" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="{{h.chev}}"><path d="M6 9l6 6 6-6"/></svg></span>
+              </button>
+            </sc-if>
+            <sc-if value="{{h.notSale}}" hint-placeholder-val="{{false}}">
+              <div style="display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; font-size: 13px"><span><span style="display: block; font-weight: 500">{{h.t}}</span><span style="display: block; color: #6B6860; margin-top: 2px">{{h.d}}</span></span><span style="font-weight: 500; font-variant-numeric: tabular-nums">{{h.v}}</span></div>
+            </sc-if>
+            <sc-if value="{{h.open}}" hint-placeholder-val="{{false}}">
+              <div style="background: #FBFAF7; border-radius: 10px; padding: 4px 12px 12px; margin-bottom: 10px">
+                <sc-for list="{{h.items}}" as="i" hint-placeholder-count="3">
+                  <div style="display: flex; justify-content: space-between; gap: 10px; padding: 8px 0; border-bottom: 1px solid #ECE9E3; font-size: 13px; font-variant-numeric: tabular-nums"><span>{{i.n}} <span style="color: #6B6860">× {{i.q}}</span></span><span style="font-weight: 500">{{i.v}}</span></div>
+                </sc-for>
+                <div style="display: flex; justify-content: space-between; gap: 10px; padding-top: 10px; font-size: 13px"><span style="color: #55524B">{{h.sum}}</span><span style="font-weight: 600">Total {{h.v}}</span></div>
+                <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px">
+                  <button type="button" style="height: 30px; padding: 0 12px; border-radius: 999px; border: 1px solid #D8D4CC; background: #FFFFFF; font: inherit; font-size: 12px; color: #1A1915">Reimprimir ticket</button>
+                  <button type="button" style="height: 30px; padding: 0 12px; border-radius: 999px; border: 1px solid #D8D4CC; background: #FFFFFF; font: inherit; font-size: 12px; color: #1A1915">Devolución o cambio</button>
+                </div>
+              </div>
+            </sc-if>
+          </div>
+        </sc-for>
+      </aside>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { open: 'Venta #0142' }; }
+  renderVals() {
+    const hist = [
+      { t: 'Venta #0142', d: 'Hoy · 4 productos · Efectivo', v: '$ 17.300', sum: '4 unidades + 0,25 kg', items: [
+        { n: 'Gaseosa cola 1,5 L', q: '2', v: '$ 6.000' }, { n: 'Pan lactal grande', q: '1', v: '$ 2.500' },
+        { n: 'Jamón cocido', q: '0,25 kg', v: '$ 4.000' }, { n: 'Yerba mate 1 kg', q: '1', v: '$ 4.800' } ] },
+      { t: 'Venta #0119', d: '16/11 · 3 productos · Transferencia', v: '$ 22.300', sum: '6 unidades', items: [
+        { n: 'Aceite de girasol 1,5 L', q: '3', v: '$ 11.700' }, { n: 'Yerba mate 1 kg', q: '1', v: '$ 4.800' },
+        { n: 'Dulce de leche clásico 400 g', q: '2', v: '$ 5.800' } ] },
+      { t: 'Presupuesto #0031 · aprobado', d: '05/11', v: '$ 92.000' },
+      { t: 'Mensaje por WhatsApp', d: '02/11 · aviso de pedido listo', v: '' }
+    ];
+    const c = (n, ini, last, cat, total, sel) => ({ n, ini, last, cat, total, bg: sel ? '#FBFAF7' : '#FFFFFF' });
+    return {
+      list: [
+        c('Marta Giménez', 'MG', 'Última compra hoy', 'Frecuente', '$ 386.200', true),
+        c('Taller Rodríguez', 'TR', 'Hace 3 días · OT #0088', 'Empresa', '$ 1.240.000'),
+        c('Julián Ferreyra', 'JF', 'Hace 12 días', 'Ocasional', '$ 48.900'),
+        c('Carla Benítez', 'CB', 'Hace 1 mes', 'Frecuente', '$ 210.400'),
+        c('Escuela N.º 14', 'E1', 'Hace 2 meses · presupuesto', 'Empresa', '$ 520.000'),
+        c('Diego Sosa', 'DS', 'Hace 3 meses', 'Inactivo', '$ 18.300'),
+        c('Lorena Paz', 'LP', 'Hace 4 días', 'Frecuente', '$ 156.700')
+      ],
+      hist: hist.map((h) => {
+        const isSale = !!h.items, open = isSale && this.state.open === h.t;
+        return { ...h, isSale, notSale: !isSale, open, expanded: open ? 'true' : 'false',
+          chev: open ? 'transform: rotate(180deg)' : '',
+          toggle: () => this.setState({ open: open ? null : h.t }) };
+      })
+    };
+  }
+}
+</script>
+</body>
+</html>

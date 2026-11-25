@@ -40,3 +40,6 @@ build-output.log
 
 # Notas locales
 Funcion.txt
+
+# Prompts de trabajo: describen agujeros de seguridad de versiones en uso. Nunca al repo.
+docs/prompts/

@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Alta rápida desde el punto de venta</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+body{margin:0;background:#EFEDE8}
+</style>
+</helmet>
+<div style="display: flex; flex-wrap: wrap; min-height: 900px; background: #EFEDE8; font-family: 'Geist', system-ui, sans-serif; color: #1A1915; position: relative">
+  <dc-import name="Sidebar" active="Punto de venta" hint-size="240px,900px"></dc-import>
+  <main style="flex: 999 1 560px; min-width: 0; padding: 28px 20px 20px 4px; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px">
+    <h1 style="margin: 0; font-size: 26px; font-weight: 600; letter-spacing: -0.02em">Punto de venta</h1>
+    <div style="background: #FFFFFF; border: 1px solid #E3E0D9; border-radius: 14px; height: 52px; display: flex; align-items: center; padding: 0 14px; font-family: 'Geist Mono', monospace; font-size: 15px; color: #55524B">7791234567890</div>
+    <div style="background: #FFFFFF; border: 1px solid #E3E0D9; border-radius: 16px; height: 520px"></div>
+  </main>
+
+  <div style="position: absolute; inset: 0; background: rgba(26, 25, 21, 0.28); display: flex; justify-content: flex-end">
+    <section role="dialog" aria-modal="true" aria-labelledby="alta-title" style="width: 460px; max-width: 100%; background: #FFFFFF; border-left: 1px solid #E3E0D9; box-sizing: border-box; padding: 24px; display: flex; flex-direction: column; gap: 18px">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px">
+        <div>
+          <div style="font-family: 'Geist Mono', monospace; font-size: 11px; letter-spacing: 0.08em; color: #6E6A62">ALTA RÁPIDA</div>
+          <h2 id="alta-title" style="margin: 6px 0 0; font-size: 20px; font-weight: 600; letter-spacing: -0.01em">Nuevo producto</h2>
+        </div>
+        <button type="button" aria-label="Cerrar" style="width: 36px; height: 36px; border-radius: 999px; border: 1px solid #D8D4CC; background: #FFFFFF; font: inherit; font-size: 16px; color: #3D3A34">×</button>
+      </div>
+
+      <label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #55524B">Código de barras
+        <input type="text" value="7791234567890" readonly style="height: 42px; border: 1px solid #E3E0D9; border-radius: 10px; padding: 0 12px; font-family: 'Geist Mono', monospace; font-size: 14px; color: #1A1915; background: #F7F5F1">
+      </label>
+      <label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #55524B">Nombre
+        <input type="text" value="Dulce de leche clásico 400 g" style="height: 42px; border: 2px solid #1A1915; border-radius: 10px; padding: 0 12px; font: inherit; font-size: 14px; color: #1A1915; background: #FFFFFF">
+        <span style="font-size: 12px; color: #2F7D4F">Sugerido por la base compartida de Velora</span>
+      </label>
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px">
+        <label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #55524B">Precio de venta
+          <input type="text" value="$ 2.900" style="height: 42px; border: 1px solid #DDD9D1; border-radius: 10px; padding: 0 12px; font: inherit; font-size: 14px; color: #1A1915; background: #FFFFFF">
+        </label>
+        <label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #55524B">Costo
+          <input type="text" value="$ 2.100" style="height: 42px; border: 1px solid #DDD9D1; border-radius: 10px; padding: 0 12px; font: inherit; font-size: 14px; color: #1A1915; background: #FFFFFF">
+        </label>
+        <label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #55524B">Categoría
+          <select style="height: 42px; border: 1px solid #DDD9D1; border-radius: 10px; padding: 0 10px; font: inherit; font-size: 14px; color: #1A1915; background: #FFFFFF"><option>Almacén</option><option>Lácteos</option><option>Bebidas</option></select>
+        </label>
+        <label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #55524B">Se vende por
+          <select style="height: 42px; border: 1px solid #DDD9D1; border-radius: 10px; padding: 0 10px; font: inherit; font-size: 14px; color: #1A1915; background: #FFFFFF"><option>Unidad</option><option>Kilogramo</option><option>Metro</option><option>Litro</option></select>
+        </label>
+        <label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #55524B">Stock inicial
+          <input type="text" value="12" style="height: 42px; border: 1px solid #DDD9D1; border-radius: 10px; padding: 0 12px; font: inherit; font-size: 14px; color: #1A1915; background: #FFFFFF">
+        </label>
+        <div style="display: flex; flex-direction: column; justify-content: flex-end; gap: 4px; padding-bottom: 4px">
+          <span style="font-family: 'Geist Mono', monospace; font-size: 11px; letter-spacing: 0.08em; color: #6E6A62">MARGEN</span>
+          <span style="font-size: 20px; font-weight: 600">27,6%</span>
+        </div>
+      </div>
+
+      <div style="flex-grow: 1"></div>
+      <div style="display: flex; flex-direction: column; gap: 8px">
+        <button type="button" style="height: 48px; border-radius: 999px; border: 0; background: #1A1915; color: #FFFFFF; font: inherit; font-size: 15px; font-weight: 500">Guardar y seguir escaneando <span style="font-family: 'Geist Mono', monospace; font-size: 11px; color: #C9C5BC">Enter</span></button>
+        <button type="button" style="height: 44px; border-radius: 999px; border: 1px solid #D8D4CC; background: #FFFFFF; font: inherit; font-size: 14px; color: #1A1915">Guardar como borrador</button>
+        <p style="margin: 4px 0 0; font-size: 12px; color: #6B6860; text-align: center">El producto se suma al carrito de la venta actual.</p>
+      </div>
+    </section>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

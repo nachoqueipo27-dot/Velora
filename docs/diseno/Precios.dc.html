@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Lista de precios</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+body{margin:0;background:#EFEDE8}
+</style>
+</helmet>
+<div style="display: flex; flex-wrap: wrap; min-height: 900px; background: #EFEDE8; font-family: 'Geist', system-ui, sans-serif; color: #1A1915">
+  <dc-import name="Sidebar" active="Lista de precios" hint-size="240px,900px"></dc-import>
+  <main style="flex: 999 1 560px; min-width: 0; padding: 20px 20px 20px 4px; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px">
+    <header style="padding: 8px 4px 0">
+      <h1 style="margin: 0; font-size: 26px; font-weight: 600; letter-spacing: -0.02em">Lista de precios</h1>
+      <p style="margin: 4px 0 0; font-size: 14px; color: #6B6860">Última actualización general: 01/11 · +8%</p>
+    </header>
+    <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start">
+      <section style="flex: 1 1 340px; min-width: 0; max-width: 420px; background: #FFFFFF; border: 1px solid #E3E0D9; border-radius: 16px; padding: 18px 20px; display: flex; flex-direction: column; gap: 14px">
+        <h2 style="margin: 0; font-size: 15px; font-weight: 600">Actualizar por porcentaje</h2>
+        <label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #55524B">Aplicar a
+          <select style="height: 40px; border: 1px solid #DDD9D1; border-radius: 10px; padding: 0 10px; font: inherit; font-size: 14px; color: #1A1915; background: #FFFFFF"><option>Categoría: Almacén (148 productos)</option><option>Todos los productos</option><option>Proveedor: Distribuidora Norte</option></select>
+        </label>
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px">
+          <label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #55524B">Aumento
+            <input type="text" value="12 %" style="height: 40px; border: 2px solid #1A1915; border-radius: 10px; padding: 0 12px; font: inherit; font-size: 16px; font-weight: 600; color: #1A1915">
+          </label>
+          <label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #55524B">Redondear a
+            <select style="height: 40px; border: 1px solid #DDD9D1; border-radius: 10px; padding: 0 10px; font: inherit; font-size: 14px; color: #1A1915; background: #FFFFFF"><option>$ 50</option><option>$ 10</option><option>$ 100</option><option>Sin redondeo</option></select>
+          </label>
+        </div>
+        <div style="display: flex; gap: 8px; align-items: flex-start; background: #F7F5F1; border-radius: 10px; padding: 10px 12px; font-size: 12.5px; line-height: 1.5; color: #4A4740">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6B6860" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="flex-shrink: 0; margin-top: 2px"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.5"/></svg>
+          <span>Sube el precio de venta de todos los productos elegidos y lo redondea para que quede un número fácil de cobrar. Antes de aplicar se guarda una copia de la lista actual, así podés volver atrás desde "Historial de listas".</span>
+        </div>
+        <button type="button" style="height: 44px; border-radius: 999px; border: 0; background: #1A1915; color: #FFFFFF; font: inherit; font-size: 14px; font-weight: 500">Aplicar a 148 productos</button>
+      </section>
+      <section style="flex: 999 1 460px; min-width: 0; background: #FFFFFF; border: 1px solid #E3E0D9; border-radius: 16px; overflow: hidden">
+        <div style="display: flex; justify-content: space-between; align-items: baseline; padding: 16px 18px; border-bottom: 1px solid #ECE9E3"><h2 style="margin: 0; font-size: 15px; font-weight: 600">Así quedan</h2><span style="font-size: 12px; color: #6B6860">Vista previa · todavía no se aplicó</span></div>
+        <div style="overflow-x: auto">
+          <table style="width: 100%; border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums; min-width: 520px">
+            <thead>
+              <tr style="font-family: 'Geist Mono', monospace; font-size: 11px; letter-spacing: 0.06em; color: #6E6A62; text-align: left; border-bottom: 1px solid #ECE9E3">
+                <th style="padding: 12px 18px; font-weight: 400">PRODUCTO</th>
+                <th style="padding: 12px 8px; font-weight: 400; text-align: right">PRECIO</th>
+                <th style="padding: 12px 18px; font-weight: 400; text-align: right">MARGEN NUEVO</th>
+              </tr>
+            </thead>
+            <tbody>
+              <sc-for list="{{rows}}" as="r" hint-placeholder-count="7">
+                <tr style="border-bottom: 1px solid #F1EEE9">
+                  <td style="padding: 12px 18px; font-weight: 500">{{r.n}}</td>
+                  <td style="padding: 12px 8px; text-align: right"><span style="color: #8A8579; text-decoration: line-through; margin-right: 8px">{{r.o}}</span><span style="font-weight: 600">{{r.p}}</span></td>
+                  <td style="padding: 12px 18px; text-align: right; color: #55524B">{{r.m}}</td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const items = [['Yerba mate 1 kg', 4800, 3380], ['Arroz largo fino 1 kg', 1600, 1480], ['Galletitas de agua', 1100, 690], ['Aceite de girasol 1,5 L', 3900, 2950], ['Fideos tirabuzón 500 g', 1050, 760], ['Dulce de leche clásico 400 g', 2900, 2100], ['Azúcar 1 kg', 1400, 1010]];
+    const f = (n) => '$ ' + n.toLocaleString('es-AR');
+    return {
+      rows: items.map(([n, p, c]) => {
+        const np = Math.round(p * 1.12 / 50) * 50;
+        return { n, o: f(p), p: f(np), m: (Math.round((np - c) / np * 1000) / 10).toLocaleString('es-AR') + '%' };
+      })
+    };
+  }
+}
+</script>
+</body>
+</html>

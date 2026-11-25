@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Pantalla del cliente</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+body{margin:0}
+@keyframes vlr-pop{0%{transform:scale(0)}60%{transform:scale(1.15)}100%{transform:scale(1)}}
+@keyframes vlr-draw{from{stroke-dashoffset:40}to{stroke-dashoffset:0}}
+@keyframes vlr-ring{0%{transform:scale(1);opacity:.45}100%{transform:scale(1.9);opacity:0}}
+@keyframes vlr-spin{to{transform:rotate(360deg)}}
+.vlr-spin{animation:vlr-spin 1s linear infinite}
+@keyframes vlr-rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.vlr-pop{animation:vlr-pop .5s cubic-bezier(.2,.9,.3,1.3) both}
+.vlr-draw{stroke-dasharray:40;animation:vlr-draw .35s ease-out .35s both}
+.vlr-ring{animation:vlr-ring .9s ease-out .3s both}
+.vlr-rise{animation:vlr-rise .45s ease-out both}
+@media (prefers-reduced-motion: reduce){.vlr-spin{animation-duration:3s}.vlr-pop,.vlr-draw,.vlr-ring,.vlr-rise{animation:none}}
+</style>
+</helmet>
+<div style="width: 1280px; height: 720px; box-sizing: border-box; background: #EFEDE8; font-family: 'Geist', system-ui, sans-serif; color: #1A1915; display: flex; flex-direction: column; overflow: hidden">
+  <sc-if value="{{scan}}" hint-placeholder-val="{{true}}">
+    <div style="flex: 1; display: flex; gap: 24px; padding: 40px">
+      <section style="flex: 1; background: #FFFFFF; border-radius: 24px; padding: 28px 32px; display: flex; flex-direction: column">
+        <div style="font-family: 'Geist Mono', monospace; font-size: 14px; letter-spacing: 0.08em; color: #6E6A62; margin-bottom: 8px">TU COMPRA</div>
+        <sc-for list="{{items}}" as="i" hint-placeholder-count="4">
+          <div style="display: flex; align-items: baseline; gap: 16px; padding: 16px 12px; border-bottom: 1px solid #F1EEE9; background: {{i.bg}}; border-radius: 12px">
+            <span style="flex: 1; font-size: 26px; font-weight: {{i.w}}">{{i.n}}</span>
+            <span style="font-size: 20px; color: #55524B">{{i.q}}</span>
+            <span style="width: 160px; text-align: right; font-size: 26px; font-weight: 600; font-variant-numeric: tabular-nums">{{i.v}}</span>
+          </div>
+        </sc-for>
+      </section>
+      <aside style="width: 380px; display: flex; flex-direction: column; gap: 20px">
+        <div style="background: #1A1915; color: #FFFFFF; border-radius: 24px; padding: 32px; display: flex; flex-direction: column; gap: 8px">
+          <span style="font-size: 20px; color: #C9C5BC">Total</span>
+          <span style="font-size: 64px; font-weight: 600; letter-spacing: -0.03em; font-variant-numeric: tabular-nums">$ 17.300</span>
+          <span style="font-size: 18px; color: #C9C5BC">4 productos</span>
+        </div>
+        <div style="background: #FBEAE3; border-radius: 24px; padding: 28px; flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 8px">
+          <span style="font-family: 'Geist Mono', monospace; font-size: 14px; letter-spacing: 0.08em; color: #8A3214">PROMO DE HOY</span>
+          <span style="font-size: 32px; font-weight: 600; line-height: 1.15; color: #5E2410">2x1 en galletitas de agua</span>
+        </div>
+      </aside>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{pay}}" hint-placeholder-val="{{false}}">
+    <div style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 72px; padding: 40px">
+      <div style="display: flex; flex-direction: column; gap: 12px; max-width: 520px">
+        <span style="font-size: 26px; color: #55524B">Total a pagar</span>
+        <span style="font-size: 104px; font-weight: 600; letter-spacing: -0.04em; line-height: 1; font-variant-numeric: tabular-nums">$ 17.300</span>
+        <span style="font-size: 26px; line-height: 1.35; margin-top: 16px">Escaneá el código con Mercado Pago o con la app de tu banco.</span>
+        <span style="font-size: 18px; color: #6B6860">Esperando el pago…</span>
+      </div>
+      <div style="background: #FFFFFF; border-radius: 28px; padding: 28px; display: flex; flex-direction: column; align-items: center; gap: 14px">
+        <svg width="320" height="320" viewBox="0 0 21 21" role="img" aria-label="Código QR para pagar" shape-rendering="crispEdges"><rect width="21" height="21" fill="#FFFFFF"/><path fill="#1A1915" d="M0 0h7v7H0zM14 0h7v7h-7zM0 14h7v7H0zM9 0h1v2H9zM11 1h2v1h-2zM8 3h2v2H8zM11 4h1v3h-1zM9 8h3v1H9zM0 9h2v1H0zM3 8h2v2H3zM14 9h3v1h-3zM18 8h3v2h-3zM8 11h1v3H8zM10 12h3v1h-3zM15 12h1v2h-1zM17 11h2v3h-2zM9 15h2v2H9zM12 14h2v1h-2zM14 16h3v1h-3zM18 15h3v1h-3zM10 18h1v3h-1zM12 17h2v2h-2zM15 19h2v2h-2zM19 18h2v1h-2z"/><path fill="#FFFFFF" d="M1 1h5v5H1zM15 1h5v5h-5zM1 15h5v5H1z"/><path fill="#1A1915" d="M2 2h3v3H2zM16 2h3v3h-3zM2 16h3v3H2z"/></svg>
+        <span style="font-size: 16px; color: #55524B">El código vence en 14:52</span>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{thanks}}" hint-placeholder-val="{{false}}">
+    <div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 28px; padding: 40px; text-align: center">
+      <sc-if value="{{showAnim}}" hint-placeholder-val="{{true}}">
+        <button type="button" onClick="{{replay}}" aria-label="Repetir animación y sonido" style="position: relative; width: 120px; height: 120px; border: 0; padding: 0; background: transparent; cursor: pointer">
+          <span class="vlr-ring" style="position: absolute; inset: 0; border-radius: 50%; background: #2F7D4F"></span>
+          <span class="vlr-pop" style="position: absolute; inset: 0; border-radius: 50%; background: #2F7D4F; display: flex; align-items: center; justify-content: center">
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="vlr-draw" d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+          </span>
+        </button>
+      </sc-if>
+      <sc-if value="{{hideAnim}}" hint-placeholder-val="{{false}}"><span style="width: 120px; height: 120px"></span></sc-if>
+      <span class="vlr-rise" style="font-size: 64px; font-weight: 600; letter-spacing: -0.03em; animation-delay: .45s">¡Gracias por tu compra!</span>
+      <span class="vlr-rise" style="font-size: 30px; color: #3D3A34; animation-delay: .6s">Tu vuelto: <strong style="font-weight: 600">$ 2.700</strong></span>
+      <div class="vlr-rise" style="display: flex; gap: 20px; margin-top: 8px; animation-delay: .75s">
+        <div style="background: #FFFFFF; border: 2px dashed #1A1915; border-radius: 20px; padding: 20px 28px; font-size: 22px"><strong style="font-weight: 600">10% en tu próxima compra</strong><br><span style="font-size: 17px; color: #55524B">El cupón sale en tu ticket</span></div>
+        <div style="background: #FFFFFF; border-radius: 20px; padding: 20px 28px; font-size: 22px"><strong style="font-weight: 600">¿Te atendimos bien?</strong><br><span style="font-size: 17px; color: #55524B">Escaneá el QR del ticket y dejanos tu reseña</span></div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{idle}}" hint-placeholder-val="{{false}}">
+    <div style="flex: 1; display: flex; gap: 24px; padding: 40px">
+      <div style="flex: 1; background: #FBEAE3; border-radius: 28px; padding: 56px; display: flex; flex-direction: column; justify-content: center; gap: 18px">
+        <span style="font-family: 'Geist Mono', monospace; font-size: 18px; letter-spacing: 0.1em; color: #8A3214">SOLO ESTA SEMANA</span>
+        <span style="font-size: 96px; font-weight: 600; letter-spacing: -0.04em; line-height: 0.95; color: #5E2410">2x1 en galletitas de agua</span>
+        <span style="font-size: 26px; color: #8A3214">Llevá dos y pagá una.</span>
+      </div>
+      <aside style="width: 320px; display: flex; flex-direction: column; gap: 24px">
+        <div style="background: #FFFFFF; border-radius: 28px; padding: 32px; flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 10px">
+          <svg width="40" height="40" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="#C24A22" stroke-width="2.4" stroke-linecap="round"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6L5.6 18.4"/></svg>
+          <span style="font-size: 30px; font-weight: 600; line-height: 1.15">Almacén La Esquina</span>
+          <span style="font-size: 18px; color: #55524B">Este sábado abrimos de 9 a 13</span>
+        </div>
+        <div style="background: #1A1915; color: #FFFFFF; border-radius: 28px; padding: 28px; font-size: 56px; font-weight: 600; letter-spacing: -0.02em; text-align: center; font-variant-numeric: tabular-nums">14:32</div>
+      </aside>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{video}}" hint-placeholder-val="{{false}}">
+    <div style="flex: 1; position: relative; background: #24457A; display: flex; align-items: center; padding: 72px; box-sizing: border-box">
+      <div style="display: flex; flex-direction: column; gap: 18px; color: #FFFFFF; max-width: 760px">
+        <span style="font-family: 'Geist Mono', monospace; font-size: 18px; letter-spacing: 0.1em; color: #B5C8E6">NUEVO EN EL LOCAL</span>
+        <span style="font-size: 92px; font-weight: 600; letter-spacing: -0.04em; line-height: 0.95">Café de especialidad molido en el momento</span>
+        <span style="font-size: 26px; color: #D6E1F2">Pedí tu cuarto en la caja.</span>
+      </div>
+      <div style="position: absolute; right: 72px; bottom: 120px; width: 260px; height: 260px; border-radius: 50%; background: #2F5A97" aria-hidden="true"></div>
+      <div style="position: absolute; left: 0; right: 0; bottom: 0; height: 6px; background: #1B3A69"><div style="height: 6px; width: 38%; background: #FFFFFF"></div></div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{proc}}" hint-placeholder-val="{{false}}">
+    <div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 26px; padding: 40px; text-align: center">
+      <div role="status" aria-label="Procesando el pago" style="position: relative; width: 132px; height: 132px">
+        <span style="position: absolute; inset: 0; border-radius: 50%; border: 10px solid #E3E0D9"></span>
+        <span class="vlr-spin" style="position: absolute; inset: 0; border-radius: 50%; border: 10px solid transparent; border-top-color: #D9572B; border-right-color: #D9572B"></span>
+      </div>
+      <span style="font-size: 56px; font-weight: 600; letter-spacing: -0.03em">Procesando tu pago…</span>
+      <span style="font-size: 30px; color: #3D3A34; font-variant-numeric: tabular-nums">$ 17.300 · QR Mercado Pago</span>
+      <span style="font-size: 22px; color: #55524B">Esperá un momento y no cierres la app de tu banco.</span>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{fail}}" hint-placeholder-val="{{false}}">
+    <div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px; padding: 40px; text-align: center">
+      <span style="width: 120px; height: 120px; border-radius: 50%; background: #F8EDD8; display: flex; align-items: center; justify-content: center">
+        <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="#7A4A06" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 7v6M12 16.5v.5"/></svg>
+      </span>
+      <span style="font-size: 56px; font-weight: 600; letter-spacing: -0.03em">El pago no se completó</span>
+      <span style="font-size: 30px; color: #1F5E39; font-weight: 500">No se te cobró nada.</span>
+      <span style="font-size: 24px; color: #3D3A34; max-width: 760px; line-height: 1.4">Podés intentar de nuevo o pagar de otra forma. El cajero te ayuda.</span>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{footer}}" hint-placeholder-val="{{true}}">
+    <footer style="height: 56px; display: flex; align-items: center; justify-content: space-between; padding: 0 40px; font-size: 16px; color: #55524B; border-top: 1px solid #E3E0D9">
+      <span>Almacén La Esquina</span><span>Aceptamos efectivo, tarjetas y QR de cualquier banco</span>
+    </footer>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"momento":{"editor":"enum","options":["escaneando","cobrando","procesando","rechazado","gracias","reposo","video"],"default":"escaneando"},"$preview":{"width":1280,"height":720}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { show: true }; }
+  componentDidMount() { if ((this.props.momento ?? 'escaneando') === 'gracias') this.chime(); }
+  componentWillUnmount() { clearTimeout(this.t); }
+  chime() {
+    try {
+      const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
+      const ctx = this.ctx || (this.ctx = new AC()); if (ctx.state === 'suspended') ctx.resume();
+      const now = ctx.currentTime;
+      [[880, 0], [1318.5, 0.14]].forEach(([f, d]) => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sine'; o.frequency.value = f;
+        g.gain.setValueAtTime(0.0001, now + d); g.gain.exponentialRampToValueAtTime(0.25, now + d + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, now + d + 0.6);
+        o.connect(g); g.connect(ctx.destination); o.start(now + d); o.stop(now + d + 0.65);
+      });
+    } catch (e) {}
+  }
+  renderVals() {
+    const m = this.props.momento ?? 'escaneando';
+    const it = (n, q, v, last) => ({ n, q, v, bg: last ? '#FBF6F3' : '#FFFFFF', w: last ? '600' : '400' });
+    return {
+      showAnim: this.state.show, hideAnim: !this.state.show,
+      replay: () => { this.setState({ show: false }); this.t = setTimeout(() => { this.setState({ show: true }); this.chime(); }, 40); },
+      proc: m === 'procesando', fail: m === 'rechazado',
+      scan: m === 'escaneando', pay: m === 'cobrando', thanks: m === 'gracias', idle: m === 'reposo', video: m === 'video', footer: m !== 'video',
+      items: [it('Gaseosa cola 1,5 L', '× 2', '$ 6.000'), it('Pan lactal grande', '× 1', '$ 2.500'), it('Jamón cocido', '0,25 kg', '$ 4.000'), it('Yerba mate 1 kg', '× 1', '$ 4.800', true)]
+    };
+  }
+}
+</script>
+</body>
+</html>

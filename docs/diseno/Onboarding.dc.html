@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Configuración inicial</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+body{margin:0;background:#EFEDE8}
+input[type=checkbox]{accent-color:#1A1915;width:18px;height:18px;margin:0}
+</style>
+</helmet>
+<div style="min-height: 900px; background: #EFEDE8; font-family: 'Geist', system-ui, sans-serif; color: #1A1915; display: flex; flex-wrap: wrap; gap: 24px; padding: 40px; box-sizing: border-box; justify-content: center; align-items: flex-start">
+  <nav aria-label="Pasos" style="flex: 0 1 260px; display: flex; flex-direction: column; gap: 4px; padding-top: 8px">
+    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 24px">
+      <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="#C24A22" stroke-width="2.4" stroke-linecap="round"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6L5.6 18.4"/></svg>
+      <span style="font-size: 18px; font-weight: 600">Velora</span>
+    </div>
+    <sc-for list="{{steps}}" as="s" hint-placeholder-count="5">
+      <div style="display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 12px; background: {{s.bg}}; border: 1px solid {{s.bd}}">
+        <span style="width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; background: {{s.cbg}}; color: {{s.cfg}}">{{s.mark}}</span>
+        <span style="font-size: 14px; font-weight: {{s.w}}; color: {{s.fg}}">{{s.t}}</span>
+      </div>
+    </sc-for>
+  </nav>
+  <section style="flex: 1 1 560px; max-width: 760px; background: #FFFFFF; border: 1px solid #E3E0D9; border-radius: 20px; padding: 32px; box-sizing: border-box; display: flex; flex-direction: column; gap: 18px">
+    <div>
+      <div style="font-family: 'Geist Mono', monospace; font-size: 11px; letter-spacing: 0.08em; color: #6E6A62">PASO 3 DE 4</div>
+      <h1 style="margin: 6px 0 0; font-size: 26px; font-weight: 600; letter-spacing: -0.02em">¿Qué vas a usar?</h1>
+      <p style="margin: 6px 0 0; font-size: 14px; color: #55524B; line-height: 1.5">Activá solo lo que necesitás: el menú queda más simple. Podés cambiarlo cuando quieras desde Configuración → Funciones.</p>
+    </div>
+    <div style="display: flex; flex-direction: column">
+      <sc-for list="{{mods}}" as="m" hint-placeholder-count="6">
+        <div style="padding: 14px 0; border-top: 1px solid #F1EEE9; display: flex; flex-direction: column; gap: 10px">
+          <label style="display: flex; gap: 12px; align-items: flex-start; font-size: 14px; cursor: pointer">
+            <input type="checkbox" checked="{{m.on}}">
+            <span style="font-weight: 500">{{m.t}}</span>
+          </label>
+          <div style="display: flex; gap: 8px; align-items: flex-start; background: #F7F5F1; border-radius: 10px; padding: 10px 12px; font-size: 12.5px; line-height: 1.5; color: #4A4740; margin-left: 30px">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6B6860" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="flex-shrink: 0; margin-top: 2px"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.5"/></svg>
+            <span>{{m.h}}</span>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+    <div style="display: flex; justify-content: space-between; gap: 8px; border-top: 1px solid #ECE9E3; padding-top: 18px">
+      <button type="button" style="height: 44px; padding: 0 18px; border-radius: 999px; border: 1px solid #D8D4CC; background: #FFFFFF; font: inherit; font-size: 14px; color: #1A1915">Atrás</button>
+      <button type="button" style="height: 44px; padding: 0 22px; border-radius: 999px; border: 0; background: #1A1915; color: #FFFFFF; font: inherit; font-size: 14px; font-weight: 500">Seguir</button>
+    </div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1250}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const st = (t, state) => {
+      const done = state === 'done', cur = state === 'cur';
+      return { t, mark: done ? '✓' : '', w: cur ? '600' : '400', fg: state === 'next' ? '#6E6A62' : '#1A1915',
+        bg: cur ? '#FFFFFF' : 'transparent', bd: cur ? '#E3E0D9' : 'transparent',
+        cbg: done ? '#1A1915' : (cur ? '#D9572B' : '#E3E0D9'), cfg: done || cur ? '#FFFFFF' : '#55524B' };
+    };
+    const steps = [st('Tu negocio', 'done'), st('Usuario administrador', 'done'), st('Funciones', 'cur'), st('Ticket e impresora', 'next'), st('Listo', 'next')];
+    steps[2].mark = '3'; steps[3].mark = '4'; steps[4].mark = '5';
+    return {
+      steps,
+      mods: [
+        { t: 'Punto de venta y caja', on: true, h: 'Para cobrar con lector de códigos, imprimir tickets y cerrar la caja cada día. Es la base de Velora.' },
+        { t: 'Inventario y recepción de mercadería', on: true, h: 'Controla el stock de cada producto, avisa cuando falta y compara lo que te llega del proveedor con lo que pediste.' },
+        { t: 'Finanzas', on: true, h: 'Saldos de caja, banco y Mercado Pago, lo que te deben y lo que debés, y montos ajustados por inflación para comparar meses.' },
+        { t: 'Órdenes de trabajo y presupuestos', on: false, h: 'Para negocios que reparan, instalan o hacen trabajos a pedido: seguís cada trabajo desde el presupuesto hasta la entrega.' },
+        { t: 'Agenda', on: false, h: 'Turnos y citas por empleado, con aviso cuando dos se superponen.' },
+        { t: 'Empleados', on: true, h: 'Fichaje de entrada y salida, horas extra, vacaciones y ausencias de tu equipo.' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

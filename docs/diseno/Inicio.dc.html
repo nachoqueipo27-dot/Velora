@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Inicio</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+body{margin:0;background:#EFEDE8}
+a{color:#1A1915}a:hover{color:#55524B}
+</style>
+</helmet>
+<div style="display: flex; flex-wrap: wrap; min-height: 900px; background: #EFEDE8; font-family: 'Geist', system-ui, sans-serif; color: #1A1915">
+  <dc-import name="Sidebar" active="Inicio" hint-size="240px,900px"></dc-import>
+  <main style="flex: 999 1 560px; min-width: 0; padding: 20px 20px 20px 4px; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px">
+    <header style="padding: 8px 4px 0">
+      <div style="font-family: 'Geist Mono', monospace; font-size: 11px; letter-spacing: 0.08em; color: #6E6A62">MIÉRCOLES 25 DE NOVIEMBRE</div>
+      <h1 style="margin: 4px 0 0; font-size: 26px; font-weight: 600; letter-spacing: -0.02em">Buen día, Lucía</h1>
+    </header>
+
+    <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px">
+      <sc-for list="{{kpis}}" as="k" hint-placeholder-count="4">
+        <div style="background: #FFFFFF; border: 1px solid #E3E0D9; border-radius: 14px; padding: 16px">
+          <div style="font-family: 'Geist Mono', monospace; font-size: 11px; letter-spacing: 0.08em; color: #6E6A62">{{k.l}}</div>
+          <div style="font-size: 26px; font-weight: 600; letter-spacing: -0.02em; margin-top: 8px; font-variant-numeric: tabular-nums">{{k.v}}</div>
+          <div style="font-size: 12px; color: #6B6860; margin-top: 4px">{{k.n}}</div>
+        </div>
+      </sc-for>
+    </div>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start">
+      <section style="flex: 1 1 420px; min-width: 0; background: #FFFFFF; border: 1px solid #E3E0D9; border-radius: 16px; padding: 18px 20px">
+        <h2 style="margin: 0 0 8px; font-size: 15px; font-weight: 600">Para hacer hoy</h2>
+        <sc-for list="{{todo}}" as="t" hint-placeholder-count="5">
+          <a href="{{t.href}}" style="display: flex; align-items: center; gap: 12px; padding: 12px 0; border-top: 1px solid #F1EEE9; text-decoration: none">
+            <span style="width: 8px; height: 8px; border-radius: 50%; background: {{t.dot}}; flex-shrink: 0"></span>
+            <span style="flex: 1; font-size: 14px">{{t.t}}</span>
+            <span style="color: #6E6A62">→</span>
+          </a>
+        </sc-for>
+      </section>
+      <section style="flex: 1 1 420px; min-width: 0; background: #FFFFFF; border: 1px solid #E3E0D9; border-radius: 16px; padding: 18px 20px">
+        <div style="display: flex; justify-content: space-between; align-items: baseline"><h2 style="margin: 0; font-size: 15px; font-weight: 600">Ventas por hora</h2><span style="font-size: 12px; color: #6B6860">Hoy contra el promedio de los miércoles</span></div>
+        <div style="display: flex; align-items: flex-end; gap: 8px; height: 180px; margin-top: 18px" role="img" aria-label="Ventas por hora de 9 a 20; el pico es a las 12">
+          <sc-for list="{{hours}}" as="h" hint-placeholder-count="12">
+            <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; height: 100%; justify-content: flex-end">
+              <div style="width: 100%; max-width: 28px; height: {{h.h}}; background: {{h.c}}; border-radius: 6px 6px 2px 2px"></div>
+              <span style="font-family: 'Geist Mono', monospace; font-size: 11px; color: #6E6A62">{{h.l}}</span>
+            </div>
+          </sc-for>
+        </div>
+        <div style="display: flex; gap: 16px; margin-top: 12px; font-size: 12px; color: #55524B"><span><span style="display: inline-block; width: 10px; height: 10px; border-radius: 3px; background: #1A1915; margin-right: 6px"></span>Hoy</span><span><span style="display: inline-block; width: 10px; height: 10px; border-radius: 3px; background: #DDD9D1; margin-right: 6px"></span>Horas que faltan</span></div>
+      </section>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const vals = [18, 34, 52, 88, 61, 40, 0, 0, 0, 0, 0, 0];
+    const est = [20, 30, 50, 80, 60, 45, 38, 42, 55, 70, 64, 30];
+    return {
+      kpis: [
+        { l: 'VENTAS DE HOY', v: '$ 212.450', n: '38 ventas · +6% vs. miércoles' },
+        { l: 'EN CAJA', v: '$ 184.300', n: 'Efectivo $ 96.200' },
+        { l: 'ÓRDENES ABIERTAS', v: '6', n: '1 para entregar hoy' },
+        { l: 'CITAS HOY', v: '4', n: 'Próxima a las 15:30' }
+      ],
+      todo: [
+        { t: 'Completar 3 productos cargados como borrador', href: 'Inventario.dc.html', dot: '#D9572B' },
+        { t: 'Reponer 9 productos con stock bajo', href: 'Inventario.dc.html', dot: '#9A5B0B' },
+        { t: 'Recepción parcial de Distribuidora Norte: faltan 6', href: 'Recepcion.dc.html', dot: '#9A5B0B' },
+        { t: 'El arroz largo fino perdió margen: revisar precio', href: 'Finanzas.dc.html', dot: '#9E1F3C' },
+        { t: '2 presupuestos vencen esta semana', href: '#', dot: '#6E6A62' }
+      ],
+      hours: vals.map((v, i) => ({ l: String(9 + i), h: Math.round((v || est[i]) * 1.9) + 'px', c: v ? '#1A1915' : '#DDD9D1' }))
+    };
+  }
+}
+</script>
+</body>
+</html>

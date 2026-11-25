@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Autorización con PIN</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+body{margin:0;background:#EFEDE8}
+</style>
+</helmet>
+<div style="display: flex; flex-wrap: wrap; min-height: 900px; background: #EFEDE8; font-family: 'Geist', system-ui, sans-serif; color: #1A1915; position: relative">
+  <dc-import name="Sidebar" active="Punto de venta" hint-size="240px,900px"></dc-import>
+  <main style="flex: 999 1 560px; min-width: 0; padding: 28px 20px 20px 4px; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px">
+    <h1 style="margin: 0; font-size: 26px; font-weight: 600; letter-spacing: -0.02em">Punto de venta</h1>
+    <div style="display: flex; gap: 16px; flex-wrap: wrap">
+      <div style="flex: 999 1 400px; background: #FFFFFF; border: 1px solid #E3E0D9; border-radius: 16px; height: 600px"></div>
+      <div style="flex: 1 1 340px; max-width: 420px; background: #FFFFFF; border: 1px solid #E3E0D9; border-radius: 16px; height: 600px"></div>
+    </div>
+  </main>
+  <div style="position: absolute; inset: 0; background: rgba(26, 25, 21, 0.32); display: flex; align-items: center; justify-content: center; padding: 24px">
+    <section role="dialog" aria-modal="true" aria-labelledby="aut-t" style="width: 440px; max-width: 100%; background: #FFFFFF; border: 1px solid #E3E0D9; border-radius: 20px; padding: 26px; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px">
+      <div>
+        <div style="font-family: 'Geist Mono', monospace; font-size: 11px; letter-spacing: 0.08em; color: #B5441E">NECESITA AUTORIZACIÓN</div>
+        <h2 id="aut-t" style="margin: 6px 0 0; font-size: 20px; font-weight: 600; letter-spacing: -0.01em">Descuento del 15% en la venta #0143</h2>
+        <p style="margin: 6px 0 0; font-size: 14px; color: #55524B; line-height: 1.5">Martín no tiene permiso para hacer descuentos. Un encargado o administrador lo autoriza acá, sin cerrar la sesión de Martín.</p>
+      </div>
+      <div style="display: flex; justify-content: space-between; background: #F7F5F1; border-radius: 12px; padding: 12px 14px; font-size: 14px; font-variant-numeric: tabular-nums"><span>Total $ 24.000</span><span style="font-weight: 600">Con descuento $ 20.400</span></div>
+      <label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #55524B">Quién autoriza
+        <select style="height: 44px; border: 1px solid #DDD9D1; border-radius: 12px; padding: 0 12px; font: inherit; font-size: 14px; color: #1A1915; background: #FFFFFF"><option>Lucía Romero · Administradora</option></select>
+      </label>
+      <label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #55524B">Su PIN secreto
+        <input type="password" inputmode="numeric" value="1234" style="height: 52px; border: 2px solid #1A1915; border-radius: 12px; padding: 0 16px; font-family: 'Geist Mono', monospace; font-size: 22px; letter-spacing: 0.4em; color: #1A1915">
+      </label>
+      <label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #55524B">Motivo
+        <input type="text" value="Cliente frecuente, compra mayorista" style="height: 44px; border: 1px solid #DDD9D1; border-radius: 12px; padding: 0 12px; font: inherit; font-size: 14px; color: #1A1915">
+      </label>
+      <div style="display: flex; gap: 8px; align-items: flex-start; background: #F7F5F1; border-radius: 10px; padding: 10px 12px; font-size: 12.5px; line-height: 1.5; color: #4A4740">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6B6860" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="flex-shrink: 0; margin-top: 2px"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.5"/></svg>
+        <span>Queda en el historial de actividad: Martín lo pidió, Lucía lo autorizó, con el motivo y la hora.</span>
+      </div>
+      <div style="display: flex; gap: 8px; justify-content: flex-end">
+        <button type="button" style="height: 44px; padding: 0 18px; border-radius: 999px; border: 1px solid #D8D4CC; background: #FFFFFF; font: inherit; font-size: 14px; color: #1A1915">Cancelar</button>
+        <button type="button" style="height: 44px; padding: 0 20px; border-radius: 999px; border: 0; background: #1A1915; color: #FFFFFF; font: inherit; font-size: 14px; font-weight: 500">Autorizar descuento</button>
+      </div>
+    </section>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

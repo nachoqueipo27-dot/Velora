@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Generar códigos e imprimir etiquetas</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+body{margin:0;background:#EFEDE8}
+input[type=checkbox],input[type=radio]{accent-color:#1A1915;width:18px;height:18px;margin:0}
+</style>
+</helmet>
+<div style="display: flex; flex-wrap: wrap; min-height: 900px; background: #EFEDE8; font-family: 'Geist', system-ui, sans-serif; color: #1A1915">
+  <dc-import name="Sidebar" active="Inventario" hint-size="240px,900px"></dc-import>
+  <main style="flex: 999 1 560px; min-width: 0; padding: 20px 20px 20px 4px; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px">
+    <header style="display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding: 8px 4px 0">
+      <div>
+        <div style="font-family: 'Geist Mono', monospace; font-size: 11px; letter-spacing: 0.08em; color: #6E6A62">INVENTARIO</div>
+        <h1 style="margin: 4px 0 0; font-size: 26px; font-weight: 600; letter-spacing: -0.02em">Códigos y etiquetas</h1>
+        <p style="margin: 4px 0 0; font-size: 14px; color: #6B6860">3 productos seleccionados · 2 no tenían código y se les generó uno</p>
+      </div>
+      <a href="EtiquetasHoja.dc.html" style="display: inline-flex; align-items: center; height: 40px; padding: 0 16px; border-radius: 999px; background: #1A1915; color: #FFFFFF; font-size: 13px; font-weight: 500; text-decoration: none">Imprimir 34 etiquetas</a>
+    </header>
+    <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start">
+      <div style="flex: 1 1 420px; min-width: 0; display: flex; flex-direction: column; gap: 16px">
+        <section style="background: #FFFFFF; border: 1px solid #E3E0D9; border-radius: 16px; overflow: hidden">
+          <sc-for list="{{prods}}" as="p" hint-placeholder-count="3">
+            <div style="display: flex; align-items: center; gap: 12px; padding: 12px 18px; border-bottom: 1px solid #F1EEE9">
+              <span style="flex: 1; min-width: 0"><span style="display: block; font-size: 14px; font-weight: 500">{{p.n}}</span><span style="display: block; font-family: 'Geist Mono', monospace; font-size: 12px; color: #55524B; margin-top: 2px">{{p.code}}</span></span>
+              <span style="font-size: 11px; font-weight: 500; border-radius: 999px; padding: 3px 9px; background: {{p.tb}}; color: {{p.tf}}">{{p.tag}}</span>
+              <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: #55524B">Copias<input type="text" value="{{p.q}}" style="width: 44px; height: 32px; border: 1px solid #DDD9D1; border-radius: 8px; text-align: center; font: inherit; font-size: 13px; color: #1A1915"></label>
+            </div>
+          </sc-for>
+        </section>
+        <section style="background: #FFFFFF; border: 1px solid #E3E0D9; border-radius: 16px; padding: 6px 20px 10px">
+          <fieldset style="margin: 0; padding: 14px 0; border: 0; display: flex; flex-direction: column; gap: 10px">
+            <legend style="font-size: 14px; font-weight: 600; padding: 0; margin-bottom: 8px">Dónde se imprime</legend>
+            <label style="display: flex; gap: 10px; align-items: center; font-size: 14px"><input type="radio" name="t" checked> Rollo de etiquetas 40×30 mm</label>
+            <label style="display: flex; gap: 10px; align-items: center; font-size: 14px"><input type="radio" name="t"> Impresora del ticket (80 mm)</label>
+            <label style="display: flex; gap: 10px; align-items: center; font-size: 14px"><input type="radio" name="t"> Hoja A4 de etiquetas autoadhesivas</label>
+          </fieldset>
+          <div style="padding: 14px 0; border-top: 1px solid #F1EEE9; display: flex; flex-direction: column; gap: 10px">
+            <label style="display: flex; gap: 12px; align-items: center; font-size: 14px"><input type="checkbox"><span style="font-weight: 500">Incluir el precio en la etiqueta</span></label>
+            <div style="display: flex; gap: 8px; align-items: flex-start; background: #F7F5F1; border-radius: 10px; padding: 10px 12px; font-size: 12.5px; line-height: 1.5; color: #4A4740; margin-left: 30px">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6B6860" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="flex-shrink: 0; margin-top: 2px"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.5"/></svg>
+              <span>Si el precio cambia, la etiqueta vieja queda desactualizada. Por eso viene apagado: el precio real siempre sale al escanear. Si lo activás, después de cada aumento Velora te ofrece reimprimir las etiquetas afectadas.</span>
+            </div>
+          </div>
+          <div style="padding: 14px 0; border-top: 1px solid #F1EEE9; display: flex; flex-direction: column; gap: 10px">
+            <label style="display: flex; gap: 12px; align-items: center; font-size: 14px"><input type="checkbox"><span style="font-weight: 500">Sumar a la hoja de mostrador</span></label>
+            <div style="display: flex; gap: 8px; align-items: flex-start; background: #F7F5F1; border-radius: 10px; padding: 10px 12px; font-size: 12.5px; line-height: 1.5; color: #4A4740; margin-left: 30px">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6B6860" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="flex-shrink: 0; margin-top: 2px"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.5"/></svg>
+              <span>Para lo que no se puede etiquetar, como pan, frutas o tornillos sueltos. Se imprime una hoja con el nombre y el código de cada producto para tener junto a la caja: el cajero escanea desde la hoja.</span>
+            </div>
+          </div>
+        </section>
+      </div>
+      <aside aria-label="Vista previa" style="flex: 1 1 380px; min-width: 0; background: #E6E3DC; border-radius: 16px; padding: 20px; box-sizing: border-box; display: flex; flex-direction: column; gap: 12px">
+        <div style="font-family: 'Geist Mono', monospace; font-size: 11px; letter-spacing: 0.08em; color: #5F5B53">VISTA PREVIA · 40×30 MM</div>
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px">
+          <sc-for list="{{labels}}" as="l" hint-placeholder-count="4">
+            <div style="background: #FFFFFF; border-radius: 6px; padding: 10px 10px 8px; aspect-ratio: 4 / 3; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between">
+              <div style="font-size: 12px; font-weight: 600; line-height: 1.25">{{l.n}}</div>
+              <div>
+                <div style="display: flex; height: 34px" aria-hidden="true"><sc-for list="{{l.bars}}" as="b" hint-placeholder-count="40"><span style="width: {{b.w}}; background: {{b.c}}"></span></sc-for></div>
+                <div style="font-family: 'Geist Mono', monospace; font-size: 10px; text-align: center; margin-top: 3px; letter-spacing: 0.08em">{{l.code}}</div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </aside>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1000}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const bars = (seed) => {
+      const out = []; let x = seed;
+      for (let i = 0; i < 44; i++) { x = (x * 9301 + 49297) % 233280; out.push({ w: (1 + (x % 3)) + 'px', c: i % 2 ? '#FFFFFF' : '#1A1915' }); }
+      return out;
+    };
+    const nw = ['#E5F2EA', '#1F5E39'], ex = ['#EDEBE6', '#4A4740'];
+    const prods = [
+      { n: 'Tornillos 6×40 · bolsa de 10', code: '2900000000018', tag: 'Código nuevo', t: nw, q: '18' },
+      { n: 'Clavos 2" · bolsa de ½ kg', code: '2900000000025', tag: 'Código nuevo', t: nw, q: '12' },
+      { n: 'Cinta aisladora negra', code: '7798123456783', tag: 'Ya tenía código', t: ex, q: '4' }
+    ].map((p) => ({ ...p, tb: p.t[0], tf: p.t[1] }));
+    return {
+      prods,
+      labels: prods.concat([prods[0]]).map((p, i) => ({ n: p.n, code: p.code, bars: bars(17 + (i % 3) * 7) }))
+    };
+  }
+}
+</script>
+</body>
+</html>

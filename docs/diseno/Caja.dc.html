@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Caja — ventas del día</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+body{margin:0;background:#EFEDE8}
+a{color:#55524B}a:hover{color:#1A1915}
+</style>
+</helmet>
+<div style="display: flex; flex-wrap: wrap; min-height: 900px; background: #EFEDE8; font-family: 'Geist', system-ui, sans-serif; color: #1A1915">
+  <dc-import name="Sidebar" active="Caja" hint-size="240px,900px"></dc-import>
+  <main style="flex: 999 1 560px; min-width: 0; padding: 20px 20px 20px 4px; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px">
+    <header style="display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding: 8px 4px 0">
+      <div>
+        <h1 style="margin: 0; font-size: 26px; font-weight: 600; letter-spacing: -0.02em">Caja</h1>
+        <p style="margin: 4px 0 0; font-size: 14px; color: #6B6860">Martes 25 de noviembre · abierta desde las 9:02 por Lucía</p>
+      </div>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap">
+        <button type="button" style="height: 40px; padding: 0 16px; border-radius: 999px; border: 1px solid #D8D4CC; background: #FFFFFF; font: inherit; font-size: 13px; color: #1A1915; cursor: pointer">Registrar gasto</button>
+        <button type="button" style="height: 40px; padding: 0 16px; border-radius: 999px; border: 0; background: #1A1915; color: #FFFFFF; font: inherit; font-size: 13px; font-weight: 500; cursor: pointer">Cerrar caja</button>
+      </div>
+    </header>
+
+    <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px">
+      <sc-for list="{{kpis}}" as="k" hint-placeholder-count="4">
+        <div style="background: #FFFFFF; border: 1px solid #E3E0D9; border-radius: 14px; padding: 16px">
+          <div style="font-family: 'Geist Mono', monospace; font-size: 11px; letter-spacing: 0.08em; color: #6E6A62">{{k.label}}</div>
+          <div style="font-size: 24px; font-weight: 600; letter-spacing: -0.02em; margin-top: 8px; font-variant-numeric: tabular-nums">{{k.value}}</div>
+          <div style="font-size: 12px; color: #6B6860; margin-top: 4px">{{k.note}}</div>
+        </div>
+      </sc-for>
+    </div>
+
+    <section style="background: #FFFFFF; border: 1px solid #E3E0D9; border-radius: 16px; overflow: hidden">
+      <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; padding: 14px 18px; border-bottom: 1px solid #ECE9E3">
+        <div role="tablist" aria-label="Movimientos" style="display: flex; gap: 4px; background: #F2EFEA; border-radius: 12px; padding: 4px">
+          <button type="button" role="tab" aria-selected="true" style="height: 32px; padding: 0 14px; border: 1px solid #E3E0D9; border-radius: 9px; background: #FFFFFF; font: inherit; font-size: 13px; font-weight: 500; color: #1A1915">Cobros</button>
+          <button type="button" role="tab" aria-selected="false" style="height: 32px; padding: 0 14px; border: 0; border-radius: 9px; background: transparent; font: inherit; font-size: 13px; color: #55524B">Gastos</button>
+          <button type="button" role="tab" aria-selected="false" style="height: 32px; padding: 0 14px; border: 0; border-radius: 9px; background: transparent; font: inherit; font-size: 13px; color: #55524B">Historial</button>
+        </div>
+        <div style="font-family: 'Geist Mono', monospace; font-size: 11px; letter-spacing: 0.08em; color: #6E6A62">38 COBROS · TOCÁ UNA VENTA PARA VER EL DETALLE</div>
+      </div>
+
+      <sc-for list="{{sales}}" as="s" hint-placeholder-count="5">
+        <div style="border-bottom: 1px solid #F1EEE9">
+          <button type="button" onClick="{{s.toggle}}" aria-expanded="{{s.expanded}}" style="width: 100%; display: flex; align-items: center; gap: 14px; padding: 14px 18px; border: 0; background: {{s.rowBg}}; font: inherit; color: #1A1915; text-align: left; cursor: pointer">
+            <span style="font-family: 'Geist Mono', monospace; font-size: 12px; color: #6B6860; width: 44px">{{s.time}}</span>
+            <span style="flex: 1; min-width: 0">
+              <span style="display: block; font-size: 14px; font-weight: 500">Venta #{{s.num}} · {{s.count}}</span>
+              <span style="display: block; font-size: 12px; color: #6B6860; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{s.preview}}</span>
+            </span>
+            <span style="font-size: 12px; color: #55524B; border: 1px solid #E3E0D9; border-radius: 999px; padding: 3px 10px">{{s.pay}}</span>
+            <span style="width: 96px; text-align: right; font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums">{{s.total}}</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B6860" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="{{s.chev}}"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <sc-if value="{{s.open}}" hint-placeholder-val="{{false}}">
+            <div style="padding: 4px 18px 18px 76px; background: #FBFAF7">
+              <div style="overflow-x: auto">
+                <table style="width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums">
+                  <thead>
+                    <tr style="font-family: 'Geist Mono', monospace; font-size: 11px; letter-spacing: 0.06em; color: #6E6A62; text-align: left">
+                      <th style="padding: 10px 0; font-weight: 400">PRODUCTO</th>
+                      <th style="padding: 10px 0; font-weight: 400; text-align: right">CANT.</th>
+                      <th style="padding: 10px 0; font-weight: 400; text-align: right">PRECIO</th>
+                      <th style="padding: 10px 0; font-weight: 400; text-align: right">DESC.</th>
+                      <th style="padding: 10px 0; font-weight: 400; text-align: right">SUBTOTAL</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <sc-for list="{{s.items}}" as="i" hint-placeholder-count="3">
+                      <tr style="border-top: 1px solid #ECE9E3">
+                        <td style="padding: 10px 0">{{i.name}}</td>
+                        <td style="padding: 10px 0; text-align: right">{{i.qty}}</td>
+                        <td style="padding: 10px 0; text-align: right; color: #55524B">{{i.price}}</td>
+                        <td style="padding: 10px 0; text-align: right; color: #55524B">{{i.disc}}</td>
+                        <td style="padding: 10px 0; text-align: right; font-weight: 500">{{i.sub}}</td>
+                      </tr>
+                    </sc-for>
+                  </tbody>
+                </table>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; border-top: 1px solid #DDD9D1; margin-top: 4px; padding-top: 12px">
+                <div style="font-size: 13px; color: #55524B">{{s.units}} · {{s.pay}} · Cajero: {{s.cashier}}</div>
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap">
+                  <span style="font-size: 14px; font-weight: 600; margin-right: 8px; font-variant-numeric: tabular-nums">Total {{s.total}}</span>
+                  <button type="button" style="height: 34px; padding: 0 14px; border-radius: 999px; border: 1px solid #D8D4CC; background: #FFFFFF; font: inherit; font-size: 13px; color: #1A1915; cursor: pointer">Reimprimir ticket</button>
+                  <button type="button" style="height: 34px; padding: 0 14px; border-radius: 999px; border: 1px solid #D8D4CC; background: #FFFFFF; font: inherit; font-size: 13px; color: #1A1915; cursor: pointer">Devolución o cambio</button>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+        </div>
+      </sc-for>
+    </section>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { open: '0142' }; }
+  renderVals() {
+    const data = [
+      { num: '0142', time: '14:32', count: '4 productos', preview: 'Gaseosa cola 1,5 L, Pan lactal grande, Jamón cocido +1', pay: 'Efectivo', total: '$ 17.300', units: '4 unidades + 0,25 kg', cashier: 'Lucía',
+        items: [
+          { name: 'Gaseosa cola 1,5 L', qty: '2', price: '$ 3.000', disc: '—', sub: '$ 6.000' },
+          { name: 'Pan lactal grande', qty: '1', price: '$ 2.500', disc: '—', sub: '$ 2.500' },
+          { name: 'Jamón cocido', qty: '0,25 kg', price: '$ 16.000', disc: '—', sub: '$ 4.000' },
+          { name: 'Yerba mate 1 kg', qty: '1', price: '$ 4.800', disc: '—', sub: '$ 4.800' }
+        ] },
+      { num: '0141', time: '14:18', count: '2 productos', preview: 'Leche entera 1 L, Galletitas de agua', pay: 'Transferencia', total: '$ 3.800', units: '3 unidades', cashier: 'Lucía',
+        items: [
+          { name: 'Leche entera 1 L', qty: '2', price: '$ 1.350', disc: '—', sub: '$ 2.700' },
+          { name: 'Galletitas de agua', qty: '1', price: '$ 1.100', disc: '—', sub: '$ 1.100' }
+        ] },
+      { num: '0140', time: '13:55', count: '1 producto', preview: 'Yerba mate 1 kg', pay: 'Tarjeta', total: '$ 4.320', units: '1 unidad', cashier: 'Martín',
+        items: [ { name: 'Yerba mate 1 kg', qty: '1', price: '$ 4.800', disc: '10%', sub: '$ 4.320' } ] },
+      { num: '0139', time: '13:41', count: '3 productos', preview: 'Gaseosa cola 1,5 L, Leche entera 1 L, Pan lactal grande', pay: 'Efectivo', total: '$ 6.850', units: '3 unidades', cashier: 'Martín',
+        items: [
+          { name: 'Gaseosa cola 1,5 L', qty: '1', price: '$ 3.000', disc: '—', sub: '$ 3.000' },
+          { name: 'Leche entera 1 L', qty: '1', price: '$ 1.350', disc: '—', sub: '$ 1.350' },
+          { name: 'Pan lactal grande', qty: '1', price: '$ 2.500', disc: '—', sub: '$ 2.500' }
+        ] }
+    ];
+    const sales = data.map((s) => {
+      const open = this.state.open === s.num;
+      return { ...s, open, expanded: open ? 'true' : 'false',
+        rowBg: open ? '#FBFAF7' : '#FFFFFF',
+        chev: open ? 'transform: rotate(180deg)' : '',
+        toggle: () => this.setState({ open: open ? null : s.num }) };
+    });
+    return {
+      sales,
+      kpis: [
+        { label: 'INGRESOS', value: '$ 212.450', note: '38 cobros' },
+        { label: 'GASTOS', value: '$ 28.150', note: '3 gastos' },
+        { label: 'SALDO NETO', value: '$ 184.300', note: 'Efectivo $ 96.200' },
+        { label: 'TICKET PROMEDIO', value: '$ 5.590', note: '+4% vs. martes pasado' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Doble llave de Finanzas</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+body{margin:0;background:#EFEDE8}
+</style>
+</helmet>
+<div style="display: flex; flex-wrap: wrap; min-height: 900px; background: #EFEDE8; font-family: 'Geist', system-ui, sans-serif; color: #1A1915">
+  <dc-import name="Sidebar" active="Finanzas" hint-size="240px,900px"></dc-import>
+  <main style="flex: 999 1 560px; min-width: 0; padding: 20px 20px 20px 4px; box-sizing: border-box; display: flex; align-items: center; justify-content: center">
+    <section style="width: 440px; max-width: 100%; background: #FFFFFF; border: 1px solid #E3E0D9; border-radius: 20px; padding: 30px; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px">
+      <span style="width: 44px; height: 44px; border-radius: 12px; background: #F2EFEA; display: flex; align-items: center; justify-content: center">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1A1915" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+      </span>
+      <div>
+        <h1 style="margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -0.01em">Finanzas está protegida</h1>
+        <p style="margin: 6px 0 0; font-size: 14px; color: #55524B; line-height: 1.5">Lucía, confirmá tu contraseña para ver saldos, ganancias y márgenes.</p>
+      </div>
+      <label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #55524B">Contraseña
+        <input type="password" value="velora-2026" style="height: 50px; border: 2px solid #1A1915; border-radius: 12px; padding: 0 14px; font: inherit; font-size: 16px; color: #1A1915">
+      </label>
+      <button type="button" style="height: 48px; border-radius: 999px; border: 0; background: #1A1915; color: #FFFFFF; font: inherit; font-size: 15px; font-weight: 500">Ver Finanzas</button>
+      <div style="display: flex; gap: 8px; align-items: flex-start; background: #F7F5F1; border-radius: 10px; padding: 10px 12px; font-size: 12.5px; line-height: 1.5; color: #4A4740">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6B6860" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="flex-shrink: 0; margin-top: 2px"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.5"/></svg>
+        <span>Aunque ya entraste con tu PIN, Finanzas y Reportes piden la contraseña otra vez si pasaron 10 minutos sin usarlos. Así nadie los ve si dejaste la computadora abierta en el mostrador.</span>
+      </div>
+      <a href="#" style="font-size: 13px; color: #55524B; text-align: center">Olvidé mi contraseña</a>
+    </section>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

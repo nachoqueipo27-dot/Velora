@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Reportes</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+body{margin:0;background:#EFEDE8}
+</style>
+</helmet>
+<div style="display: flex; flex-wrap: wrap; min-height: 900px; background: #EFEDE8; font-family: 'Geist', system-ui, sans-serif; color: #1A1915">
+  <dc-import name="Sidebar" active="Reportes" hint-size="240px,900px"></dc-import>
+  <main style="flex: 999 1 560px; min-width: 0; padding: 20px 20px 20px 4px; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px">
+    <header style="display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding: 8px 4px 0">
+      <div>
+        <h1 style="margin: 0; font-size: 26px; font-weight: 600; letter-spacing: -0.02em">Reportes</h1>
+        <p style="margin: 4px 0 0; font-size: 14px; color: #6B6860">Elegí un reporte para verlo o exportarlo en PDF.</p>
+      </div>
+      <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #55524B">Período
+        <select style="height: 40px; border: 1px solid #DDD9D1; border-radius: 999px; padding: 0 14px; font: inherit; font-size: 13px; color: #1A1915; background: #FFFFFF"><option>Últimos 12 meses</option><option>Este mes</option><option>Este año</option></select>
+      </label>
+    </header>
+    <section style="background: #FFFFFF; border: 1px solid #E3E0D9; border-radius: 16px; padding: 18px 20px">
+      <div style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 8px"><h2 style="margin: 0; font-size: 15px; font-weight: 600">Ventas por mes, en pesos de hoy</h2><span style="font-size: 12px; color: #6B6860">Ajustado por inflación para que los meses se puedan comparar</span></div>
+      <div style="display: flex; align-items: flex-end; gap: 10px; height: 200px; margin-top: 18px" role="img" aria-label="Ventas mensuales ajustadas por inflación, de diciembre 2025 a noviembre 2026; el mejor mes fue diciembre">
+        <sc-for list="{{months}}" as="m" hint-placeholder-count="12">
+          <div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 6px; height: 100%">
+            <span style="font-size: 11px; color: #55524B; font-variant-numeric: tabular-nums">{{m.v}}</span>
+            <div style="width: 100%; max-width: 40px; height: {{m.h}}; background: {{m.c}}; border-radius: 6px 6px 2px 2px"></div>
+            <span style="font-family: 'Geist Mono', monospace; font-size: 11px; color: #6E6A62">{{m.l}}</span>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+    <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px">
+      <sc-for list="{{reports}}" as="r" hint-placeholder-count="6">
+        <article style="background: #FFFFFF; border: 1px solid #E3E0D9; border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 8px">
+          <div style="font-family: 'Geist Mono', monospace; font-size: 11px; letter-spacing: 0.08em; color: #6E6A62">{{r.t}}</div>
+          <div style="font-size: 20px; font-weight: 600; letter-spacing: -0.01em">{{r.v}}</div>
+          <div style="font-size: 13px; color: #55524B; line-height: 1.45; flex-grow: 1">{{r.d}}</div>
+          <div style="display: flex; gap: 8px; margin-top: 6px">
+            <button type="button" style="height: 34px; padding: 0 14px; border-radius: 999px; border: 1px solid #D8D4CC; background: #FFFFFF; font: inherit; font-size: 13px; color: #1A1915">Ver</button>
+            <button type="button" style="height: 34px; padding: 0 14px; border-radius: 999px; border: 1px solid #D8D4CC; background: #FFFFFF; font: inherit; font-size: 13px; color: #1A1915">Exportar PDF</button>
+          </div>
+        </article>
+      </sc-for>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const data = [['DIC', 6.9], ['ENE', 4.1], ['FEB', 4.3], ['MAR', 4.8], ['ABR', 4.6], ['MAY', 4.9], ['JUN', 4.7], ['JUL', 5.2], ['AGO', 5.0], ['SEP', 5.1], ['OCT', 5.3], ['NOV', 4.8]];
+    const max = 6.9;
+    return {
+      months: data.map(([l, v], i) => ({ l, v: v.toLocaleString('es-AR') + ' M', h: Math.round(v / max * 150) + 'px', c: i === data.length - 1 ? '#D9572B' : '#1A1915' })),
+      reports: [
+        { t: 'VENTAS', v: '$ 59,7 M en 12 meses', d: 'Por producto, categoría, forma de pago, cajero y hora del día.' },
+        { t: 'CAJA Y FINANZAS', v: 'Resultado: $ 2,82 M', d: 'Ingresos, comisiones, gastos, cierres de caja y diferencias de efectivo del mes.' },
+        { t: 'INVENTARIO Y STOCK', v: '9 con stock bajo', d: 'Rotación, rentabilidad por producto y valor del stock a costo.' },
+        { t: 'ÓRDENES Y PRESUPUESTOS', v: '43% de aprobación', d: 'Presupuestos enviados contra aprobados y tiempo promedio por orden.' },
+        { t: 'CLIENTES', v: '41 compraron este mes', d: 'Frecuencia, ticket promedio por cliente y clientes que dejaron de venir.' },
+        { t: 'RECURSOS HUMANOS', v: '5,5 h extra', d: 'Horas trabajadas, horas extra, llegadas tarde y ausencias.' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

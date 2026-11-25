@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Conector: estados</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+body{margin:0;background:#EFEDE8}
+input[type=checkbox]{accent-color:#1A1915;width:18px;height:18px;margin:0}
+</style>
+</helmet>
+<div style="display: flex; flex-wrap: wrap; min-height: 900px; background: #EFEDE8; font-family: 'Geist', system-ui, sans-serif; color: #1A1915">
+  <dc-import name="Sidebar" active="Configuración" hint-size="240px,900px"></dc-import>
+  <main style="flex: 999 1 560px; min-width: 0; padding: 20px 20px 20px 4px; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px">
+    <header style="display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; padding: 8px 4px 0">
+      <div>
+        <div style="font-family: 'Geist Mono', monospace; font-size: 11px; letter-spacing: 0.08em; color: #6E6A62">CONFIGURACIÓN</div>
+        <h1 style="margin: 4px 0 0; font-size: 26px; font-weight: 600; letter-spacing: -0.02em">Conectores</h1>
+      </div>
+      <div role="tablist" aria-label="Conectores" style="display: flex; gap: 4px; background: #E3E0D9; border-radius: 12px; padding: 4px; flex-wrap: wrap">
+        <sc-for list="{{tabs}}" as="t" hint-placeholder-count="4">
+          <span role="tab" aria-selected="{{t.sel}}" style="{{t.style}}"><span style="width: 8px; height: 8px; border-radius: 50%; background: {{t.dot}}"></span>{{t.l}}</span>
+        </sc-for>
+      </div>
+    </header>
+
+    <sc-if value="{{shopOff}}" hint-placeholder-val="{{false}}">
+      <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start">
+        <section style="flex: 999 1 480px; min-width: 0; background: #FFFFFF; border: 1px solid #E3E0D9; border-radius: 16px; padding: 28px; display: flex; flex-direction: column; gap: 18px">
+          <span style="width: 52px; height: 52px; border-radius: 14px; background: #F2EFEA; display: flex; align-items: center; justify-content: center">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#1A1915" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9h16l-1.5 11h-13z"/><path d="M8 9V7a4 4 0 0 1 8 0v2"/><path d="M15 15l3-3M18 12v3h-3" stroke="#D9572B"/></svg>
+          </span>
+          <div>
+            <h2 style="margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -0.01em">Conectá tu cuenta de {{name}}</h2>
+            <p style="margin: 8px 0 0; font-size: 14px; color: #55524B; line-height: 1.55">{{pitch}}</p>
+          </div>
+          <ul style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px">
+            <sc-for list="{{benefits}}" as="b" hint-placeholder-count="3">
+              <li style="display: flex; gap: 10px; font-size: 14px; line-height: 1.45"><span style="color: #2F7D4F; font-weight: 600">✓</span>{{b}}</li>
+            </sc-for>
+          </ul>
+          <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap">
+            <button type="button" style="height: 46px; padding: 0 22px; border-radius: 999px; border: 0; background: #1A1915; color: #FFFFFF; font: inherit; font-size: 15px; font-weight: 500">Conectar {{name}}</button>
+            <span style="font-size: 12px; font-weight: 500; color: #24457A; background: #E8EEF8; border-radius: 999px; padding: 4px 10px">Incluido en tu soporte</span>
+          </div>
+        </section>
+        <aside style="flex: 1 1 300px; min-width: 0; max-width: 380px; background: #FFFFFF; border: 1px solid #E3E0D9; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 12px">
+          <div style="font-family: 'Geist Mono', monospace; font-size: 11px; letter-spacing: 0.08em; color: #6E6A62">QUÉ VA A PASAR</div>
+          <sc-for list="{{how}}" as="h" hint-placeholder-count="3">
+            <div style="display: flex; gap: 12px; font-size: 14px; line-height: 1.45"><span style="width: 24px; height: 24px; border-radius: 50%; background: #F2EFEA; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; flex-shrink: 0">{{h.n}}</span><span>{{h.t}}</span></div>
+          </sc-for>
+          <div style="display: flex; gap: 8px; align-items: flex-start; background: #F7F5F1; border-radius: 10px; padding: 10px 12px; font-size: 12.5px; line-height: 1.5; color: #4A4740; margin-top: 4px">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6B6860" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="flex-shrink: 0; margin-top: 2px"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.5"/></svg>
+            <span>Necesitás ser administrador de la cuenta. Velora nunca ve tu contraseña y no cambia nada online hasta que revises y confirmes.</span>
+          </div>
+        </aside>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{shopOn}}" hint-placeholder-val="{{false}}">
+      <div style="display: flex; flex-direction: column; gap: 16px">
+        <div style="background: #FFFFFF; border: 1px solid #E3E0D9; border-radius: 14px; padding: 14px 16px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap">
+          <span style="width: 10px; height: 10px; border-radius: 50%; background: #2F7D4F"></span>
+          <span style="flex: 1 1 280px; font-size: 14px"><strong style="font-weight: 600">Conectado a {{account}}</strong> · última sincronización hace 4 minutos</span>
+          <button type="button" style="height: 36px; padding: 0 14px; border-radius: 999px; border: 1px solid #D8D4CC; background: #FFFFFF; font: inherit; font-size: 13px; color: #1A1915">Sincronizar ahora</button>
+          <button type="button" style="height: 36px; padding: 0 14px; border-radius: 999px; border: 1px solid #D8D4CC; background: #FFFFFF; font: inherit; font-size: 13px; color: #1A1915">Desconectar</button>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px">
+          <sc-for list="{{kpis}}" as="k" hint-placeholder-count="4">
+            <div style="background: #FFFFFF; border: 1px solid #E3E0D9; border-radius: 14px; padding: 16px"><div style="font-family: 'Geist Mono', monospace; font-size: 11px; letter-spacing: 0.08em; color: #6E6A62">{{k.l}}</div><div style="font-size: 26px; font-weight: 600; margin-top: 8px; color: {{k.c}}">{{k.v}}</div><div style="font-size: 12px; color: #6B6860; margin-top: 4px">{{k.n}}</div></div>
+          </sc-for>
+        </div>
+        <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start">
+          <section style="flex: 1 1 420px; min-width: 0; background: #FFFFFF; border: 1px solid #E3E0D9; border-radius: 16px; padding: 18px 20px">
+            <h2 style="margin: 0 0 6px; font-size: 15px; font-weight: 600">Actividad reciente</h2>
+            <sc-for list="{{log}}" as="l" hint-placeholder-count="5">
+              <div style="display: flex; gap: 12px; padding: 10px 0; border-top: 1px solid #F1EEE9; font-size: 13px; line-height: 1.45"><span style="font-family: 'Geist Mono', monospace; font-size: 12px; color: #6B6860; width: 44px; flex-shrink: 0">{{l.t}}</span><span style="width: 8px; height: 8px; border-radius: 50%; background: {{l.c}}; margin-top: 5px; flex-shrink: 0"></span><span>{{l.e}}</span></div>
+            </sc-for>
+          </section>
+          <section style="flex: 1 1 420px; min-width: 0; background: #FFFFFF; border: 1px solid #E3E0D9; border-radius: 16px; padding: 6px 20px 10px">
+            <sc-for list="{{opts}}" as="o" hint-placeholder-count="3">
+              <div style="padding: 14px 0; border-top: {{o.bt}}; display: flex; flex-direction: column; gap: 10px">
+                <label style="display: flex; gap: 12px; align-items: center; font-size: 14px"><input type="checkbox" checked="{{o.on}}"><span style="font-weight: 500">{{o.t}}</span></label>
+                <div style="display: flex; gap: 8px; align-items: flex-start; background: #F7F5F1; border-radius: 10px; padding: 10px 12px; font-size: 12.5px; line-height: 1.5; color: #4A4740; margin-left: 30px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6B6860" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="flex-shrink: 0; margin-top: 2px"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.5"/></svg><span>{{o.h}}</span></div>
+              </div>
+            </sc-for>
+            <label style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 0; border-top: 1px solid #F1EEE9; font-size: 14px"><span style="font-weight: 500">Stock de seguridad</span><input type="text" value="2 unidades" style="width: 120px; height: 36px; border: 1px solid #DDD9D1; border-radius: 10px; padding: 0 10px; font: inherit; font-size: 13px; color: #1A1915"></label>
+          </section>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{xl}}" hint-placeholder-val="{{false}}">
+      <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start">
+        <section style="flex: 999 1 480px; min-width: 0; background: #FFFFFF; border: 1px solid #E3E0D9; border-radius: 16px; padding: 22px; display: flex; flex-direction: column; gap: 16px">
+          <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap"><h2 style="margin: 0; font-size: 17px; font-weight: 600">Importar productos</h2><button type="button" style="height: 34px; padding: 0 14px; border-radius: 999px; border: 1px solid #D8D4CC; background: #FFFFFF; font: inherit; font-size: 13px; color: #1A1915">Descargar plantilla</button></div>
+          <label style="border: 2px dashed #C9C5BC; border-radius: 14px; padding: 40px 20px; display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; background: #FBFAF7; cursor: pointer">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#55524B" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M12 17v-6M9.5 13.5L12 11l2.5 2.5"/></svg>
+            <span style="font-size: 16px; font-weight: 600">Arrastrá tu archivo acá</span>
+            <span style="font-size: 13px; color: #6B6860">Excel (.xlsx) o .csv · hasta 20.000 productos</span>
+            <span style="height: 40px; padding: 0 18px; border-radius: 999px; background: #1A1915; color: #FFFFFF; font-size: 13px; font-weight: 500; display: inline-flex; align-items: center; margin-top: 6px">Elegir archivo</span>
+            <input type="file" accept=".xlsx,.csv" style="position: absolute; width: 1px; height: 1px; opacity: 0">
+          </label>
+          <ol style="margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px">
+            <sc-for list="{{xlSteps}}" as="s" hint-placeholder-count="4">
+              <li style="background: #F7F5F1; border-radius: 12px; padding: 12px; font-size: 13px; line-height: 1.4"><div style="font-family: 'Geist Mono', monospace; font-size: 11px; color: #6E6A62; margin-bottom: 4px">PASO {{s.n}}</div>{{s.t}}</li>
+            </sc-for>
+          </ol>
+          <div style="display: flex; gap: 8px; align-items: flex-start; background: #F7F5F1; border-radius: 10px; padding: 10px 12px; font-size: 12.5px; line-height: 1.5; color: #4A4740"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6B6860" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="flex-shrink: 0; margin-top: 2px"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.5"/></svg><span>Sirve el Excel que exporta tu sistema anterior, aunque las columnas tengan otros nombres: vos indicás cuál es cuál. Si un código ya existe en Velora, el producto se actualiza en vez de duplicarse.</span></div>
+        </section>
+        <div style="flex: 1 1 320px; min-width: 0; max-width: 400px; display: flex; flex-direction: column; gap: 16px">
+          <section style="background: #FFFFFF; border: 1px solid #E3E0D9; border-radius: 16px; padding: 18px 20px; display: flex; flex-direction: column; gap: 8px">
+            <h2 style="margin: 0 0 4px; font-size: 15px; font-weight: 600">Exportar a Excel</h2>
+            <sc-for list="{{exports}}" as="e" hint-placeholder-count="3">
+              <button type="button" style="display: flex; justify-content: space-between; align-items: center; padding: 11px 0; border: 0; border-top: 1px solid #F1EEE9; background: transparent; font: inherit; font-size: 14px; color: #1A1915; text-align: left; cursor: pointer">{{e}}<span style="color: #6E6A62">↓</span></button>
+            </sc-for>
+          </section>
+          <section style="background: #FFFFFF; border: 1px solid #E3E0D9; border-radius: 16px; padding: 18px 20px">
+            <h2 style="margin: 0 0 6px; font-size: 15px; font-weight: 600">Importaciones anteriores</h2>
+            <sc-for list="{{history}}" as="h" hint-placeholder-count="2">
+              <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 0; border-top: 1px solid #F1EEE9; font-size: 13px"><span><span style="display: block; font-weight: 500">{{h.f}}</span><span style="display: block; color: #6B6860; margin-top: 2px">{{h.d}}</span></span><button type="button" style="height: 30px; padding: 0 12px; border-radius: 999px; border: 1px solid #D8D4CC; background: #FFFFFF; font: inherit; font-size: 12px; color: #1A1915">Deshacer</button></div>
+            </sc-for>
+          </section>
+        </div>
+      </div>
+    </sc-if>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"variant":{"editor":"enum","options":["tn-off","tn-on","ml-off","ml-on","xl-idle"],"default":"tn-off"},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const v = this.props.variant ?? 'tn-off';
+    const isML = v.startsWith('ml'), on = v.endsWith('on');
+    const active = v === 'xl-idle' ? 'xl' : (isML ? 'ml' : 'tn');
+    const tabStyle = (sel) => 'display: flex; align-items: center; gap: 8px; height: 32px; padding: 0 14px; border-radius: 9px; font-size: 13px; ' + (sel ? 'border: 1px solid #DDD9D1; background: #FFFFFF; color: #1A1915; font-weight: 500' : 'border: 1px solid transparent; color: #4A4740');
+    const dotFor = (id) => id === 'mp' ? '#2F7D4F' : (id === active && on ? '#2F7D4F' : (id === 'xl' ? '#6E6A62' : '#C9C5BC'));
+    const tabs = [['mp', 'Mercado Pago'], ['tn', 'Tiendanube'], ['ml', 'Mercado Libre'], ['xl', 'Excel']].map(([id, l]) => ({ l, sel: id === active ? 'true' : 'false', style: tabStyle(id === active), dot: dotFor(id) }));
+    const name = isML ? 'Mercado Libre' : 'Tiendanube';
+    const helpOpts = [
+      { t: 'Sincronizar stock', on: true, bt: '0', h: 'Cada venta en el local baja el stock online. Si llega a cero, la publicación se pausa sola.' },
+      { t: 'Sincronizar precios', on: false, bt: '1px solid #F1EEE9', h: 'Apagado: online podés cobrar distinto, por ejemplo para cubrir comisiones y envío.' },
+      { t: 'Registrar las ventas online en Velora', on: true, bt: '1px solid #F1EEE9', h: 'Descuentan stock del local y suman a reportes como canal "online".' }
+    ];
+    if (isML) helpOpts.push({ t: 'Mi cuenta usa varios depósitos', on: false, bt: '1px solid #F1EEE9', h: 'Activalo si manejás stock por depósito, por ejemplo Full y tu local.' });
+    return {
+      tabs, name, xl: v === 'xl-idle', shopOff: v === 'tn-off' || v === 'ml-off', shopOn: v === 'tn-on' || v === 'ml-on',
+      pitch: isML ? 'Velora mantiene al día el stock de tus publicaciones y registra cada venta de Mercado Libre, para que nunca vendas algo que ya no tenés en el local.' : 'Velora mantiene al día el stock de tu tienda online y registra cada venta, para que nunca vendas algo que ya no tenés en el local.',
+      benefits: isML ? ['Stock al día en todas tus publicaciones, incluidos packs y combos', 'Publicaciones pausadas solas cuando se agota un producto', 'Ventas de Mercado Libre en tus reportes, separadas del local'] : ['Stock al día en tu tienda con cada venta del local', 'Productos pausados solos cuando se agotan', 'Ventas online en tus reportes, separadas del local'],
+      how: [{ n: '1', t: 'Se abre ' + name + ' para que autorices la conexión.' }, { n: '2', t: 'Velora lee tus ' + (isML ? 'publicaciones' : 'productos') + ' y los vincula por código o SKU.' }, { n: '3', t: 'Revisás los que no se pudieron vincular y confirmás. Recién ahí empieza la sincronización.' }],
+      account: isML ? 'ALMACENLAESQUINA en Mercado Libre' : 'almacenlaesquina.mitiendanube.com',
+      kpis: isML ? [
+        { l: 'VINCULADAS', v: '296', n: 'de 318 publicaciones', c: '#1A1915' }, { l: 'PARA REVISAR', v: '22', n: 'combos o packs', c: '#7A4A06' },
+        { l: 'VENTAS HOY', v: '5', n: '$ 38.400 online', c: '#1A1915' }, { l: 'PAUSADAS', v: '8', n: 'sin stock en el local', c: '#1A1915' }
+      ] : [
+        { l: 'VINCULADOS', v: '584', n: 'de 612 productos', c: '#1A1915' }, { l: 'PARA REVISAR', v: '28', n: 'sin código o stock distinto', c: '#7A4A06' },
+        { l: 'VENTAS HOY', v: '3', n: '$ 21.600 online', c: '#1A1915' }, { l: 'PAUSADOS', v: '4', n: 'sin stock en el local', c: '#1A1915' }
+      ],
+      log: isML ? [
+        { t: '14:28', c: '#2F7D4F', e: 'Venta en Mercado Libre: pack de yerba ×3. Se descontaron 3 unidades del local.' },
+        { t: '14:02', c: '#1A1915', e: 'Stock enviado: Aceite de girasol 1,5 L quedó en 10 (12 menos 2 de seguridad).' },
+        { t: '13:40', c: '#B7791F', e: 'Publicación pausada: Galletitas de agua ×12, sin stock suficiente en el local.' },
+        { t: '11:15', c: '#2F7D4F', e: 'Venta en Mercado Libre: Azúcar 1 kg ×2.' }
+      ] : [
+        { t: '14:32', c: '#1A1915', e: 'Stock enviado: Yerba mate 1 kg quedó en 53 online (55 en el local menos 2 de seguridad).' },
+        { t: '14:30', c: '#2F7D4F', e: 'Venta online #1043: Yerba mate 1 kg ×2. Se descontaron del local.' },
+        { t: '13:55', c: '#B7791F', e: 'Producto pausado: Pan lactal grande, sin stock en el local.' },
+        { t: '12:10', c: '#2F7D4F', e: 'Venta online #1042: Aceite de girasol 1,5 L ×1.' }
+      ],
+      opts: helpOpts,
+      xlSteps: [{ n: '1', t: 'Descargá la plantilla o usá tu Excel' }, { n: '2', t: 'Subí el archivo' }, { n: '3', t: 'Indicá qué columna es cada dato' }, { n: '4', t: 'Revisá la vista previa e importá' }],
+      exports: ['Todos los productos', 'Clientes', 'Ventas del mes'],
+      history: [{ f: 'productos_almacen.xlsx', d: '20/11 · 1.388 nuevos · 88 actualizados' }, { f: 'lista_precios_nov.csv', d: '05/11 · 412 precios actualizados' }]
+    };
+  }
+}
+</script>
+</body>
+</html>

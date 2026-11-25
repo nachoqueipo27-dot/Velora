@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Conectores</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+body{margin:0;background:#EFEDE8}
+input[type=checkbox]{accent-color:#1A1915;width:18px;height:18px;margin:0}
+</style>
+</helmet>
+<div style="display: flex; flex-wrap: wrap; min-height: 900px; background: #EFEDE8; font-family: 'Geist', system-ui, sans-serif; color: #1A1915">
+  <dc-import name="Sidebar" active="Configuración" hint-size="240px,900px"></dc-import>
+  <main style="flex: 999 1 560px; min-width: 0; padding: 20px 20px 20px 4px; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px">
+    <header style="padding: 8px 4px 0">
+      <div style="font-family: 'Geist Mono', monospace; font-size: 11px; letter-spacing: 0.08em; color: #6E6A62">CONFIGURACIÓN</div>
+      <h1 style="margin: 4px 0 0; font-size: 26px; font-weight: 600; letter-spacing: -0.02em">Conectores</h1>
+      <p style="margin: 4px 0 0; font-size: 14px; color: #6B6860">Todo lo que Velora conecta con otros servicios.</p>
+    </header>
+    <div role="tablist" aria-label="Conectores" style="display: flex; gap: 4px; background: #E3E0D9; border-radius: 12px; padding: 4px; align-self: flex-start; flex-wrap: wrap">
+      <sc-for list="{{tabs}}" as="t" hint-placeholder-count="4">
+        <button type="button" role="tab" aria-selected="{{t.sel}}" onClick="{{t.pick}}" style="{{t.style}}"><span style="width: 8px; height: 8px; border-radius: 50%; background: {{t.dot}}"></span>{{t.l}}</button>
+      </sc-for>
+    </div>
+
+    <sc-if value="{{isMP}}" hint-placeholder-val="{{true}}">
+      <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start">
+        <section style="flex: 999 1 460px; min-width: 0; background: #FFFFFF; border: 1px solid #E3E0D9; border-radius: 16px; padding: 6px 20px 10px">
+          <div style="display: flex; align-items: center; gap: 12px; padding: 14px 0">
+            <span style="width: 10px; height: 10px; border-radius: 50%; background: #2F7D4F"></span>
+            <span style="flex: 1"><span style="display: block; font-size: 15px; font-weight: 600">Conectado a Almacén La Esquina</span><span style="display: block; font-size: 13px; color: #6B6860; margin-top: 2px">Alias almacen.esquina.mp · conectado el 20/11</span></span>
+            <button type="button" style="height: 34px; padding: 0 14px; border-radius: 999px; border: 1px solid #D8D4CC; background: #FFFFFF; font: inherit; font-size: 13px; color: #1A1915">Desconectar</button>
+          </div>
+          <sc-for list="{{mpOpts}}" as="o" hint-placeholder-count="3">
+            <div style="padding: 14px 0; border-top: 1px solid #F1EEE9; display: flex; flex-direction: column; gap: 10px">
+              <label style="display: flex; gap: 12px; align-items: center; font-size: 14px"><input type="checkbox" checked="{{o.on}}"><span style="font-weight: 500">{{o.t}}</span></label>
+              <div style="display: flex; gap: 8px; align-items: flex-start; background: #F7F5F1; border-radius: 10px; padding: 10px 12px; font-size: 12.5px; line-height: 1.5; color: #4A4740; margin-left: 30px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6B6860" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="flex-shrink: 0; margin-top: 2px"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.5"/></svg><span>{{o.h}}</span></div>
+            </div>
+          </sc-for>
+        </section>
+        <aside style="flex: 1 1 300px; max-width: 360px; background: #FFFFFF; border: 1px solid #E3E0D9; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center">
+          <div style="font-family: 'Geist Mono', monospace; font-size: 11px; letter-spacing: 0.08em; color: #6E6A62">QR DE LA CAJA 1</div>
+          <svg width="150" height="150" viewBox="0 0 21 21" role="img" aria-label="Código QR de ejemplo" shape-rendering="crispEdges"><rect width="21" height="21" fill="#FFFFFF"/><path fill="#1A1915" d="M0 0h7v7H0zM14 0h7v7h-7zM0 14h7v7H0zM9 0h1v2H9zM11 1h2v1h-2zM8 3h2v2H8zM11 4h1v3h-1zM9 8h3v1H9zM0 9h2v1H0zM3 8h2v2H3zM14 9h3v1h-3zM18 8h3v2h-3zM8 11h1v3H8zM10 12h3v1h-3zM15 12h1v2h-1zM17 11h2v3h-2zM9 15h2v2H9zM12 14h2v1h-2zM14 16h3v1h-3zM18 15h3v1h-3zM10 18h1v3h-1zM12 17h2v2h-2zM15 19h2v2h-2zM19 18h2v1h-2z"/><path fill="#FFFFFF" d="M1 1h5v5H1zM15 1h5v5h-5zM1 15h5v5H1z"/><path fill="#1A1915" d="M2 2h3v3H2zM16 2h3v3h-3zM2 16h3v3H2z"/></svg>
+          <div style="font-size: 13px; color: #55524B; line-height: 1.45">Imprimilo y pegalo en el mostrador. Se paga desde Mercado Pago o desde la app de cualquier banco.</div>
+          <button type="button" style="height: 38px; padding: 0 16px; border-radius: 999px; border: 0; background: #1A1915; color: #FFFFFF; font: inherit; font-size: 13px; font-weight: 500">Imprimir QR</button>
+        </aside>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{isShop}}" hint-placeholder-val="{{false}}">
+      <section style="background: #FFFFFF; border: 1px solid #E3E0D9; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 16px; max-width: 820px">
+        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap">
+          <span style="flex: 1 1 260px"><span style="display: block; font-size: 16px; font-weight: 600">{{shopName}}</span><span style="display: block; font-size: 13px; color: #6B6860; margin-top: 2px">Velora es el dueño del stock: cada venta en el local actualiza tu tienda online y cada venta online descuenta del local.</span></span>
+          <span style="font-size: 12px; font-weight: 500; color: #24457A; background: #E8EEF8; border-radius: 999px; padding: 4px 10px">Segunda etapa</span>
+          <button type="button" style="height: 40px; padding: 0 16px; border-radius: 999px; border: 0; background: #1A1915; color: #FFFFFF; font: inherit; font-size: 13px; font-weight: 500">Conectar {{shopShort}}</button>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px">
+          <div style="background: #F2EFEA; border-radius: 12px; padding: 14px"><div style="font-size: 22px; font-weight: 600">—</div><div style="font-size: 12px; color: #55524B">Productos vinculados</div></div>
+          <div style="background: #F2EFEA; border-radius: 12px; padding: 14px"><div style="font-size: 22px; font-weight: 600">2 u.</div><div style="font-size: 12px; color: #55524B">Stock de seguridad</div></div>
+          <div style="background: #F2EFEA; border-radius: 12px; padding: 14px"><div style="font-size: 22px; font-weight: 600">—</div><div style="font-size: 12px; color: #55524B">Última sincronización</div></div>
+        </div>
+        <sc-for list="{{shopOpts}}" as="o" hint-placeholder-count="3">
+          <div style="padding-top: 14px; border-top: 1px solid #F1EEE9; display: flex; flex-direction: column; gap: 10px">
+            <label style="display: flex; gap: 12px; align-items: center; font-size: 14px"><input type="checkbox" checked="{{o.on}}"><span style="font-weight: 500">{{o.t}}</span></label>
+            <div style="display: flex; gap: 8px; align-items: flex-start; background: #F7F5F1; border-radius: 10px; padding: 10px 12px; font-size: 12.5px; line-height: 1.5; color: #4A4740; margin-left: 30px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6B6860" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="flex-shrink: 0; margin-top: 2px"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.5"/></svg><span>{{o.h}}</span></div>
+          </div>
+        </sc-for>
+      </section>
+    </sc-if>
+
+    <sc-if value="{{isExcel}}" hint-placeholder-val="{{false}}">
+      <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start">
+        <section style="flex: 1 1 320px; max-width: 380px; background: #FFFFFF; border: 1px solid #E3E0D9; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 12px">
+          <h2 style="margin: 0; font-size: 15px; font-weight: 600">Importar productos</h2>
+          <ol style="margin: 0; padding-left: 18px; font-size: 14px; color: #3D3A34; line-height: 1.7"><li>Descargá la plantilla o usá tu propio Excel</li><li>Subí el archivo</li><li>Indicá qué columna es cada dato</li><li>Revisá la vista previa e importá</li></ol>
+          <button type="button" style="height: 38px; border-radius: 999px; border: 1px solid #D8D4CC; background: #FFFFFF; font: inherit; font-size: 13px; color: #1A1915">Descargar plantilla</button>
+          <div style="border: 1.5px dashed #C9C5BC; border-radius: 12px; padding: 18px; text-align: center; font-size: 13px; color: #55524B">productos_almacen.xlsx · 1.482 filas</div>
+          <div style="display: flex; gap: 8px; align-items: flex-start; background: #F7F5F1; border-radius: 10px; padding: 10px 12px; font-size: 12.5px; line-height: 1.5; color: #4A4740"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6B6860" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="flex-shrink: 0; margin-top: 2px"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.5"/></svg><span>Sirve el Excel que exporta tu sistema anterior. Si un código ya existe en Velora, se actualiza en vez de duplicarse. Antes de importar se hace una copia de seguridad automática.</span></div>
+          <button type="button" style="height: 38px; border-radius: 999px; border: 1px solid #D8D4CC; background: #FFFFFF; font: inherit; font-size: 13px; color: #1A1915">Exportar todos los productos a Excel</button>
+        </section>
+        <section style="flex: 999 1 460px; min-width: 0; background: #FFFFFF; border: 1px solid #E3E0D9; border-radius: 16px; overflow: hidden">
+          <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; padding: 14px 18px; border-bottom: 1px solid #ECE9E3"><span style="font-size: 14px"><strong style="font-weight: 600">1.476 listos</strong> · 6 con errores</span><button type="button" style="height: 36px; padding: 0 16px; border-radius: 999px; border: 0; background: #1A1915; color: #FFFFFF; font: inherit; font-size: 13px; font-weight: 500">Importar 1.476 productos</button></div>
+          <div style="overflow-x: auto">
+            <table style="width: 100%; border-collapse: collapse; font-size: 13px; min-width: 560px">
+              <thead>
+                <tr style="background: #FBFAF7">
+                  <sc-for list="{{cols}}" as="c" hint-placeholder-count="4">
+                    <th style="padding: 10px 12px; text-align: left; font-weight: 400; border-bottom: 1px solid #ECE9E3"><div style="font-family: 'Geist Mono', monospace; font-size: 11px; color: #6E6A62">COLUMNA {{c.col}}</div><select aria-label="Dato de la columna {{c.col}}" style="margin-top: 4px; height: 30px; border: 1px solid #DDD9D1; border-radius: 8px; font: inherit; font-size: 12px; color: #1A1915; background: #FFFFFF"><option>{{c.map}}</option></select></th>
+                  </sc-for>
+                </tr>
+              </thead>
+              <tbody>
+                <sc-for list="{{rows}}" as="r" hint-placeholder-count="5">
+                  <tr style="border-bottom: 1px solid #F1EEE9; background: {{r.bg}}">
+                    <td style="padding: 10px 12px">{{r.a}}</td>
+                    <td style="padding: 10px 12px; font-family: 'Geist Mono', monospace; font-size: 12px">{{r.b}}</td>
+                    <td style="padding: 10px 12px">{{r.c}}</td>
+                    <td style="padding: 10px 12px; color: {{r.ec}}">{{r.d}}</td>
+                  </tr>
+                </sc-for>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </sc-if>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { tab: 'mp' }; }
+  renderVals() {
+    const tab = this.state.tab;
+    const defs = [['mp', 'Mercado Pago', '#2F7D4F'], ['tn', 'Tiendanube', '#C9C5BC'], ['ml', 'Mercado Libre', '#C9C5BC'], ['xl', 'Excel', '#6E6A62']];
+    const tabs = defs.map(([id, l, dot]) => ({ l, dot, sel: tab === id ? 'true' : 'false', pick: () => this.setState({ tab: id }),
+      style: 'display: flex; align-items: center; gap: 8px; height: 34px; padding: 0 14px; border-radius: 9px; font: inherit; font-size: 13px; cursor: pointer; ' + (tab === id ? 'border: 1px solid #DDD9D1; background: #FFFFFF; color: #1A1915; font-weight: 500' : 'border: 1px solid transparent; background: transparent; color: #4A4740') }));
+    const isShop = tab === 'tn' || tab === 'ml';
+    const shopOpts = [
+      { t: 'Sincronizar stock', on: true, h: 'Cuando vendés en el local, el stock baja también en la tienda online. Si llega a cero, la publicación se pausa sola para no vender algo que no tenés.' },
+      { t: 'Sincronizar precios', on: false, h: 'Usa el mismo precio que en el local. Dejalo apagado si online cobrás distinto (por ejemplo, para cubrir comisiones y envío).' },
+      { t: 'Registrar las ventas online en Velora', on: true, h: 'Cada venta online aparece en Velora como canal "online": descuenta stock y suma a los reportes. Se procesan cuando la PC se conecta a internet.' }
+    ];
+    if (tab === 'ml') shopOpts.push({ t: 'Mi cuenta usa varios depósitos', on: false, h: 'Activalo si en Mercado Libre manejás stock por depósito (por ejemplo, Full y tu local). Velora actualiza el stock del depósito correcto.' });
+    return {
+      tabs, isMP: tab === 'mp', isShop, isExcel: tab === 'xl',
+      shopName: tab === 'ml' ? 'Mercado Libre' : 'Tiendanube', shopShort: tab === 'ml' ? 'Mercado Libre' : 'Tiendanube', shopOpts,
+      mpOpts: [
+        { t: 'Cobrar con QR desde el punto de venta', on: true, h: 'Al elegir "QR Mercado Pago", el cliente paga con el QR impreso o con el de la pantalla, y la venta se cierra sola cuando el pago entra. Necesita internet y el soporte al día.' },
+        { t: 'Avisar cuando entra dinero', on: true, h: 'Muestra un aviso en Velora con el monto y quién pagó, para no tener que mirar el celular. Las transferencias al alias se suman si Mercado Pago las informa (pendiente de prueba).' },
+        { t: 'Cruzar Mercado Pago en el cierre de caja', on: true, h: 'Al cerrar la caja, Velora trae los cobros del día y los compara con lo que contó el cajero, para detectar pagos que no se registraron como venta.' }
+      ],
+      cols: [{ col: 'A', map: 'Nombre' }, { col: 'B', map: 'Código de barras' }, { col: 'C', map: 'Precio de venta' }, { col: 'D', map: 'Stock' }],
+      rows: [
+        { a: 'Yerba mate 1 kg', b: '7790070012340', c: '$ 4.800', d: '56', bg: '#FFFFFF', ec: '#1A1915' },
+        { a: 'Leche entera 1 L', b: '7790080054321', c: '$ 1.350', d: '42', bg: '#FFFFFF', ec: '#1A1915' },
+        { a: 'Azúcar 1 kg', b: '7790150000014', c: '$ 1.400', d: 'veinte', bg: '#FBF0F2', ec: '#8E1C36' },
+        { a: 'Fideos tirabuzón 500 g', b: '7790580123456', c: '$ 1.050', d: '30', bg: '#FFFFFF', ec: '#1A1915' },
+        { a: 'Arroz largo fino 1 kg', b: '7790123400011', c: '$ 1.600', d: '12', bg: '#FFFFFF', ec: '#1A1915' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

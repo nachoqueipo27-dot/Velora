@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Configuración</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+body{margin:0;background:#EFEDE8}
+a{color:#1A1915}
+</style>
+</helmet>
+<div style="display: flex; flex-wrap: wrap; min-height: 900px; background: #EFEDE8; font-family: 'Geist', system-ui, sans-serif; color: #1A1915">
+  <dc-import name="Sidebar" active="Configuración" hint-size="240px,900px"></dc-import>
+  <main style="flex: 999 1 560px; min-width: 0; padding: 20px 20px 20px 4px; box-sizing: border-box; display: flex; flex-direction: column; gap: 20px">
+    <header style="padding: 8px 4px 0">
+      <h1 style="margin: 0; font-size: 26px; font-weight: 600; letter-spacing: -0.02em">Configuración</h1>
+      <p style="margin: 4px 0 0; font-size: 14px; color: #6B6860">Cada opción explica debajo qué hace antes de activarla.</p>
+    </header>
+    <sc-for list="{{groups}}" as="g" hint-placeholder-count="3">
+      <section style="display: flex; flex-direction: column; gap: 10px">
+        <div style="font-family: 'Geist Mono', monospace; font-size: 11px; letter-spacing: 0.08em; color: #6E6A62; padding: 0 4px">{{g.t}}</div>
+        <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px">
+          <sc-for list="{{g.items}}" as="i" hint-placeholder-count="3">
+            <a href="{{i.href}}" style="background: #FFFFFF; border: 1px solid #E3E0D9; border-radius: 14px; padding: 16px; text-decoration: none; display: flex; flex-direction: column; gap: 6px; min-height: 92px">
+              <span style="display: flex; justify-content: space-between; gap: 8px; font-size: 15px; font-weight: 600">{{i.t}}<span style="color: #6E6A62; font-weight: 400">→</span></span>
+              <span style="font-size: 13px; color: #55524B; line-height: 1.45">{{i.d}}</span>
+            </a>
+          </sc-for>
+        </div>
+      </section>
+    </sc-for>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const i = (t, d, href) => ({ t, d, href: href || '#' });
+    return {
+      groups: [
+        { t: 'TU NEGOCIO', items: [
+          i('Datos del negocio', 'Nombre, dirección, logo y link de Google. Salen en tickets y PDFs.'),
+          i('Usuarios y permisos', 'Quién entra a Velora y qué puede hacer cada uno.', 'Usuarios.dc.html'),
+          i('Funciones', 'Qué módulos aparecen en el menú.') ] },
+        { t: 'VENTA', items: [
+          i('Ticket de venta', 'Impresora, ancho del papel, cajón y opcionales del ticket.', 'Ticket.dc.html'),
+          i('Códigos de barras', 'Lector, código desconocido, balanza y cámara.', 'Codigos.dc.html'),
+          i('Monedas y cotización', 'Dólar oficial, MEP o blue para precios y reportes.'),
+          i('Conectores', 'Mercado Pago, Tiendanube, Mercado Libre e importar o exportar Excel.', 'Conectores.dc.html'),
+          i('Pantalla externa', 'Monitores para mostrar la venta al cliente o pasar videos.', 'PantallaExterna.dc.html') ] },
+        { t: 'DATOS Y SEGURIDAD', items: [
+          i('Copias de seguridad', 'Backup automático de tus datos y cómo recuperarlos.', 'Backup.dc.html'),
+          i('Historial de actividad', 'Quién hizo qué y cuándo: ventas anuladas, cambios de precio, cierres.'),
+          i('Licencia y soporte', 'Tu licencia, la PC vinculada y el estado del soporte.', 'Licencia.dc.html') ] }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

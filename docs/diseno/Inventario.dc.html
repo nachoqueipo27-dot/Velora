@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Inventario</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+body{margin:0;background:#EFEDE8}
+a{color:#55524B}a:hover{color:#1A1915}
+</style>
+</helmet>
+<div style="display: flex; flex-wrap: wrap; min-height: 900px; background: #EFEDE8; font-family: 'Geist', system-ui, sans-serif; color: #1A1915">
+  <dc-import name="Sidebar" active="Inventario" hint-size="240px,900px"></dc-import>
+  <main style="flex: 999 1 560px; min-width: 0; padding: 20px 20px 20px 4px; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px">
+    <header style="display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding: 8px 4px 0">
+      <div>
+        <h1 style="margin: 0; font-size: 26px; font-weight: 600; letter-spacing: -0.02em">Inventario</h1>
+        <p style="margin: 4px 0 0; font-size: 14px; color: #6B6860">412 productos · valor del stock a costo $ 6.284.000</p>
+      </div>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap">
+        <a href="Stock.dc.html" style="display: inline-flex; align-items: center; height: 40px; padding: 0 16px; border-radius: 999px; border: 1px solid #D8D4CC; background: #FFFFFF; font-size: 13px; color: #1A1915; text-decoration: none">Agregar stock</a>
+        <button type="button" style="height: 40px; padding: 0 16px; border-radius: 999px; border: 0; background: #1A1915; color: #FFFFFF; font: inherit; font-size: 13px; font-weight: 500; cursor: pointer">Nuevo producto</button>
+      </div>
+    </header>
+
+    <div style="background: #FFFFFF; border: 1px solid #E8C9BB; border-radius: 14px; padding: 12px 16px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap">
+      <span style="font-size: 14px; flex: 1 1 260px"><strong style="font-weight: 600">3 productos por completar.</strong> Se dieron de alta como borrador desde el punto de venta.</span>
+      <button type="button" style="height: 34px; padding: 0 14px; border-radius: 999px; border: 1px solid #D8D4CC; background: #FFFFFF; font: inherit; font-size: 13px; color: #1A1915">Completar ahora</button>
+    </div>
+
+    <section style="background: #FFFFFF; border: 1px solid #E3E0D9; border-radius: 16px; overflow: hidden">
+      <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; padding: 14px 18px; border-bottom: 1px solid #ECE9E3">
+        <div role="tablist" aria-label="Filtro" style="display: flex; gap: 4px; background: #F2EFEA; border-radius: 12px; padding: 4px">
+          <button type="button" role="tab" aria-selected="true" style="height: 32px; padding: 0 14px; border: 1px solid #E3E0D9; border-radius: 9px; background: #FFFFFF; font: inherit; font-size: 13px; font-weight: 500; color: #1A1915">Todos</button>
+          <button type="button" role="tab" aria-selected="false" style="height: 32px; padding: 0 14px; border: 0; border-radius: 9px; background: transparent; font: inherit; font-size: 13px; color: #55524B">Stock bajo · 9</button>
+          <button type="button" role="tab" aria-selected="false" style="height: 32px; padding: 0 14px; border: 0; border-radius: 9px; background: transparent; font: inherit; font-size: 13px; color: #55524B">Por completar · 3</button>
+          <button type="button" role="tab" aria-selected="false" style="height: 32px; padding: 0 14px; border: 0; border-radius: 9px; background: transparent; font: inherit; font-size: 13px; color: #55524B">Por vencer · 2</button>
+        </div>
+        <label style="display: flex; align-items: center; gap: 8px; height: 36px; border: 1px solid #E3E0D9; border-radius: 10px; padding: 0 12px; min-width: 240px">
+          <span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Buscar</span>
+          <input type="text" placeholder="Buscar o escanear" style="border: 0; outline: none; font: inherit; font-size: 13px; flex: 1; min-width: 0; background: transparent">
+        </label>
+      </div>
+      <div style="overflow-x: auto">
+        <table style="width: 100%; border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums; min-width: 760px">
+          <thead>
+            <tr style="font-family: 'Geist Mono', monospace; font-size: 11px; letter-spacing: 0.06em; color: #6E6A62; text-align: left; border-bottom: 1px solid #ECE9E3">
+              <th style="padding: 12px 18px; font-weight: 400">PRODUCTO</th>
+              <th style="padding: 12px 8px; font-weight: 400">CATEGORÍA</th>
+              <th style="padding: 12px 8px; font-weight: 400; text-align: right">STOCK</th>
+              <th style="padding: 12px 8px; font-weight: 400; text-align: right">COSTO</th>
+              <th style="padding: 12px 8px; font-weight: 400; text-align: right">PRECIO</th>
+              <th style="padding: 12px 18px; font-weight: 400; text-align: right">MARGEN</th>
+            </tr>
+          </thead>
+          <tbody>
+            <sc-for list="{{rows}}" as="r" hint-placeholder-count="8">
+              <tr style="border-bottom: 1px solid #F1EEE9">
+                <td style="padding: 12px 18px"><a href="Producto.dc.html" style="color: #1A1915; text-decoration: none; font-weight: 500">{{r.n}}</a><div style="font-family: 'Geist Mono', monospace; font-size: 11px; color: #6E6A62; margin-top: 2px">{{r.c}}</div></td>
+                <td style="padding: 12px 8px; color: #55524B">{{r.cat}}</td>
+                <td style="padding: 12px 8px; text-align: right"><span style="display: inline-block; border-radius: 999px; padding: 3px 10px; font-size: 13px; font-weight: 500; background: {{r.sbg}}; color: {{r.sfg}}">{{r.s}}</span></td>
+                <td style="padding: 12px 8px; text-align: right; color: #55524B">{{r.cost}}</td>
+                <td style="padding: 12px 8px; text-align: right; font-weight: 500">{{r.p}}</td>
+                <td style="padding: 12px 18px; text-align: right; color: {{r.mfg}}">{{r.m}}</td>
+              </tr>
+            </sc-for>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const ok = ['#E5F2EA', '#1F5E39'], low = ['#F8EDD8', '#7A4A06'], draft = ['#EDEBE6', '#4A4740'];
+    const r = (n, c, cat, s, t, cost, p, m, mLow) => ({ n, c, cat, s, sbg: t[0], sfg: t[1], cost, p, m, mfg: mLow ? '#9E1F3C' : '#1A1915' });
+    return {
+      rows: [
+        r('Yerba mate 1 kg', '7790070012340', 'Almacén', '56', ok, '$ 3.380', '$ 4.800', '29,6%'),
+        r('Arroz largo fino 1 kg', '7790123400011', 'Almacén', '12', ok, '$ 1.480', '$ 1.600', '7,5%', true),
+        r('Pan lactal grande', '7790040099887', 'Panificados', '4 · bajo', low, '$ 1.750', '$ 2.500', '30%'),
+        r('Galletitas de agua', '7790040011223', 'Almacén', '3 · bajo', low, '$ 690', '$ 1.100', '37,3%'),
+        r('Jamón cocido', 'BALANZA 20-00412', 'Fiambrería', '8,2 kg', ok, '$ 11.200', '$ 16.000', '30%'),
+        r('Dulce de leche clásico 400 g', '7791234567890', 'Sin categoría', 'Borrador', draft, '—', '$ 2.900', '—'),
+        r('Gaseosa cola 1,5 L', '7790895000447', 'Bebidas', '24', ok, '$ 2.150', '$ 3.000', '28,3%'),
+        r('Leche entera 1 L', '7790080054321', 'Lácteos', '42', ok, '$ 920', '$ 1.350', '31,9%')
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

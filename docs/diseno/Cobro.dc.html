@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Cobro: procesando, aprobado o rechazado</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+body{margin:0;background:#EFEDE8}
+@keyframes vlr-spin{to{transform:rotate(360deg)}}
+.vlr-spin{animation:vlr-spin 1s linear infinite}
+@media (prefers-reduced-motion: reduce){.vlr-spin{animation-duration:3s}}
+</style>
+</helmet>
+<div style="display: flex; flex-wrap: wrap; min-height: 900px; background: #EFEDE8; font-family: 'Geist', system-ui, sans-serif; color: #1A1915; position: relative">
+  <dc-import name="Sidebar" active="Punto de venta" hint-size="240px,900px"></dc-import>
+  <main style="flex: 999 1 560px; min-width: 0; padding: 28px 20px 20px 4px; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px">
+    <h1 style="margin: 0; font-size: 26px; font-weight: 600; letter-spacing: -0.02em">Punto de venta</h1>
+    <div style="display: flex; gap: 16px; flex-wrap: wrap"><div style="flex: 999 1 400px; background: #FFFFFF; border: 1px solid #E3E0D9; border-radius: 16px; height: 620px"></div><div style="flex: 1 1 340px; max-width: 420px; background: #FFFFFF; border: 1px solid #E3E0D9; border-radius: 16px; height: 620px"></div></div>
+  </main>
+
+  <div style="position: absolute; inset: 0; background: rgba(26, 25, 21, 0.32); display: flex; align-items: center; justify-content: center; padding: 24px">
+    <section role="dialog" aria-modal="true" aria-labelledby="cobro-t" style="width: 520px; max-width: 100%; background: #FFFFFF; border: 1px solid #E3E0D9; border-radius: 20px; padding: 26px; box-sizing: border-box; display: flex; flex-direction: column; gap: 18px">
+      <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 12px">
+        <div><div style="font-family: 'Geist Mono', monospace; font-size: 11px; letter-spacing: 0.08em; color: #6E6A62">VENTA #0142 · {{method}}</div><h2 id="cobro-t" style="margin: 6px 0 0; font-size: 22px; font-weight: 600; letter-spacing: -0.01em">{{title}}</h2></div>
+        <span style="font-size: 26px; font-weight: 600; font-variant-numeric: tabular-nums">$ 17.300</span>
+      </div>
+
+      <sc-if value="{{isWait}}" hint-placeholder-val="{{true}}">
+        <div style="display: flex; gap: 18px; align-items: center; background: #F7F5F1; border-radius: 14px; padding: 16px">
+          <svg width="96" height="96" viewBox="0 0 21 21" role="img" aria-label="QR del cobro" shape-rendering="crispEdges"><rect width="21" height="21" fill="#FFFFFF"/><path fill="#1A1915" d="M0 0h7v7H0zM14 0h7v7h-7zM0 14h7v7H0zM9 0h1v2H9zM11 1h2v1h-2zM8 3h2v2H8zM9 8h3v1H9zM3 8h2v2H3zM14 9h3v1h-3zM8 11h1v3H8zM10 12h3v1h-3zM17 11h2v3h-2zM9 15h2v2H9zM14 16h3v1h-3zM10 18h1v3h-1zM15 19h2v2h-2z"/><path fill="#FFFFFF" d="M1 1h5v5H1zM15 1h5v5h-5zM1 15h5v5H1z"/><path fill="#1A1915" d="M2 2h3v3H2zM16 2h3v3h-3zM2 16h3v3H2z"/></svg>
+          <div style="font-size: 14px; color: #3D3A34; line-height: 1.5">El cliente puede pagar con el QR del mostrador o el de su pantalla.<br><span style="color: #6B6860">El QR vence en 14:52.</span></div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{isProc}}" hint-placeholder-val="{{false}}">
+        <div role="status" style="display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 18px 0">
+          <div style="position: relative; width: 72px; height: 72px"><span style="position: absolute; inset: 0; border-radius: 50%; border: 6px solid #E3E0D9"></span><span class="vlr-spin" style="position: absolute; inset: 0; border-radius: 50%; border: 6px solid transparent; border-top-color: #D9572B; border-right-color: #D9572B"></span></div>
+          <div style="font-size: 14px; color: #55524B; text-align: center; line-height: 1.5">Confirmando con Mercado Pago. No cierres Velora.<br>La venta se registra sola cuando llega la confirmación.</div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{isOk}}" hint-placeholder-val="{{false}}">
+        <div style="display: flex; gap: 14px; align-items: center; background: #E5F2EA; border-radius: 14px; padding: 16px">
+          <span style="width: 44px; height: 44px; border-radius: 50%; background: #2F7D4F; color: #FFFFFF; font-size: 22px; display: flex; align-items: center; justify-content: center; flex-shrink: 0">✓</span>
+          <div style="font-size: 14px; line-height: 1.5; color: #1F5E39"><strong style="font-weight: 600">Venta registrada.</strong> Operación de Mercado Pago 128473902. Imprimiendo el ticket…</div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{isFail}}" hint-placeholder-val="{{false}}">
+        <div style="display: flex; flex-direction: column; gap: 10px; background: #F8EDD8; border-radius: 14px; padding: 16px">
+          <div style="font-size: 15px; font-weight: 600; color: #5E3A05">{{reason}}</div>
+          <div style="font-size: 14px; color: #3D3A34; line-height: 1.5">{{reasonHelp}}</div>
+          <div style="font-size: 13px; font-weight: 500; color: #1F5E39">No se cobró nada. Los productos siguen en la venta.</div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{isChange}}" hint-placeholder-val="{{false}}">
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+          <sc-for list="{{methods}}" as="m" hint-placeholder-count="5">
+            <button type="button" onClick="{{m.pick}}" style="text-align: left; padding: 14px; border-radius: 14px; border: 1px solid #E3E0D9; background: #FFFFFF; font: inherit; color: #1A1915; cursor: pointer"><span style="display: block; font-size: 15px; font-weight: 500">{{m.t}}</span><span style="display: block; font-size: 12px; color: #6B6860; margin-top: 3px">{{m.d}}</span></button>
+          </sc-for>
+        </div>
+        <div style="display: flex; gap: 8px; align-items: flex-start; background: #F7F5F1; border-radius: 10px; padding: 10px 12px; font-size: 12.5px; line-height: 1.5; color: #4A4740"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6B6860" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="flex-shrink: 0; margin-top: 2px"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.5"/></svg><span>El QR anterior se anula antes de cambiar, así el cliente no puede pagar dos veces. "Dividir el pago" permite, por ejemplo, $ 10.000 en efectivo y el resto con QR.</span></div>
+      </sc-if>
+
+      <div style="display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap">
+        <sc-for list="{{actions}}" as="a" hint-placeholder-count="3">
+          <button type="button" onClick="{{a.go}}" style="{{a.style}}">{{a.t}}</button>
+        </sc-for>
+      </div>
+    </section>
+  </div>
+
+  <div aria-label="Simular respuesta de Mercado Pago" style="position: absolute; left: 20px; bottom: 20px; background: #1A1915; color: #FFFFFF; border-radius: 14px; padding: 10px; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; font-size: 12px">
+    <span style="font-family: 'Geist Mono', monospace; font-size: 11px; color: #C9C5BC; padding: 0 6px">SOLO PROTOTIPO · SIMULAR</span>
+    <sc-for list="{{sims}}" as="s" hint-placeholder-count="5"><button type="button" onClick="{{s.go}}" style="height: 30px; padding: 0 10px; border-radius: 8px; border: 0; background: #3A3832; color: #FFFFFF; font: inherit; font-size: 12px; cursor: pointer">{{s.t}}</button></sc-for>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { phase: 'wait', reason: 'funds', method: 'QR MERCADO PAGO' }; }
+  componentWillUnmount() { clearTimeout(this.t); }
+  go(phase, extra) { clearTimeout(this.t); this.setState({ phase, ...(extra || {}) }); }
+  pay(ok, reason) { this.go('proc'); this.t = setTimeout(() => this.setState(ok ? { phase: 'ok' } : { phase: 'fail', reason }), 1800); }
+  renderVals() {
+    const st = this.state;
+    const R = {
+      funds: ['Mercado Pago rechazó el pago', 'Puede ser falta de saldo o un límite de la tarjeta. El cliente puede probar con otra tarjeta o cuenta, o pagar de otra forma.'],
+      cancel: ['El cliente canceló el pago', 'Lo canceló desde su celular. Podés generar un QR nuevo o elegir otra forma de pago.'],
+      expired: ['El QR venció', 'Pasaron 15 minutos sin que se pagara. Generá uno nuevo para seguir.'],
+      offline: ['Sin conexión con Mercado Pago', 'Si el cliente te muestra el pago aprobado en su celular, podés registrarlo como "QR sin verificar" y se revisa en el cierre de caja.']
+    };
+    const P = (t, go) => ({ t, go, style: 'height: 44px; padding: 0 18px; border-radius: 999px; border: 0; background: #1A1915; color: #FFFFFF; font: inherit; font-size: 14px; font-weight: 500; cursor: pointer' });
+    const S = (t, go) => ({ t, go, style: 'height: 44px; padding: 0 16px; border-radius: 999px; border: 1px solid #D8D4CC; background: #FFFFFF; font: inherit; font-size: 14px; color: #1A1915; cursor: pointer' });
+    const toChange = () => this.go('change');
+    const cancelSale = () => this.go('wait', { method: 'QR MERCADO PAGO' });
+    let actions = [], title = '';
+    if (st.phase === 'wait') { title = 'Esperando el pago'; actions = [S('Cancelar cobro', cancelSale), S('Cambiar forma de pago', toChange)]; }
+    if (st.phase === 'proc') { title = 'Procesando el pago…'; actions = []; }
+    if (st.phase === 'ok') { title = 'Pago aprobado'; actions = [P('Nueva venta', () => this.go('wait'))]; }
+    if (st.phase === 'fail') { title = 'No se pudo cobrar'; actions = [S('Cancelar cobro', cancelSale), S('Cambiar forma de pago', toChange), P(st.reason === 'offline' ? 'Registrar sin verificar' : 'Generar un QR nuevo', () => this.go(st.reason === 'offline' ? 'ok' : 'wait'))]; }
+    if (st.phase === 'change') { title = '¿Cómo quiere pagar?'; actions = [S('Volver', () => this.go('wait'))]; }
+    const pickM = (label) => () => label === 'QR MERCADO PAGO' ? this.go('wait', { method: label }) : this.go('ok', { method: label });
+    return {
+      title, method: st.method, actions,
+      isWait: st.phase === 'wait', isProc: st.phase === 'proc', isOk: st.phase === 'ok', isFail: st.phase === 'fail', isChange: st.phase === 'change',
+      reason: R[st.reason][0], reasonHelp: R[st.reason][1],
+      methods: [
+        { t: 'Efectivo', d: 'Calcula el vuelto', pick: pickM('EFECTIVO') },
+        { t: 'Tarjeta', d: 'Débito o crédito con el posnet', pick: pickM('TARJETA') },
+        { t: 'Transferencia', d: 'Al alias del local', pick: pickM('TRANSFERENCIA') },
+        { t: 'QR nuevo', d: 'Mercado Pago o cualquier banco', pick: pickM('QR MERCADO PAGO') },
+        { t: 'Dividir el pago', d: 'Parte en una forma y parte en otra', pick: pickM('PAGO DIVIDIDO') }
+      ],
+      sims: [
+        { t: 'El cliente pagó', go: () => this.pay(true) },
+        { t: 'Rechazado', go: () => this.pay(false, 'funds') },
+        { t: 'Canceló', go: () => this.go('fail', { reason: 'cancel' }) },
+        { t: 'Venció el QR', go: () => this.go('fail', { reason: 'expired' }) },
+        { t: 'Sin internet', go: () => this.go('fail', { reason: 'offline' }) }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

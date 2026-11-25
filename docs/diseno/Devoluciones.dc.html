@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Devolución o cambio</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+body{margin:0;background:#EFEDE8}
+input[type=checkbox],input[type=radio]{accent-color:#1A1915;width:18px;height:18px;margin:0}
+</style>
+</helmet>
+<div style="display: flex; flex-wrap: wrap; min-height: 900px; background: #EFEDE8; font-family: 'Geist', system-ui, sans-serif; color: #1A1915">
+  <dc-import name="Sidebar" active="Devoluciones" hint-size="240px,900px"></dc-import>
+  <main style="flex: 999 1 560px; min-width: 0; padding: 20px 20px 20px 4px; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px">
+    <header style="padding: 8px 4px 0">
+      <h1 style="margin: 0; font-size: 26px; font-weight: 600; letter-spacing: -0.02em">Devolución o cambio</h1>
+      <p style="margin: 4px 0 0; font-size: 14px; color: #6B6860">Escaneá el código del ticket o escribí el número de venta.</p>
+    </header>
+    <div style="background: #FFFFFF; border: 1px solid #E3E0D9; border-radius: 14px; height: 52px; display: flex; align-items: center; gap: 12px; padding: 0 14px">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6B6860" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 6v12M7 6v12M10 6v12M14 6v12M17 6v12M20 6v12"/></svg>
+      <span style="font-family: 'Geist Mono', monospace; font-size: 15px">Venta #0142</span>
+      <span style="font-size: 13px; color: #6B6860">· 25/11 14:32 · Marta Giménez · Efectivo</span>
+      <span style="margin-left: auto; font-size: 12px; font-weight: 500; color: #1F5E39; background: #E5F2EA; border-radius: 999px; padding: 4px 10px">Dentro del plazo de cambio</span>
+    </div>
+    <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start">
+      <section style="flex: 999 1 460px; min-width: 0; background: #FFFFFF; border: 1px solid #E3E0D9; border-radius: 16px; padding: 6px 20px">
+        <h2 style="margin: 12px 0 4px; font-size: 15px; font-weight: 600">¿Qué devuelve?</h2>
+        <sc-for list="{{items}}" as="i" hint-placeholder-count="4">
+          <label style="display: flex; align-items: center; gap: 12px; padding: 14px 0; border-top: 1px solid #F1EEE9; font-size: 14px; cursor: pointer">
+            <input type="checkbox" checked="{{i.on}}">
+            <span style="flex: 1"><span style="display: block; font-weight: 500">{{i.n}}</span><span style="display: block; font-size: 12px; color: #6B6860; margin-top: 2px">{{i.d}}</span></span>
+            <span style="font-weight: 500; font-variant-numeric: tabular-nums">{{i.v}}</span>
+          </label>
+        </sc-for>
+        <label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #55524B; padding: 14px 0; border-top: 1px solid #F1EEE9">Motivo
+          <select style="height: 40px; border: 1px solid #DDD9D1; border-radius: 10px; padding: 0 10px; font: inherit; font-size: 14px; color: #1A1915; background: #FFFFFF"><option>Producto vencido o en mal estado</option><option>Se equivocó de producto</option><option>Regalo: cambio</option></select>
+        </label>
+      </section>
+      <aside style="flex: 1 1 340px; min-width: 0; max-width: 420px; background: #FFFFFF; border: 1px solid #E3E0D9; border-radius: 16px; padding: 18px 20px; display: flex; flex-direction: column; gap: 12px">
+        <fieldset style="margin: 0; padding: 0; border: 0; display: flex; flex-direction: column; gap: 10px">
+          <legend style="font-size: 15px; font-weight: 600; margin-bottom: 8px">¿Cómo se le devuelve?</legend>
+          <label style="display: flex; gap: 10px; align-items: center; font-size: 14px"><input type="radio" name="dev" checked> Efectivo de la caja</label>
+          <label style="display: flex; gap: 10px; align-items: center; font-size: 14px"><input type="radio" name="dev"> Cambio por otro producto</label>
+          <label style="display: flex; gap: 10px; align-items: center; font-size: 14px"><input type="radio" name="dev"> Saldo a favor para la próxima compra</label>
+        </fieldset>
+        <label style="display: flex; gap: 10px; align-items: flex-start; font-size: 14px; border-top: 1px solid #F1EEE9; padding-top: 12px"><input type="checkbox"><span>Vuelve al stock<span style="display: block; font-size: 12px; color: #6B6860; margin-top: 2px">Destildado porque el motivo es "en mal estado"</span></span></label>
+        <div style="display: flex; justify-content: space-between; align-items: baseline; border-top: 1px solid #ECE9E3; padding-top: 12px"><span style="font-size: 14px">A devolver</span><span style="font-size: 26px; font-weight: 600; font-variant-numeric: tabular-nums">$ 4.000</span></div>
+        <button type="button" style="height: 48px; border-radius: 999px; border: 0; background: #1A1915; color: #FFFFFF; font: inherit; font-size: 15px; font-weight: 500">Confirmar devolución</button>
+        <p style="margin: 0; font-size: 12px; color: #6B6860; text-align: center">Sale de la caja de hoy y se imprime el comprobante.</p>
+      </aside>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      items: [
+        { n: 'Gaseosa cola 1,5 L', d: '2 unidades · $ 3.000 c/u', v: '$ 6.000', on: false },
+        { n: 'Pan lactal grande', d: '1 unidad', v: '$ 2.500', on: false },
+        { n: 'Jamón cocido', d: '0,25 kg · $ 16.000 por kg', v: '$ 4.000', on: true },
+        { n: 'Yerba mate 1 kg', d: '1 unidad', v: '$ 4.800', on: false }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

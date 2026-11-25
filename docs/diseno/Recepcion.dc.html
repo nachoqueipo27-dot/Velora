@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Recepción de mercadería</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+body{margin:0;background:#EFEDE8}
+a{color:#55524B}a:hover{color:#1A1915}
+</style>
+</helmet>
+<div style="display: flex; flex-wrap: wrap; min-height: 900px; background: #EFEDE8; font-family: 'Geist', system-ui, sans-serif; color: #1A1915">
+  <dc-import name="Sidebar" active="Recepción" hint-size="240px,900px"></dc-import>
+  <main style="flex: 999 1 560px; min-width: 0; padding: 20px 20px 20px 4px; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px">
+    <header style="display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding: 8px 4px 0">
+      <div>
+        <div style="font-family: 'Geist Mono', monospace; font-size: 11px; letter-spacing: 0.08em; color: #6E6A62">ORDEN DE COMPRA #0027 · PEDIDA EL 18/11</div>
+        <h1 style="margin: 4px 0 0; font-size: 26px; font-weight: 600; letter-spacing: -0.02em">Recepción · Distribuidora Norte</h1>
+        <p style="margin: 4px 0 0; font-size: 14px; color: #6B6860">Escaneá lo que llegó. Velora lo compara con lo pedido y con el precio pactado.</p>
+      </div>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap">
+        <button type="button" style="height: 40px; padding: 0 16px; border-radius: 999px; border: 1px solid #D8D4CC; background: #FFFFFF; font: inherit; font-size: 13px; color: #1A1915; cursor: pointer">Adjuntar remito</button>
+        <button type="button" style="height: 40px; padding: 0 16px; border-radius: 999px; border: 0; background: #1A1915; color: #FFFFFF; font: inherit; font-size: 13px; font-weight: 500; cursor: pointer">Confirmar recepción parcial</button>
+      </div>
+    </header>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start">
+      <section style="flex: 999 1 560px; min-width: 0; background: #FFFFFF; border: 1px solid #E3E0D9; border-radius: 16px; overflow: hidden">
+        <div style="overflow-x: auto">
+          <table style="width: 100%; border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums; min-width: 700px">
+            <thead>
+              <tr style="font-family: 'Geist Mono', monospace; font-size: 11px; letter-spacing: 0.06em; color: #6E6A62; text-align: left; border-bottom: 1px solid #ECE9E3">
+                <th style="padding: 14px 18px; font-weight: 400">PRODUCTO</th>
+                <th style="padding: 14px 8px; font-weight: 400; text-align: right">PEDIDO</th>
+                <th style="padding: 14px 8px; font-weight: 400; text-align: right">RECIBIDO</th>
+                <th style="padding: 14px 8px; font-weight: 400">ESTADO</th>
+                <th style="padding: 14px 18px; font-weight: 400; text-align: right">COSTO UNITARIO</th>
+              </tr>
+            </thead>
+            <tbody>
+              <sc-for list="{{rows}}" as="r" hint-placeholder-count="6">
+                <tr style="border-bottom: 1px solid #F1EEE9">
+                  <td style="padding: 13px 18px; font-weight: 500">{{r.name}}</td>
+                  <td style="padding: 13px 8px; text-align: right; color: #55524B">{{r.ord}}</td>
+                  <td style="padding: 13px 8px; text-align: right; font-weight: 600">{{r.rec}}</td>
+                  <td style="padding: 13px 8px">
+                    <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; border-radius: 999px; padding: 4px 10px; background: {{r.bg}}; color: {{r.fg}}"><span aria-hidden="true">{{r.icon}}</span>{{r.state}}</span>
+                  </td>
+                  <td style="padding: 13px 18px; text-align: right">
+                    <sc-if value="{{r.changed}}" hint-placeholder-val="{{false}}">
+                      <span style="color: #8A8579; text-decoration: line-through; margin-right: 6px">{{r.old}}</span>
+                    </sc-if>
+                    <span style="font-weight: 500">{{r.cost}}</span>
+                    <sc-if value="{{r.changed}}" hint-placeholder-val="{{false}}">
+                      <span style="display: block; font-size: 12px; color: #9E1F3C; margin-top: 2px">↑ {{r.diff}} sobre lo pactado</span>
+                    </sc-if>
+                  </td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <aside style="flex: 1 1 320px; min-width: 0; max-width: 400px; display: flex; flex-direction: column; gap: 12px">
+        <div style="background: #FFFFFF; border: 1px solid #E3E0D9; border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 12px">
+          <div style="font-family: 'Geist Mono', monospace; font-size: 11px; letter-spacing: 0.08em; color: #6E6A62">RESUMEN</div>
+          <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+            <div style="background: #F2EFEA; border-radius: 12px; padding: 12px"><div style="font-size: 22px; font-weight: 600">3</div><div style="font-size: 12px; color: #55524B">Completos</div></div>
+            <div style="background: #F2EFEA; border-radius: 12px; padding: 12px"><div style="font-size: 22px; font-weight: 600">1</div><div style="font-size: 12px; color: #55524B">Con faltante</div></div>
+            <div style="background: #F2EFEA; border-radius: 12px; padding: 12px"><div style="font-size: 22px; font-weight: 600">1</div><div style="font-size: 12px; color: #55524B">De más</div></div>
+            <div style="background: #F2EFEA; border-radius: 12px; padding: 12px"><div style="font-size: 22px; font-weight: 600">1</div><div style="font-size: 12px; color: #55524B">No pedido</div></div>
+          </div>
+          <div style="font-size: 13px; color: #55524B; line-height: 1.5">2 productos llegaron más caros que lo pactado. Al confirmar podés actualizar el costo y el precio de venta manteniendo tu margen.</div>
+        </div>
+        <div style="background: #FFFFFF; border: 1px solid #E3E0D9; border-radius: 16px; padding: 8px">
+          <button type="button" style="width: 100%; text-align: left; display: flex; justify-content: space-between; align-items: center; padding: 12px; border: 0; border-radius: 10px; background: transparent; font: inherit; font-size: 14px; color: #1A1915; cursor: pointer">Enviar reclamo por WhatsApp<span style="color: #6E6A62">→</span></button>
+          <button type="button" style="width: 100%; text-align: left; display: flex; justify-content: space-between; align-items: center; padding: 12px; border: 0; border-top: 1px solid #F1EEE9; background: transparent; font: inherit; font-size: 14px; color: #1A1915; cursor: pointer">Pasar faltantes a una nueva orden<span style="color: #6E6A62">→</span></button>
+          <button type="button" style="width: 100%; text-align: left; display: flex; justify-content: space-between; align-items: center; padding: 12px; border: 0; border-top: 1px solid #F1EEE9; background: transparent; font: inherit; font-size: 14px; color: #1A1915; cursor: pointer">Marcar ítems dañados o vencidos<span style="color: #6E6A62">→</span></button>
+        </div>
+      </aside>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const st = {
+      ok: { state: 'Completo', icon: '✓', bg: '#E5F2EA', fg: '#1F5E39' },
+      falta: { state: 'Faltan 6', icon: '−', bg: '#F9E6EA', fg: '#8E1C36' },
+      mas: { state: 'Llegaron 2 de más', icon: '+', bg: '#F8EDD8', fg: '#7A4A06' },
+      nop: { state: 'No pedido', icon: '?', bg: '#EDEBE6', fg: '#4A4740' }
+    };
+    const r = (name, ord, rec, s, cost, old, diff) => ({ name, ord, rec, cost, old: old || '', diff: diff || '', changed: !!old, ...st[s] });
+    return {
+      rows: [
+        r('Yerba mate 1 kg', '24', '24', 'ok', '$ 3.380', '$ 3.100', '9%'),
+        r('Aceite de girasol 1,5 L', '12', '12', 'ok', '$ 2.950'),
+        r('Leche entera 1 L', '24', '18', 'falta', '$ 920'),
+        r('Galletitas de agua', '20', '22', 'mas', '$ 690'),
+        r('Arroz largo fino 1 kg', '12', '12', 'ok', '$ 1.480', '$ 1.390', '6%'),
+        r('Fideos tirabuzón 500 g', '—', '10', 'nop', '$ 760')
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

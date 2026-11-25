@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Menú lateral de Velora</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<nav aria-label="Menú principal" style="width: 240px; min-height: 860px; box-sizing: border-box; padding: 20px 14px; display: flex; flex-direction: column; gap: 22px; font-family: 'Geist', system-ui, sans-serif; color: #1A1915; background: #EFEDE8">
+  <div style="display: flex; align-items: center; gap: 8px; padding: 4px 10px">
+    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="#C24A22" stroke-width="2.4" stroke-linecap="round"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6L5.6 18.4"/></svg>
+    <span style="font-size: 17px; font-weight: 600; letter-spacing: -0.01em">Velora</span>
+  </div>
+  <sc-for list="{{groups}}" as="g" hint-placeholder-count="3">
+    <div style="display: flex; flex-direction: column; gap: 2px">
+      <div style="font-family: 'Geist Mono', monospace; font-size: 11px; letter-spacing: 0.08em; color: #6E6A62; padding: 0 10px 6px">{{g.label}}</div>
+      <sc-for list="{{g.items}}" as="it" hint-placeholder-count="4">
+        <a href="#" style="{{it.style}}">
+          <span style="{{it.dot}}"></span>
+          <span>{{it.name}}</span>
+        </a>
+      </sc-for>
+    </div>
+  </sc-for>
+  <div style="flex-grow: 1"></div>
+  <a href="#" style="display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 10px; font-size: 14px; color: #55524B; text-decoration: none">Configuración</a>
+  <div style="background: #FFFFFF; border: 1px solid #E3E0D9; border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 10px">
+    <div style="display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500">
+      <span style="width: 8px; height: 8px; border-radius: 50%; background: #2F7D4F"></span>Caja abierta
+    </div>
+    <div style="font-size: 20px; font-weight: 600; letter-spacing: -0.01em; font-variant-numeric: tabular-nums">$ 184.300</div>
+    <div style="display: flex; gap: 6px; flex-wrap: wrap; font-size: 12px; color: #55524B; align-items: center">
+      <kbd style="font-family: 'Geist Mono', monospace; font-size: 11px; border: 1px solid #DDD9D1; border-radius: 5px; padding: 1px 6px; background: #F7F5F1; color: #3D3A34">F2</kbd>Cobrar
+      <kbd style="font-family: 'Geist Mono', monospace; font-size: 11px; border: 1px solid #DDD9D1; border-radius: 5px; padding: 1px 6px; background: #F7F5F1; color: #3D3A34; margin-left: 6px">F4</kbd>Gasto
+    </div>
+    <div style="font-family: 'Geist Mono', monospace; font-size: 11px; letter-spacing: 0.08em; color: #6E6A62; border-top: 1px solid #ECE9E3; padding-top: 10px">LICENCIA ACTIVA · OFFLINE</div>
+  </div>
+</nav>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"active":{"editor":"enum","options":["Inicio","Punto de venta","Caja","Inventario","Finanzas","Configuración"],"default":"Punto de venta"},"$preview":{"width":240,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const active = this.props.active ?? 'Punto de venta';
+    const base = 'display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 10px; font-size: 14px; text-decoration: none; ';
+    const mk = (name) => {
+      const on = name === active;
+      return {
+        name,
+        style: base + (on ? 'background: #FFFFFF; border: 1px solid #E3E0D9; color: #1A1915; font-weight: 500' : 'border: 1px solid transparent; color: #55524B'),
+        dot: 'width: 6px; height: 6px; border-radius: 50%; background: ' + (on ? '#D9572B' : 'transparent')
+      };
+    };
+    return {
+      groups: [
+        { label: 'OPERACIÓN', items: ['Inicio', 'Punto de venta', 'Caja', 'Devoluciones', 'Agenda', 'Órdenes de trabajo', 'Presupuestos'].map(mk) },
+        { label: 'STOCK', items: ['Inventario', 'Recepción', 'Proveedores', 'Lista de precios'].map(mk) },
+        { label: 'GESTIÓN', items: ['Finanzas', 'Clientes', 'Empleados', 'Reportes'].map(mk) }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>
