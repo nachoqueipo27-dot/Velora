@@ -18,6 +18,7 @@ export function getDb(): Promise<Db> {
       // Si una migración falla lanza ErrorMigracion y la app no arranca (sin datos a medias).
       await aplicarMigraciones(database, instalacionNueva)
       await seedDemoData(database)
+      await asegurarDniUnico(database)
       await confirmarVersionInstalada(database, respaldos)
       return database
     })()
@@ -666,6 +667,39 @@ async function initSchema(database: Db) {
   // Reescribir estas 6 tablas (con FKs desde tablas relacionadas) para cambiar solo esa
   // metadata agregaría riesgo real de pérdida de datos sin ningún beneficio funcional.
   // El CREATE TABLE de arriba ya declara REAL para instalaciones nuevas.
+}
+
+// Índice único de DNI en empleados. Si ya hay DNI repetidos no se crea (queda la validación
+// de empleadosStore) y se avisa una vez en el historial; cuando se corrigen, se crea en el
+// siguiente inicio. Un fallo acá no impide abrir la app.
+async function asegurarDniUnico(database: Db) {
+  try {
+    const existe = await database.select<{ n: number }[]>(
+      `SELECT COUNT(*) AS n FROM sqlite_master WHERE type = 'index' AND name = 'ux_empleados_dni'`
+    )
+    if ((existe[0]?.n ?? 0) > 0) return
+
+    const repetidos = await database.select<{ nombres: string }[]>(
+      `SELECT GROUP_CONCAT(nombre, ' y ') AS nombres FROM empleados
+       WHERE dni IS NOT NULL AND dni <> '' GROUP BY dni HAVING COUNT(*) > 1 ORDER BY MIN(id)`
+    )
+    if (repetidos.length === 0) {
+      await database.execute(
+        `CREATE UNIQUE INDEX IF NOT EXISTS ux_empleados_dni ON empleados(dni) WHERE dni IS NOT NULL AND dni <> ''`
+      )
+      return
+    }
+    const detalle = `${repetidos.length} DNI repetidos entre empleados: ${repetidos.map(r => r.nombres).join('; ')}. Corregilos en Configuración > Usuarios y roles.`
+    const now = new Date().toISOString()
+    await database.execute(
+      `INSERT INTO historial_actividad (usuario, modulo, accion, detalle, fecha, creado_en)
+       SELECT 'Sistema', 'Empleados', 'Encontró DNI repetidos', ?, ?, ?
+       WHERE NOT EXISTS (SELECT 1 FROM historial_actividad WHERE accion = 'Encontró DNI repetidos' AND detalle = ?)`,
+      [detalle, now, now, detalle]
+    )
+  } catch (e) {
+    console.error('asegurarDniUnico', e)
+  }
 }
 
 // Sólo configuración base. La app nunca carga datos de ejemplo: toda instalación

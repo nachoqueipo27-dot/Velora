@@ -5,7 +5,9 @@ import { Badge } from '../../components/ui/Badge'
 import { Select } from '../../components/ui/Select'
 import { Input } from '../../components/ui/Input'
 import { Modal } from '../../components/ui/Modal'
-import { useEmpleadosStore, ErrorFaltaClave } from '../../store/empleadosStore'
+import { useEmpleadosStore } from '../../store/empleadosStore'
+import { useAuthGlobalStore } from '../../store/authGlobalStore'
+import { ErrorValidacion } from '../../db/acceso'
 import { toast } from '../../store/toastStore'
 import { useOTStore } from '../../store/otStore'
 import type { Empleado } from '../../types/empleados'
@@ -26,6 +28,12 @@ const cargaBadge = (ots: number) => {
 export const ListadoEmpleados = ({ onVer }: ListadoEmpleadosProps) => {
   const { empleados, roles, loading, cargarEmpleados, cargarRoles, toggleActivo } = useEmpleadosStore()
   const { cargaPorEmpleado } = useOTStore()
+  const soyDueno = useAuthGlobalStore(s => s.usuario?.esAdminGeneral ?? false)
+  // Solo el dueño edita administradores (también lo valida empleadosStore).
+  const bloqueo = (e: Empleado) =>
+    !soyDueno && roles.find(r => r.id === e.rolId)?.esAdmin
+      ? { disabled: true, title: 'Solo el dueño puede editar administradores' }
+      : {}
   const [busqueda, setBusqueda] = useState('')
   const [filtroRol, setFiltroRol] = useState('Todos')
   const [modal, setModal] = useState<{ open: boolean; empleado: Empleado | null }>({ open: false, empleado: null })
@@ -47,7 +55,7 @@ export const ListadoEmpleados = ({ onVer }: ListadoEmpleadosProps) => {
       await toggleActivo(e.id, clave)
       setAReactivar(null)
     } catch (err) {
-      toast.error(err instanceof ErrorFaltaClave ? err.message : 'No se pudo cambiar el estado del empleado')
+      toast.error(err instanceof ErrorValidacion ? err.message : 'No se pudo cambiar el estado del empleado')
       console.error(err)
     } finally {
       setGuardando(false)
@@ -143,8 +151,8 @@ export const ListadoEmpleados = ({ onVer }: ListadoEmpleadosProps) => {
                   <td className="px-3 py-2.5">
                     <div className="flex items-center justify-end gap-1">
                       <IconBtn title="Ver ficha" onClick={() => onVer(e)}><Eye size={14} /></IconBtn>
-                      <IconBtn title="Editar" onClick={() => setModal({ open: true, empleado: e })}><Pencil size={14} /></IconBtn>
-                      <IconBtn title={e.activo ? 'Desactivar' : 'Activar'} onClick={() => alternarActivo(e)}><Power size={14} /></IconBtn>
+                      <IconBtn title="Editar" onClick={() => setModal({ open: true, empleado: e })} {...bloqueo(e)}><Pencil size={14} /></IconBtn>
+                      <IconBtn title={e.activo ? 'Desactivar' : 'Activar'} onClick={() => alternarActivo(e)} {...bloqueo(e)}><Power size={14} /></IconBtn>
                     </div>
                   </td>
                 </tr>
@@ -178,9 +186,9 @@ export const ListadoEmpleados = ({ onVer }: ListadoEmpleadosProps) => {
   )
 }
 
-const IconBtn = ({ children, onClick, title }: { children: React.ReactNode; onClick: () => void; title: string }) => (
-  <button title={title} onClick={onClick}
-    className="p-1.5 rounded-input text-[#606060] hover:text-white hover:bg-white/10 light:hover:text-black light:hover:bg-black/5 transition-all duration-150">
+const IconBtn = ({ children, onClick, title, disabled }: { children: React.ReactNode; onClick: () => void; title: string; disabled?: boolean }) => (
+  <button title={title} onClick={onClick} disabled={disabled}
+    className="p-1.5 rounded-input disabled:opacity-40 disabled:cursor-not-allowed text-[#606060] hover:text-white hover:bg-white/10 light:hover:text-black light:hover:bg-black/5 transition-all duration-150">
     {children}
   </button>
 )

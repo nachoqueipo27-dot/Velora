@@ -1,10 +1,14 @@
 import { create } from 'zustand'
 import { getDb } from '../db'
-import { getMasterDb, guardarUsuarioLocal, esDueno, revocarAcceso } from '../db/master'
+import { getMasterDb, guardarUsuarioLocal, esDueno, revocarAcceso, cambiarDniDueno } from '../db/master'
+import {
+  ErrorValidacion, exigirDueno, exigirPuedeTocarEmpleado, exigirDniLibre, esFichaPropiaDelDueno,
+} from '../db/acceso'
+import { useAuthGlobalStore } from './authGlobalStore'
 import { hashPassword } from '../lib/crypto'
 import { registrarActividad } from '../lib/registrarActividad'
 import type {
-  Empleado, Rol, Turno, Fichaje, HoraExtra, Ausencia, HorarioFijo,
+  Empleado, Rol, Turno, Fichaje, HoraExtra, Ausencia, HorarioFijo, NivelPermiso,
 } from '../types/empleados'
 
 export interface HorarioVigente {
@@ -51,6 +55,8 @@ interface EmpleadosStore {
   /** Para reactivar hace falta una contraseña nueva. */
   toggleActivo: (id: number, claveNueva?: string) => Promise<void>
   seleccionarEmpleado: (e: Empleado | null) => void
+  /** Reemplaza los permisos del rol. Solo el dueño. */
+  guardarPermisosRol: (rolId: number, niveles: Record<string, NivelPermiso>) => Promise<void>
 
   cargarHorarioFijo: (empleadoId: number) => Promise<HorarioFijo[]>
   obtenerHorarioVigente: (empleadoId: number, fechaISO: string) => Promise<HorarioVigente | null>
@@ -104,8 +110,18 @@ async function guardarHorarios(
   }
 }
 
-// Falta la contraseña para poder guardar. El mensaje está pensado para mostrarlo tal cual.
-export class ErrorFaltaClave extends Error {}
+// Falta la contraseña para poder guardar.
+class ErrorFaltaClave extends ErrorValidacion {}
+
+// Quién está haciendo el cambio (la cuenta con la que se ingresó).
+const actorDni = () => useAuthGlobalStore.getState().usuario?.dni ?? null
+
+type FilaEmpleado = { id: number; dni: string | null; rol_id: number; activo: number | null }
+async function leerEmpleado(db: Awaited<ReturnType<typeof getDb>>, id: number): Promise<FilaEmpleado> {
+  const [fila] = await db.select<FilaEmpleado[]>('SELECT id, dni, rol_id, activo FROM empleados WHERE id = ?', [id])
+  if (!fila) throw new ErrorValidacion('Ese empleado ya no existe.')
+  return fila
+}
 
 const tieneClave = (data: NuevoEmpleado) => data.password.trim() !== ''
 
@@ -145,6 +161,14 @@ async function syncUsuarioMaster(data: NuevoEmpleado, roles: Rol[]) {
   } else {
     await masterDb.execute(`UPDATE usuarios_master SET nombre = ?, rol = CASE WHEN rol = 'admin_master' THEN rol ELSE ? END WHERE dni = ?`, [data.nombre, rol, dni])
   }
+}
+
+// Si el cambio fue sobre la propia cuenta, la sesión toma el rol, el nombre o la baja nuevos.
+async function refrescarSesionPropia(empleadoId: number, dniDueno: string | null = null) {
+  const { usuario, revalidar } = useAuthGlobalStore.getState()
+  if (!usuario) return
+  if (dniDueno) useAuthGlobalStore.setState({ usuario: { ...usuario, dni: dniDueno } })
+  if (dniDueno || usuario.empleadoId === empleadoId) await revalidar()
 }
 
 export const useEmpleadosStore = create<EmpleadosStore>((set, get) => ({
@@ -196,13 +220,16 @@ export const useEmpleadosStore = create<EmpleadosStore>((set, get) => ({
 
   crearEmpleado: async (data) => {
     if (!tieneClave(data)) throw new ErrorFaltaClave('Ingresá una contraseña para el empleado.')
+    const dni = data.dni?.trim() || null
+    await exigirPuedeTocarEmpleado(actorDni(), null, { dni, rolId: data.rolId, cambiaClave: true, activo: data.activo })
+    if (dni) await exigirDniLibre(actorDni(), dni, data.rolId, null)
     const passwordHash = await hashPassword(data.password)
     const db = await getDb()
     const now = new Date().toISOString()
     const res = await db.execute(
       `INSERT INTO empleados (nombre, dni, rol_id, password, activo, tipo_horario, creado_en, actualizado_en)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [data.nombre, data.dni?.trim() || null, data.rolId, passwordHash, data.activo ? 1 : 0, data.tipoHorario, now, now]
+      [data.nombre, dni, data.rolId, passwordHash, data.activo ? 1 : 0, data.tipoHorario, now, now]
     )
     const empleadoId = Number(res.lastInsertId)
     await guardarHorarios(db, empleadoId, data)
@@ -215,30 +242,42 @@ export const useEmpleadosStore = create<EmpleadosStore>((set, get) => ({
   actualizarEmpleado: async (id, data) => {
     const db = await getDb()
     const now = new Date().toISOString()
-    const [previo] = await db.select<{ dni: string | null; activo: number | null }[]>(
-      'SELECT dni, activo FROM empleados WHERE id = ?', [id]
-    )
+    const previo = await leerEmpleado(db, id)
+    const actor = actorDni()
+    const dni = data.dni?.trim() || null
+    const cambiaDni = dni !== previo.dni
+    const ficha = { dni: previo.dni, rolId: previo.rol_id }
+    await exigirPuedeTocarEmpleado(actor, ficha, {
+      dni, rolId: data.rolId, cambiaClave: tieneClave(data), activo: data.activo,
+    })
+    const esPropiaDelDueno = await esFichaPropiaDelDueno(actor, ficha)
+    if (dni && cambiaDni) {
+      await exigirDniLibre(actor, dni, data.rolId, previo)
+      // Una cuenta suelta con ese DNI (p. ej. de un empleado ya eliminado) no se hereda.
+      await revocarAcceso(dni)
+      if (esPropiaDelDueno && previo.dni) await cambiarDniDueno(previo.dni, dni)
+    }
     if (data.activo) {
-      if (previo?.activo !== 1 && !tieneClave(data)) {
+      if (previo.activo !== 1 && !tieneClave(data)) {
         throw new ErrorFaltaClave('Para reactivar al empleado ingresá una contraseña nueva.')
       }
       await exigirClaveSiNoTieneAcceso(data)
     }
     // Baja o cambio de DNI: el DNI anterior deja de tener acceso (antes de guardar, así un
     // corte en el medio nunca deja entrando a alguien dado de baja).
-    if (previo && (!data.activo || previo.dni !== (data.dni?.trim() || null))) {
+    if (!data.activo || cambiaDni) {
       await quitarAcceso(db, id, previo.dni)
     }
     if (tieneClave(data)) {
       const passwordHash = await hashPassword(data.password)
       await db.execute(
         `UPDATE empleados SET nombre = ?, dni = ?, rol_id = ?, password = ?, debe_cambiar_clave = 0, activo = ?, tipo_horario = ?, actualizado_en = ? WHERE id = ?`,
-        [data.nombre, data.dni?.trim() || null, data.rolId, passwordHash, data.activo ? 1 : 0, data.tipoHorario, now, id]
+        [data.nombre, dni, data.rolId, passwordHash, data.activo ? 1 : 0, data.tipoHorario, now, id]
       )
     } else {
       await db.execute(
         `UPDATE empleados SET nombre = ?, dni = ?, rol_id = ?, activo = ?, tipo_horario = ?, actualizado_en = ? WHERE id = ?`,
-        [data.nombre, data.dni?.trim() || null, data.rolId, data.activo ? 1 : 0, data.tipoHorario, now, id]
+        [data.nombre, dni, data.rolId, data.activo ? 1 : 0, data.tipoHorario, now, id]
       )
     }
     await guardarHorarios(db, id, data)
@@ -251,19 +290,22 @@ export const useEmpleadosStore = create<EmpleadosStore>((set, get) => ({
       const actualizado = get().empleados.find(e => e.id === id) ?? null
       set({ empleadoSeleccionado: actualizado })
     }
+    await refrescarSesionPropia(id, esPropiaDelDueno ? dni : null)
   },
 
   eliminarEmpleado: async (id) => {
     const db = await getDb()
     const emp = get().empleados.find(e => e.id === id)
-    const [fila] = await db.select<{ dni: string | null }[]>('SELECT dni FROM empleados WHERE id = ?', [id])
-    await quitarAcceso(db, id, fila?.dni ?? null)
+    const fila = await leerEmpleado(db, id)
+    await exigirPuedeTocarEmpleado(actorDni(), { dni: fila.dni, rolId: fila.rol_id }, null)
+    await quitarAcceso(db, id, fila.dni)
     // Limpiar dependencias y el empleado en la DB del negocio.
     try { await db.execute('DELETE FROM horarios_fijos WHERE empleado_id = ?', [id]) } catch { /* tabla opcional */ }
     try { await db.execute('DELETE FROM asignacion_turnos WHERE empleado_id = ?', [id]) } catch { /* tabla opcional */ }
     await db.execute('DELETE FROM empleados WHERE id = ?', [id])
     await registrarActividad({ modulo: 'Empleados', accion: 'Eliminó un empleado', detalle: emp?.nombre ?? String(id), entidadTipo: 'empleado', entidadId: id })
     await get().cargarEmpleados()
+    await refrescarSesionPropia(id)
   },
 
   toggleActivo: async (id, claveNueva = '') => {
@@ -271,6 +313,9 @@ export const useEmpleadosStore = create<EmpleadosStore>((set, get) => ({
     const emp = get().empleados.find(e => e.id === id)
     if (!emp) return
     const now = new Date().toISOString()
+    const fila = await leerEmpleado(db, id)
+    const ficha = { dni: fila.dni, rolId: fila.rol_id }
+    await exigirPuedeTocarEmpleado(actorDni(), ficha, { ...ficha, cambiaClave: !emp.activo, activo: !emp.activo })
     if (emp.activo) {
       await quitarAcceso(db, id, emp.dni)
       await db.execute('UPDATE empleados SET activo = 0, actualizado_en = ? WHERE id = ?', [now, id])
@@ -284,9 +329,34 @@ export const useEmpleadosStore = create<EmpleadosStore>((set, get) => ({
       if (emp.dni) await guardarUsuarioLocal({ nombre: emp.nombre, dni: emp.dni, rol: emp.rolNombre.toLowerCase() }, claveNueva)
     }
     await get().cargarEmpleados()
+    await refrescarSesionPropia(id)
   },
 
   seleccionarEmpleado: (e) => set({ empleadoSeleccionado: e }),
+
+  guardarPermisosRol: async (rolId, niveles) => {
+    await exigirDueno(actorDni(), 'Solo el dueño puede editar los permisos de los roles.')
+    const db = await getDb()
+    const [rol] = await db.select<{ nombre: string; es_admin: number | null }[]>(
+      'SELECT nombre, es_admin FROM roles WHERE id = ?', [rolId]
+    )
+    if (!rol || rol.es_admin === 1) throw new ErrorValidacion('Los permisos de ese rol no se pueden editar.')
+    // Un solo execute de BEGIN a COMMIT (ver migraciones.ts): si fallara entre el DELETE y
+    // los INSERT, el rol quedaría sin configurar. Los literales se validan antes.
+    const filas = Object.entries(niveles).map(([modulo, nivel]) => {
+      if (!/^[a-z-]+$/.test(modulo) || !['sin_acceso', 'solo_ver', 'editar'].includes(nivel)) {
+        throw new Error(`Permiso inválido: ${modulo} / ${nivel}`)
+      }
+      return `INSERT INTO permisos (rol_id, modulo, nivel) VALUES (${Number(rolId)}, '${modulo}', '${nivel}');`
+    })
+    try {
+      await db.execute(['BEGIN;', `DELETE FROM permisos WHERE rol_id = ${Number(rolId)};`, ...filas, 'COMMIT;'].join('\n'))
+    } catch (e) {
+      try { await db.execute('ROLLBACK') } catch { /* no había transacción abierta en esta conexión */ }
+      throw e
+    }
+    await registrarActividad({ modulo: 'Configuración', accion: 'Editó los permisos de un rol', detalle: rol.nombre, entidadTipo: 'rol', entidadId: rolId })
+  },
 
   cargarHorarioFijo: async (empleadoId) => {
     const db = await getDb()

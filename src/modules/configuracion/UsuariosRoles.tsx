@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { cn } from '../../lib/utils'
-import { useEmpleadosStore, ErrorFaltaClave, type NuevoEmpleado } from '../../store/empleadosStore'
+import { useEmpleadosStore, type NuevoEmpleado } from '../../store/empleadosStore'
+import { useAuthGlobalStore } from '../../store/authGlobalStore'
+import { ErrorValidacion } from '../../db/acceso'
 import { useSessionStore } from '../../store/sessionStore'
 import { MODULES } from '../../store/navigationStore'
 import { getDb } from '../../db'
@@ -21,8 +23,9 @@ const NIVELES: { value: Nivel; label: string }[] = [
 ]
 
 export const UsuariosRoles = () => {
-  const { empleados, roles, cargarEmpleados, cargarRoles, crearEmpleado, actualizarEmpleado, eliminarEmpleado } = useEmpleadosStore()
+  const { empleados, roles, cargarEmpleados, cargarRoles, crearEmpleado, actualizarEmpleado, eliminarEmpleado, guardarPermisosRol } = useEmpleadosStore()
   const { usuario } = useSessionStore()
+  const soyDueno = useAuthGlobalStore(s => s.usuario?.esAdminGeneral ?? false)
 
   // Modal crear/editar usuario
   const [modalOpen, setModalOpen] = useState(false)
@@ -80,7 +83,7 @@ export const UsuariosRoles = () => {
       }
       setModalOpen(false)
     } catch (e) {
-      toast.error(e instanceof ErrorFaltaClave ? e.message : 'No se pudo guardar el usuario')
+      toast.error(e instanceof ErrorValidacion ? e.message : 'No se pudo guardar el usuario')
       console.error(e)
     } finally {
       setGuardando(false)
@@ -93,7 +96,7 @@ export const UsuariosRoles = () => {
       await eliminarEmpleado(aEliminar.id)
       toast.success('Usuario eliminado')
     } catch (e) {
-      toast.error('No se pudo eliminar')
+      toast.error(e instanceof ErrorValidacion ? e.message : 'No se pudo eliminar')
       console.error(e)
     } finally {
       setAEliminar(null)
@@ -111,13 +114,13 @@ export const UsuariosRoles = () => {
 
   const guardarPermisos = async () => {
     if (rolEditando == null) return
-    const db = await getDb()
-    await db.execute('DELETE FROM permisos WHERE rol_id = ?', [rolEditando])
-    for (const m of MODULES) {
-      const nivel = permisos[m.id] ?? 'sin_acceso'
-      await db.execute('INSERT INTO permisos (rol_id, modulo, nivel) VALUES (?, ?, ?)', [rolEditando, m.id, nivel])
+    try {
+      await guardarPermisosRol(rolEditando, Object.fromEntries(MODULES.map(m => [m.id, permisos[m.id] ?? 'sin_acceso'])))
+      setRolEditando(null)
+    } catch (e) {
+      toast.error(e instanceof ErrorValidacion ? e.message : 'No se pudieron guardar los permisos')
+      console.error(e)
     }
-    setRolEditando(null)
   }
 
   return (
@@ -143,6 +146,8 @@ export const UsuariosRoles = () => {
           <tbody>
             {empleados.map(e => {
               const esVos = usuario?.nombre === e.nombre
+              // Solo el dueño edita administradores (también lo valida empleadosStore).
+              const bloqueado = !soyDueno && (rolDe(e.rolId)?.esAdmin ?? false)
               return (
                 <tr key={e.id} className="border-b border-[#1C1C1C] light:border-[#F0F0F0] last:border-0">
                   <td className="px-4 py-2.5 text-white light:text-black">{e.nombre}{esVos && <span className="text-[10px] text-[#606060] ml-1.5">(vos)</span>}</td>
@@ -151,13 +156,13 @@ export const UsuariosRoles = () => {
                   <td className="px-4 py-2.5">{e.activo ? <Badge label="Activo" variant="success" /> : <Badge label="Inactivo" variant="error" />}</td>
                   <td className="px-4 py-2.5">
                     <div className="flex items-center justify-end gap-1">
-                      <button onClick={() => abrirEditar(e)} title="Editar"
-                        className="p-1.5 rounded-input text-[#808080] hover:text-white hover:bg-white/10 light:hover:text-black light:hover:bg-black/5 transition-all">
+                      <button onClick={() => abrirEditar(e)} disabled={bloqueado} title={bloqueado ? 'Solo el dueño puede editar administradores' : 'Editar'}
+                        className="p-1.5 rounded-input text-[#808080] hover:text-white hover:bg-white/10 light:hover:text-black light:hover:bg-black/5 transition-all disabled:opacity-40 disabled:cursor-not-allowed">
                         <Pencil size={14} />
                       </button>
-                      <button onClick={() => setAEliminar(e)} disabled={esVos} title={esVos ? 'No podés eliminar tu propia sesión' : 'Eliminar'}
+                      <button onClick={() => setAEliminar(e)} disabled={esVos || bloqueado} title={esVos ? 'No podés eliminar tu propia sesión' : bloqueado ? 'Solo el dueño puede editar administradores' : 'Eliminar'}
                         className={cn('p-1.5 rounded-input transition-all',
-                          esVos
+                          esVos || bloqueado
                             ? 'text-[#3A3A3A] light:text-[#D0D0D0] cursor-not-allowed'
                             : 'text-[#808080] hover:text-[#C0392B] hover:bg-[#C0392B]/10')}>
                         <Trash2 size={14} />
@@ -176,9 +181,9 @@ export const UsuariosRoles = () => {
         <span className="text-[11px] font-semibold uppercase tracking-wider text-[#606060]">Permisos por rol</span>
         <div className="flex flex-wrap gap-2">
           {roles.map(r => (
-            <button key={r.id} onClick={() => !r.esAdmin && abrirPermisos(r.id)} disabled={r.esAdmin}
+            <button key={r.id} onClick={() => !r.esAdmin && abrirPermisos(r.id)} disabled={r.esAdmin || !soyDueno} title={!soyDueno ? 'Solo el dueño puede editar los permisos' : undefined}
               className={cn('flex items-center gap-1.5 px-3 py-1.5 rounded-input border text-[13px] transition-all',
-                r.esAdmin
+                r.esAdmin || !soyDueno
                   ? 'border-[#2A2A2A] text-[#606060] light:border-[#E4E4E4] cursor-not-allowed'
                   : 'border-[#2A2A2A] text-white hover:border-white light:border-[#E4E4E4] light:text-black light:hover:border-black')}>
               <ShieldCheck size={13} />{r.nombre}{r.esAdmin && ' (acceso total)'}
@@ -215,7 +220,7 @@ export const UsuariosRoles = () => {
           />
           <Select label="Rol" value={rolId ?? ''} onChange={e => setRolId(Number(e.target.value) || null)}>
             <option value="">Seleccionar rol…</option>
-            {roles.map(r => <option key={r.id} value={r.id}>{r.nombre}</option>)}
+            {roles.filter(r => soyDueno || !r.esAdmin).map(r => <option key={r.id} value={r.id}>{r.nombre}</option>)}
           </Select>
           <label className="flex items-center gap-2 text-[13px] text-[#A0A0A0] light:text-[#404040] cursor-pointer">
             <input type="checkbox" checked={activo} onChange={e => setActivo(e.target.checked)} className="accent-current" />

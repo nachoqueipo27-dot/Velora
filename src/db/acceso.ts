@@ -1,5 +1,5 @@
 import { getDb } from './index'
-import { esDueno, cambiarPassword } from './master'
+import { esDueno, contarDuenos, cambiarPassword } from './master'
 import { hashPassword } from '../lib/crypto'
 
 // Quién puede entrar y con qué rol. La contraseña se verifica en master.db (loginLocal);
@@ -84,6 +84,78 @@ export async function estaDadoDeBaja(dni: string): Promise<boolean> {
   } catch {
     return false
   }
+}
+
+// ── Reglas sobre quién puede tocar a quién ───────────────────────────────────
+
+// Error con un mensaje pensado para mostrarlo tal cual en pantalla.
+export class ErrorValidacion extends Error {}
+
+interface FichaEmpleado { dni: string | null; rolId: number }
+
+async function esRolAdmin(rolId: number): Promise<boolean> {
+  const db = await getDb()
+  const filas = await db.select<{ es_admin: number | null }[]>('SELECT es_admin FROM roles WHERE id = ?', [rolId])
+  return filas[0]?.es_admin === 1
+}
+
+export async function exigirDueno(actorDni: string | null, mensaje: string): Promise<void> {
+  if (actorDni === null || !(await esDueno(actorDni))) throw new ErrorValidacion(mensaje)
+}
+
+/**
+ * Lanza ErrorValidacion si `actorDni` no puede crear (`previo` null), editar, dar de baja o
+ * eliminar (`nuevo` null) a ese empleado.
+ */
+export async function exigirPuedeTocarEmpleado(
+  actorDni: string | null,
+  previo: FichaEmpleado | null,
+  nuevo: (FichaEmpleado & { cambiaClave: boolean; activo: boolean }) | null,
+): Promise<void> {
+  const roles = [previo?.rolId, nuevo?.rolId].filter((r): r is number => r !== undefined)
+  for (const rolId of roles) {
+    if (await esRolAdmin(rolId)) {
+      await exigirDueno(actorDni, 'Solo el dueño puede crear o editar usuarios con rol de administrador.')
+    }
+  }
+
+  // Desde acá, reglas de la cuenta de un dueño.
+  if (!previo?.dni || !(await esDueno(previo.dni))) return
+  await exigirDueno(actorDni, 'Solo el dueño puede editar su cuenta.')
+
+  if (previo.dni !== actorDni) {
+    if (nuevo && (nuevo.dni !== previo.dni || nuevo.rolId !== previo.rolId || nuevo.cambiaClave)) {
+      throw new ErrorValidacion('Solo el propio dueño puede cambiar su DNI, su contraseña o su rol.')
+    }
+  } else if ((!nuevo || !nuevo.activo) && (await contarDuenos()) <= 1) {
+    throw new ErrorValidacion('Sos el único dueño: no podés desactivarte ni eliminarte.')
+  }
+}
+
+/**
+ * ¿El DNI está libre para esta ficha? Lo ocupa otro empleado (activo o no) o un dueño.
+ * Excepción: el dueño puede poner su propio DNI en su ficha, que nace sin DNI en el
+ * onboarding. Una fila de master.db sin empleado detrás no ocupa el DNI: no puede entrar.
+ */
+export async function exigirDniLibre(
+  actorDni: string | null, dni: string, rolId: number, empleado: { id: number; dni: string | null } | null,
+): Promise<void> {
+  const db = await getDb()
+  const otros = await db.select<{ n: number }[]>(
+    'SELECT COUNT(*) AS n FROM empleados WHERE dni = ? AND id <> ?', [dni, empleado?.id ?? 0]
+  )
+  const suPropiaFicha = empleado !== null && !empleado.dni && dni === actorDni && (await esRolAdmin(rolId))
+  if ((otros[0]?.n ?? 0) > 0 || ((await esDueno(dni)) && !suPropiaFicha)) {
+    throw new ErrorValidacion('Ese DNI ya está en uso')
+  }
+}
+
+/** ¿Es la ficha del propio dueño? (Cambiarle el DNI es cambiar el DNI de su cuenta.) */
+export async function esFichaPropiaDelDueno(actorDni: string | null, ficha: FichaEmpleado): Promise<boolean> {
+  if (!ficha.dni || ficha.dni !== actorDni || !(await esDueno(ficha.dni)) || !(await esRolAdmin(ficha.rolId))) return false
+  const db = await getDb()
+  const filas = await db.select<{ n: number }[]>('SELECT COUNT(*) AS n FROM empleados WHERE dni = ?', [ficha.dni])
+  return filas[0]?.n === 1 // con el DNI repetido no se sabe cuál es la suya: se corrige sin mover la cuenta
 }
 
 // Guarda la contraseña que eligió el propio usuario y quita la marca de cambio obligatorio.

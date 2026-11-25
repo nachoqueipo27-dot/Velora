@@ -1,4 +1,5 @@
-import { sqliteTable, text, integer, real } from 'drizzle-orm/sqlite-core'
+import { sql } from 'drizzle-orm'
+import { sqliteTable, text, integer, real, uniqueIndex } from 'drizzle-orm/sqlite-core'
 
 // Schema base — se expandirá en cada paso de módulo
 // Montos en pesos: INTEGER en centavos desde la 1.3.0 (ver src/lib/dinero.ts y la
@@ -58,7 +59,10 @@ export const empleados = sqliteTable('empleados', {
   tipoHorario:   text('tipo_horario').default('fijo'), // 'fijo' | 'turno'
   creadoEn:      text('creado_en').notNull(),
   actualizadoEn: text('actualizado_en').notNull(),
-})
+}, t => [
+  // Solo existe si no había DNI repetidos (ver asegurarDniUnico en index.ts).
+  uniqueIndex('ux_empleados_dni').on(t.dni).where(sql`dni IS NOT NULL AND dni <> ''`),
+])
 
 export const horariosFijos = sqliteTable('horarios_fijos', {
   id:         integer('id').primaryKey({ autoIncrement: true }),

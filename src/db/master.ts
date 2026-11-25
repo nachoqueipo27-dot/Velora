@@ -115,6 +115,20 @@ export async function esDueno(dni: string): Promise<boolean> {
   return rows.length > 0
 }
 
+export async function contarDuenos(): Promise<number> {
+  const db = await getMasterDb()
+  const rows = await db.select<{ n: number }[]>(
+    `SELECT COUNT(*) AS n FROM usuarios_master WHERE rol = 'admin_master' AND dni IS NOT NULL`
+  )
+  return Math.max(1, rows[0]?.n ?? 0) // sin admin_master, el dueño es el primer usuario (ver esDueno)
+}
+
+// El dueño cambió su propio DNI: conserva contraseña, pregunta de seguridad y rol.
+export async function cambiarDniDueno(anterior: string, nuevo: string): Promise<void> {
+  const db = await getMasterDb()
+  await db.execute(`UPDATE usuarios_master SET dni = ? WHERE dni = ?`, [nuevo, anterior])
+}
+
 export async function obtenerUsuarioMaster(dni: string): Promise<{ nombre: string; dni: string } | null> {
   const db = await getMasterDb()
   const rows = await db.select<{ nombre: string; dni: string }[]>(

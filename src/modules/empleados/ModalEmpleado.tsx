@@ -4,9 +4,10 @@ import { Input } from '../../components/ui/Input'
 import { Button } from '../../components/ui/Button'
 import { Select } from '../../components/ui/Select'
 import { Modal } from '../../components/ui/Modal'
-import { useEmpleadosStore, ErrorFaltaClave } from '../../store/empleadosStore'
+import { useEmpleadosStore } from '../../store/empleadosStore'
+import { useAuthGlobalStore } from '../../store/authGlobalStore'
+import { ErrorValidacion } from '../../db/acceso'
 import { toast } from '../../store/toastStore'
-import { useSessionStore } from '../../store/sessionStore'
 import { DIAS_SEMANA, type Empleado, type HorarioFijo } from '../../types/empleados'
 
 interface ModalEmpleadoProps {
@@ -27,7 +28,7 @@ const horariosPorDefecto = (): HorarioFijo[] =>
 
 export const ModalEmpleado = ({ open, onClose, empleado }: ModalEmpleadoProps) => {
   const { roles, turnos, crearEmpleado, actualizarEmpleado, cargarRoles, cargarTurnos, cargarHorarioFijo } = useEmpleadosStore()
-  const { usuario } = useSessionStore()
+  const soyDueno = useAuthGlobalStore(s => s.usuario?.esAdminGeneral ?? false)
   const esEdicion = !!empleado
 
   const [nombre, setNombre] = useState('')
@@ -41,8 +42,8 @@ export const ModalEmpleado = ({ open, onClose, empleado }: ModalEmpleadoProps) =
   const [guardando, setGuardando] = useState(false)
   const [touched, setTouched] = useState(false)
 
-  const esAdminActual = roles.find(r => r.nombre === usuario?.rol)?.esAdmin ?? false
-  const rolesDisponibles = roles.filter(r => esAdminActual || !r.esAdmin)
+  // Solo el dueño asigna roles de administrador (también lo valida empleadosStore).
+  const rolesDisponibles = roles.filter(r => soyDueno || !r.esAdmin)
 
   useEffect(() => {
     if (!open) return
@@ -100,7 +101,7 @@ export const ModalEmpleado = ({ open, onClose, empleado }: ModalEmpleadoProps) =
       else await crearEmpleado(payload)
       onClose()
     } catch (e) {
-      toast.error(e instanceof ErrorFaltaClave ? e.message : 'No se pudo guardar el empleado')
+      toast.error(e instanceof ErrorValidacion ? e.message : 'No se pudo guardar el empleado')
       console.error(e)
     } finally {
       setGuardando(false)
