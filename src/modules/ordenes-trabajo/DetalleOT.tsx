@@ -17,6 +17,7 @@ import { toast } from '../../store/toastStore'
 import { ArrowLeft, User, ShieldCheck, Download, Copy, Play, Check, PackageCheck, X, RotateCcw } from 'lucide-react'
 import { format } from 'date-fns'
 import { formatearPesos } from '../../lib/dinero'
+import { useEdicion, usePermiso } from '../../lib/permisos'
 
 interface DetalleOTProps { onVolver: () => void }
 
@@ -25,6 +26,9 @@ const money = formatearPesos
 
 export const DetalleOT = ({ onVolver }: DetalleOTProps) => {
   const { otActiva: o, notas, cargarNotas, agregarNota, cambiarEstado, duplicarOT } = useOTStore()
+  const ed = useEdicion('ordenes-trabajo')
+  const edDev = useEdicion('devoluciones')
+  const verDevoluciones = usePermiso('devoluciones') !== 'sin_acceso'
   const negocio = useNegocio()
   const { descargar, generando } = usePDF()
   const [nota, setNota] = useState('')
@@ -36,7 +40,7 @@ export const DetalleOT = ({ onVolver }: DetalleOTProps) => {
   if (!o) return null
 
   const garantiaDiasRestantes = o.garantiaVence ? Math.ceil((new Date(o.garantiaVence).getTime() - Date.now()) / 86400000) : null
-  const permiteDevolucion = o.estado === 'entregado' || o.estado === 'finalizado'
+  const permiteDevolucion = verDevoluciones && (o.estado === 'entregado' || o.estado === 'finalizado')
 
   const onDevolucion = (d: Devolucion) => toast.success(`Devolución #${String(d.numero).padStart(3, '0')} registrada`)
 
@@ -61,11 +65,11 @@ export const DetalleOT = ({ onVolver }: DetalleOTProps) => {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button size="sm" variant="secondary" onClick={() => duplicarOT(o.id)}><Copy size={14} className="mr-1.5" /> Duplicar</Button>
+          <Button size="sm" variant="secondary" onClick={() => duplicarOT(o.id)} {...ed}><Copy size={14} className="mr-1.5" /> Duplicar</Button>
           {permiteDevolucion && (
-            <Button size="sm" variant="secondary" onClick={() => setDevolucion(true)}><RotateCcw size={14} className="mr-1.5" /> Registrar devolución</Button>
+            <Button size="sm" variant="secondary" onClick={() => setDevolucion(true)} {...edDev}><RotateCcw size={14} className="mr-1.5" /> Registrar devolución</Button>
           )}
-          {accionesOT(o, { cambiarEstado, setCancelar })}
+          {accionesOT(o, { cambiarEstado, setCancelar, ed })}
         </div>
       </div>
 
@@ -109,7 +113,7 @@ export const DetalleOT = ({ onVolver }: DetalleOTProps) => {
       <span className="text-[11px] font-semibold uppercase tracking-wider text-[#606060] mb-2">Notas internas</span>
       <div className="flex gap-2 mb-3">
         <Textarea rows={1} value={nota} onChange={e => setNota(e.target.value)} placeholder="Agregar nota interna..." className="flex-1" />
-        <Button size="sm" onClick={() => { if (nota.trim()) { agregarNota(o.id, nota.trim()); setNota('') } }} disabled={nota.trim() === ''}>Agregar</Button>
+        <Button size="sm" onClick={() => { if (nota.trim()) { agregarNota(o.id, nota.trim()); setNota('') } }} disabled={nota.trim() === ''} {...ed}>Agregar</Button>
       </div>
       <div className="flex flex-col gap-2">
         {notas.length === 0 ? <p className="text-[13px] text-[#606060]">Sin notas todavía.</p> : notas.map(n => (
@@ -124,17 +128,17 @@ export const DetalleOT = ({ onVolver }: DetalleOTProps) => {
       </div>
 
       {/* Devoluciones */}
-      <div className="mt-6">
+      {verDevoluciones && <div className="mt-6">
         <div className="flex items-center justify-between mb-2">
           <span className="text-[11px] font-semibold uppercase tracking-wider text-[#606060]">Devoluciones</span>
           {permiteDevolucion && (
-            <button onClick={() => setDevolucion(true)} className="text-[11px] text-[#606060] hover:text-white light:hover:text-black transition-colors flex items-center gap-1">
+            <button onClick={() => setDevolucion(true)} {...edDev} className="disabled:opacity-40 disabled:cursor-not-allowed text-[11px] text-[#606060] hover:text-white light:hover:text-black transition-colors flex items-center gap-1">
               <RotateCcw size={11} /> Registrar
             </button>
           )}
         </div>
         <HistorialDevoluciones filtroOtId={o.id} compacto />
-      </div>
+      </div>}
 
       <ModalCancelacion open={cancelar} ot={o} onClose={() => setCancelar(false)} />
       <ModalDevolucion open={devolucion} onClose={() => setDevolucion(false)} otNumeroInicial={o.numero} onDevolucion={onDevolucion} />
@@ -142,19 +146,20 @@ export const DetalleOT = ({ onVolver }: DetalleOTProps) => {
   )
 }
 
-function accionesOT(o: OrdenTrabajo, h: { cambiarEstado: (id: number, e: any) => void; setCancelar: (v: boolean) => void }) {
-  const cancelarBtn = <Button key="cancel" size="sm" variant="danger" onClick={() => h.setCancelar(true)}><X size={14} className="mr-1.5" /> Cancelar</Button>
+function accionesOT(o: OrdenTrabajo, h: { cambiarEstado: (id: number, e: any) => void; setCancelar: (v: boolean) => void; ed: ReturnType<typeof useEdicion> }) {
+  const { ed } = h
+  const cancelarBtn = <Button key="cancel" size="sm" variant="danger" onClick={() => h.setCancelar(true)} {...ed}><X size={14} className="mr-1.5" /> Cancelar</Button>
   if (o.estado === 'recepcion') return <>
-    <Button size="sm" onClick={() => h.cambiarEstado(o.id, 'en_proceso')}><Play size={14} className="mr-1.5" /> En proceso</Button>
+    <Button size="sm" onClick={() => h.cambiarEstado(o.id, 'en_proceso')} {...ed}><Play size={14} className="mr-1.5" /> En proceso</Button>
     {cancelarBtn}
   </>
   if (o.estado === 'en_proceso') return <>
-    <Button size="sm" onClick={() => h.cambiarEstado(o.id, 'finalizado')}><Check size={14} className="mr-1.5" /> Finalizar</Button>
-    <Button size="sm" variant="secondary" onClick={() => h.cambiarEstado(o.id, 'entregado')}><PackageCheck size={14} className="mr-1.5" /> Entregar</Button>
+    <Button size="sm" onClick={() => h.cambiarEstado(o.id, 'finalizado')} {...ed}><Check size={14} className="mr-1.5" /> Finalizar</Button>
+    <Button size="sm" variant="secondary" onClick={() => h.cambiarEstado(o.id, 'entregado')} {...ed}><PackageCheck size={14} className="mr-1.5" /> Entregar</Button>
     {cancelarBtn}
   </>
   if (o.estado === 'finalizado') return <>
-    <Button size="sm" onClick={() => h.cambiarEstado(o.id, 'entregado')}><PackageCheck size={14} className="mr-1.5" /> Entregar</Button>
+    <Button size="sm" onClick={() => h.cambiarEstado(o.id, 'entregado')} {...ed}><PackageCheck size={14} className="mr-1.5" /> Entregar</Button>
     {cancelarBtn}
   </>
   return null

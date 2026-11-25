@@ -10,6 +10,7 @@ import type { SnapshotLista } from '../../types/listaPrecios'
 import { Plus, Eye, RotateCcw, FileSpreadsheet, History, ChevronDown } from 'lucide-react'
 import { format } from 'date-fns'
 import { formatearPesos } from '../../lib/dinero'
+import { useEdicion } from '../../lib/permisos'
 
 // Montos en centavos → "$ 1.234,56"
 const money = formatearPesos
@@ -17,6 +18,7 @@ type Tab = 'snapshots' | 'cambios'
 
 export const HistorialListas = () => {
   const { snapshots, historial, cargarSnapshots, cargarHistorial, guardarSnapshot, restaurarSnapshot } = useListaPreciosStore()
+  const ed = useEdicion('lista-precios')
   const [tab, setTab] = useState<Tab>('snapshots')
   const [expandido, setExpandido] = useState<number | null>(null)
   const [modalGuardar, setModalGuardar] = useState(false)
@@ -51,7 +53,7 @@ export const HistorialListas = () => {
           ))}
         </div>
         {tab === 'snapshots'
-          ? <Button size="sm" onClick={() => setModalGuardar(true)}><Plus size={14} className="mr-1.5" /> Guardar snapshot actual</Button>
+          ? <Button size="sm" onClick={() => setModalGuardar(true)} {...ed}><Plus size={14} className="mr-1.5" /> Guardar snapshot actual</Button>
           : <Button size="sm" variant="secondary" onClick={() => console.log('Exportar historial:', historialFiltrado)}><FileSpreadsheet size={14} className="mr-1.5" /> Excel</Button>}
       </div>
 
@@ -75,8 +77,8 @@ export const HistorialListas = () => {
                         className="p-1.5 rounded-input text-[#606060] hover:text-white hover:bg-white/10 light:hover:text-black light:hover:bg-black/5">
                         {expandido === s.id ? <ChevronDown size={14} /> : <Eye size={14} />}
                       </button>
-                      <button title="Restaurar" onClick={() => setRestaurar(s)}
-                        className="p-1.5 rounded-input text-[#606060] hover:text-[#4A7FA5] hover:bg-[#4A7FA5]/10">
+                      <button title="Restaurar" onClick={() => setRestaurar(s)} {...ed}
+                        className="disabled:opacity-40 disabled:cursor-not-allowed p-1.5 rounded-input text-[#606060] hover:text-[#4A7FA5] hover:bg-[#4A7FA5]/10">
                         <RotateCcw size={14} />
                       </button>
                     </div>

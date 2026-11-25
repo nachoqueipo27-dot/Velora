@@ -12,6 +12,7 @@ import { toast } from '../../store/toastStore'
 import { useOTStore } from '../../store/otStore'
 import type { Empleado } from '../../types/empleados'
 import { ModalEmpleado } from './ModalEmpleado'
+import { useEdicion } from '../../lib/permisos'
 import { Search, Plus, Eye, Pencil, Power, Users } from 'lucide-react'
 
 interface ListadoEmpleadosProps {
@@ -27,6 +28,7 @@ const cargaBadge = (ots: number) => {
 
 export const ListadoEmpleados = ({ onVer }: ListadoEmpleadosProps) => {
   const { empleados, roles, loading, cargarEmpleados, cargarRoles, toggleActivo } = useEmpleadosStore()
+  const ed = useEdicion('empleados')
   const { cargaPorEmpleado } = useOTStore()
   const soyDueno = useAuthGlobalStore(s => s.usuario?.esAdminGeneral ?? false)
   // Solo el dueño edita administradores (también lo valida empleadosStore).
@@ -102,7 +104,7 @@ export const ListadoEmpleados = ({ onVer }: ListadoEmpleadosProps) => {
           </Select>
         </div>
         <div className="flex-1" />
-        <Button size="sm" onClick={() => setModal({ open: true, empleado: null })}>
+        <Button size="sm" onClick={() => setModal({ open: true, empleado: null })} {...ed}>
           <Plus size={14} className="mr-1.5" /> Nuevo empleado
         </Button>
       </div>
@@ -151,8 +153,8 @@ export const ListadoEmpleados = ({ onVer }: ListadoEmpleadosProps) => {
                   <td className="px-3 py-2.5">
                     <div className="flex items-center justify-end gap-1">
                       <IconBtn title="Ver ficha" onClick={() => onVer(e)}><Eye size={14} /></IconBtn>
-                      <IconBtn title="Editar" onClick={() => setModal({ open: true, empleado: e })} {...bloqueo(e)}><Pencil size={14} /></IconBtn>
-                      <IconBtn title={e.activo ? 'Desactivar' : 'Activar'} onClick={() => alternarActivo(e)} {...bloqueo(e)}><Power size={14} /></IconBtn>
+                      <IconBtn title="Editar" onClick={() => setModal({ open: true, empleado: e })} {...bloqueo(e)} {...ed}><Pencil size={14} /></IconBtn>
+                      <IconBtn title={e.activo ? 'Desactivar' : 'Activar'} onClick={() => alternarActivo(e)} {...bloqueo(e)} {...ed}><Power size={14} /></IconBtn>
                     </div>
                   </td>
                 </tr>

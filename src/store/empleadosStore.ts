@@ -7,6 +7,7 @@ import {
 import { useAuthGlobalStore } from './authGlobalStore'
 import { hashPassword } from '../lib/crypto'
 import { registrarActividad } from '../lib/registrarActividad'
+import { exigirEditar } from '../lib/permisos'
 import type {
   Empleado, Rol, Turno, Fichaje, HoraExtra, Ausencia, HorarioFijo, NivelPermiso,
 } from '../types/empleados'
@@ -210,6 +211,7 @@ export const useEmpleadosStore = create<EmpleadosStore>((set, get) => ({
   },
 
   crearTurno: async (nombre, entrada, salida) => {
+    exigirEditar('empleados')
     const db = await getDb()
     await db.execute(
       'INSERT INTO turnos (nombre, entrada, salida, creado_en) VALUES (?, ?, ?, ?)',
@@ -219,6 +221,7 @@ export const useEmpleadosStore = create<EmpleadosStore>((set, get) => ({
   },
 
   crearEmpleado: async (data) => {
+    exigirEditar('empleados')
     if (!tieneClave(data)) throw new ErrorFaltaClave('Ingresá una contraseña para el empleado.')
     const dni = data.dni?.trim() || null
     await exigirPuedeTocarEmpleado(actorDni(), null, { dni, rolId: data.rolId, cambiaClave: true, activo: data.activo })
@@ -240,6 +243,7 @@ export const useEmpleadosStore = create<EmpleadosStore>((set, get) => ({
   },
 
   actualizarEmpleado: async (id, data) => {
+    exigirEditar('empleados')
     const db = await getDb()
     const now = new Date().toISOString()
     const previo = await leerEmpleado(db, id)
@@ -294,6 +298,7 @@ export const useEmpleadosStore = create<EmpleadosStore>((set, get) => ({
   },
 
   eliminarEmpleado: async (id) => {
+    exigirEditar('empleados')
     const db = await getDb()
     const emp = get().empleados.find(e => e.id === id)
     const fila = await leerEmpleado(db, id)
@@ -309,6 +314,7 @@ export const useEmpleadosStore = create<EmpleadosStore>((set, get) => ({
   },
 
   toggleActivo: async (id, claveNueva = '') => {
+    exigirEditar('empleados')
     const db = await getDb()
     const emp = get().empleados.find(e => e.id === id)
     if (!emp) return
@@ -449,6 +455,7 @@ export const useEmpleadosStore = create<EmpleadosStore>((set, get) => ({
   },
 
   registrarHoraExtra: async (data) => {
+    exigirEditar('empleados')
     const db = await getDb()
     await db.execute(
       `INSERT INTO horas_extras (empleado_id, fecha, horario_vigente, hora_salida_real, minutos_extra, tipo, observacion, registrado_por, creado_en)
@@ -495,6 +502,7 @@ export const useEmpleadosStore = create<EmpleadosStore>((set, get) => ({
   },
 
   registrarAusencia: async (data) => {
+    exigirEditar('empleados')
     const db = await getDb()
     await db.execute(
       `INSERT INTO ausencias (empleado_id, tipo, fecha_inicio, fecha_fin, horario_afectado, observacion, comprobante, creado_en)

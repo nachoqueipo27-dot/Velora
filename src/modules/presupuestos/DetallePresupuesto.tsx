@@ -15,6 +15,7 @@ import { PDFPresupuesto } from '../../lib/pdf/documentos/PDFPresupuesto'
 import { ArrowLeft, Download, Send, Check, X, RefreshCw, ArrowRightCircle } from 'lucide-react'
 import { format } from 'date-fns'
 import { formatearPesos } from '../../lib/dinero'
+import { useEdicion } from '../../lib/permisos'
 
 interface DetallePresupuestoProps {
   onVolver: () => void
@@ -28,6 +29,8 @@ const LABEL_UNIDAD: Record<string, string> = Object.fromEntries(UNIDADES_MEDIDA.
 
 export const DetallePresupuesto = ({ onVolver, onEditar }: DetallePresupuestoProps) => {
   const { presupuestoActivo: p, items, cargarItems, cambiarEstado, reenviar, convertirAOT } = usePresupuestosStore()
+  const ed = useEdicion('presupuestos')
+  const edConvertir = useEdicion('presupuestos', 'ordenes-trabajo') // convertir crea una OT
   const negocio = useNegocio()
   const { descargar, generando } = usePDF()
   const [rechazar, setRechazar] = useState(false)
@@ -68,7 +71,7 @@ export const DetallePresupuesto = ({ onVolver, onEditar }: DetallePresupuestoPro
         </div>
         <div className="flex items-center gap-2">
           <Button size="sm" variant="secondary" onClick={descargarPDF} disabled={generando}><Download size={14} className="mr-1.5" /> {generando ? 'Generando...' : 'PDF'}</Button>
-          {accionesEstado(p, { onEditar, cambiarEstado, reenviar, setRechazar, setConvertir })}
+          {accionesEstado(p, { onEditar, cambiarEstado, reenviar, setRechazar, setConvertir, ed, edConvertir })}
         </div>
       </div>
 
@@ -162,23 +165,26 @@ function accionesEstado(
     reenviar: (id: number) => void
     setRechazar: (v: boolean) => void
     setConvertir: (v: boolean) => void
+    ed: ReturnType<typeof useEdicion>
+    edConvertir: ReturnType<typeof useEdicion>
   },
 ) {
+  const { ed } = h
   if (p.estado === 'borrador') return (
     <>
-      <Button size="sm" variant="secondary" onClick={() => h.onEditar(p)}>Editar</Button>
-      <Button size="sm" onClick={() => h.cambiarEstado(p.id, 'enviado')}><Send size={14} className="mr-1.5" /> Enviar</Button>
+      <Button size="sm" variant="secondary" onClick={() => h.onEditar(p)} {...ed}>Editar</Button>
+      <Button size="sm" onClick={() => h.cambiarEstado(p.id, 'enviado')} {...ed}><Send size={14} className="mr-1.5" /> Enviar</Button>
     </>
   )
   if (p.estado === 'enviado') return (
     <>
-      <Button size="sm" variant="secondary" onClick={() => h.reenviar(p.id)}><RefreshCw size={14} className="mr-1.5" /> Reenviar</Button>
-      <Button size="sm" variant="danger" onClick={() => h.setRechazar(true)}><X size={14} className="mr-1.5" /> Rechazar</Button>
-      <Button size="sm" onClick={() => h.cambiarEstado(p.id, 'aprobado')}><Check size={14} className="mr-1.5" /> Aprobar</Button>
+      <Button size="sm" variant="secondary" onClick={() => h.reenviar(p.id)} {...ed}><RefreshCw size={14} className="mr-1.5" /> Reenviar</Button>
+      <Button size="sm" variant="danger" onClick={() => h.setRechazar(true)} {...ed}><X size={14} className="mr-1.5" /> Rechazar</Button>
+      <Button size="sm" onClick={() => h.cambiarEstado(p.id, 'aprobado')} {...ed}><Check size={14} className="mr-1.5" /> Aprobar</Button>
     </>
   )
   if (p.estado === 'aprobado') return (
-    <Button size="sm" onClick={() => h.setConvertir(true)}><ArrowRightCircle size={14} className="mr-1.5" /> Convertir a OT</Button>
+    <Button size="sm" onClick={() => h.setConvertir(true)} {...h.edConvertir}><ArrowRightCircle size={14} className="mr-1.5" /> Convertir a OT</Button>
   )
   return null
 }

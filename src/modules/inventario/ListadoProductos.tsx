@@ -8,6 +8,7 @@ import { StockBadge } from './components/StockBadge'
 import { ModalProducto } from './ModalProducto'
 import { Search, Plus, Eye, Pencil, Trash2, ImageOff, AlertTriangle, PackageX } from 'lucide-react'
 import { formatearPesos } from '../../lib/dinero'
+import { useEdicion } from '../../lib/permisos'
 
 const LABEL_UNIDAD: Record<string, string> = Object.fromEntries(UNIDADES_MEDIDA.map(u => [u.value, u.label]))
 
@@ -18,6 +19,7 @@ interface ListadoProductosProps {
 
 export const ListadoProductos = ({ tipo, onVer }: ListadoProductosProps) => {
   const { productos, categorias, loading, cargarComponentes, eliminarProducto } = useInventarioStore()
+  const ed = useEdicion('inventario')
   const [busqueda, setBusqueda] = useState('')
   const [filtroCat, setFiltroCat] = useState('Todas')
   const [modal, setModal] = useState<{ open: boolean; producto: Producto | null }>({ open: false, producto: null })
@@ -77,7 +79,7 @@ export const ListadoProductos = ({ tipo, onVer }: ListadoProductosProps) => {
           </Select>
         </div>
         <div className="flex-1" />
-        <Button size="sm" onClick={() => setModal({ open: true, producto: null })}>
+        <Button size="sm" onClick={() => setModal({ open: true, producto: null })} {...ed}>
           <Plus size={14} className="mr-1.5" /> {tipo === 'conjunto' ? 'Nuevo conjunto' : 'Nuevo producto'}
         </Button>
       </div>
@@ -134,8 +136,8 @@ export const ListadoProductos = ({ tipo, onVer }: ListadoProductosProps) => {
                     ) : (
                       <div className="flex items-center justify-end gap-1">
                         <IconBtn title="Ver" onClick={() => onVer(p)}><Eye size={14} /></IconBtn>
-                        <IconBtn title="Editar" onClick={() => setModal({ open: true, producto: p })}><Pencil size={14} /></IconBtn>
-                        <IconBtn title="Eliminar" danger onClick={() => setConfirmId(p.id)}><Trash2 size={14} /></IconBtn>
+                        <IconBtn title="Editar" onClick={() => setModal({ open: true, producto: p })} {...ed}><Pencil size={14} /></IconBtn>
+                        <IconBtn title="Eliminar" danger onClick={() => setConfirmId(p.id)} {...ed}><Trash2 size={14} /></IconBtn>
                       </div>
                     )}
                   </td>
@@ -151,9 +153,9 @@ export const ListadoProductos = ({ tipo, onVer }: ListadoProductosProps) => {
   )
 }
 
-const IconBtn = ({ children, onClick, title, danger }: { children: React.ReactNode; onClick: () => void; title: string; danger?: boolean }) => (
-  <button title={title} onClick={onClick}
-    className={cn('p-1.5 rounded-input transition-all duration-150',
+const IconBtn = ({ children, onClick, title, danger, disabled }: { children: React.ReactNode; onClick: () => void; title: string; danger?: boolean; disabled?: boolean }) => (
+  <button title={title} onClick={onClick} disabled={disabled}
+    className={cn('p-1.5 rounded-input transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed',
       danger ? 'text-[#606060] hover:text-[#C0392B] hover:bg-[#C0392B]/10' : 'text-[#606060] hover:text-white hover:bg-white/10 light:hover:text-black light:hover:bg-black/5')}>
     {children}
   </button>

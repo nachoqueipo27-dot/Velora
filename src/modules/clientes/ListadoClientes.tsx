@@ -5,6 +5,7 @@ import { useClientesStore } from '../../store/clientesStore'
 import { CATEGORIAS_CLIENTE, type Cliente } from '../../types/clientes'
 import { CategoriaBadge } from './components/CategoriaBadge'
 import { ModalCliente } from './ModalCliente'
+import { useEdicion } from '../../lib/permisos'
 import { Search, Plus, Eye, Pencil, Trash2, FileSpreadsheet, Users } from 'lucide-react'
 
 interface ListadoClientesProps {
@@ -20,6 +21,7 @@ const inputCls = cn(
 
 export const ListadoClientes = ({ onVer }: ListadoClientesProps) => {
   const { clientes, loading, eliminarCliente } = useClientesStore()
+  const ed = useEdicion('clientes')
   const [busqueda, setBusqueda] = useState('')
   const [filtroCat, setFiltroCat] = useState<string>('Todas')
   const [modal, setModal] = useState<{ open: boolean; cliente: Cliente | null }>({ open: false, cliente: null })
@@ -77,7 +79,7 @@ export const ListadoClientes = ({ onVer }: ListadoClientesProps) => {
         <Button size="sm" variant="secondary" onClick={handleExport}>
           <FileSpreadsheet size={14} className="mr-1.5" /> Excel
         </Button>
-        <Button size="sm" onClick={() => setModal({ open: true, cliente: null })}>
+        <Button size="sm" onClick={() => setModal({ open: true, cliente: null })} {...ed}>
           <Plus size={14} className="mr-1.5" /> Nuevo cliente
         </Button>
       </div>
@@ -123,8 +125,8 @@ export const ListadoClientes = ({ onVer }: ListadoClientesProps) => {
                     ) : (
                       <div className="flex items-center justify-end gap-1">
                         <IconBtn title="Ver" onClick={() => onVer(c)}><Eye size={14} /></IconBtn>
-                        <IconBtn title="Editar" onClick={() => setModal({ open: true, cliente: c })}><Pencil size={14} /></IconBtn>
-                        <IconBtn title="Eliminar" danger onClick={() => setConfirmId(c.id)}><Trash2 size={14} /></IconBtn>
+                        <IconBtn title="Editar" onClick={() => setModal({ open: true, cliente: c })} {...ed}><Pencil size={14} /></IconBtn>
+                        <IconBtn title="Eliminar" danger onClick={() => setConfirmId(c.id)} {...ed}><Trash2 size={14} /></IconBtn>
                       </div>
                     )}
                   </td>
@@ -144,12 +146,12 @@ export const ListadoClientes = ({ onVer }: ListadoClientesProps) => {
   )
 }
 
-const IconBtn = ({ children, onClick, title, danger }: { children: React.ReactNode; onClick: () => void; title: string; danger?: boolean }) => (
+const IconBtn = ({ children, onClick, title, danger, disabled }: { children: React.ReactNode; onClick: () => void; title: string; danger?: boolean; disabled?: boolean }) => (
   <button
     title={title}
-    onClick={onClick}
+    onClick={onClick} disabled={disabled}
     className={cn(
-      'p-1.5 rounded-input transition-all duration-150',
+      'p-1.5 rounded-input transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed',
       danger
         ? 'text-[#606060] hover:text-[#C0392B] hover:bg-[#C0392B]/10'
         : 'text-[#606060] hover:text-white hover:bg-white/10 light:hover:text-black light:hover:bg-black/5',

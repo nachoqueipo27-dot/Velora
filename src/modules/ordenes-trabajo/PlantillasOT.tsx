@@ -7,10 +7,12 @@ import { Textarea } from '../../components/ui/Textarea'
 import { Modal } from '../../components/ui/Modal'
 import { useOTStore } from '../../store/otStore'
 import { useInventarioStore } from '../../store/inventarioStore'
+import { useEdicion } from '../../lib/permisos'
 import { Plus, Trash2, LayoutTemplate } from 'lucide-react'
 
 export const PlantillasOT = () => {
   const { plantillas, cargarPlantillas, crearPlantilla, eliminarPlantilla } = useOTStore()
+  const ed = useEdicion('ordenes-trabajo')
   const { productos, cargarProductos } = useInventarioStore()
   const [modal, setModal] = useState(false)
   const [nombre, setNombre] = useState('')
@@ -37,7 +39,7 @@ export const PlantillasOT = () => {
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold text-white light:text-black">Plantillas de OT</h2>
-        <Button size="sm" onClick={() => setModal(true)}><Plus size={14} className="mr-1.5" /> Nueva plantilla</Button>
+        <Button size="sm" onClick={() => setModal(true)} {...ed}><Plus size={14} className="mr-1.5" /> Nueva plantilla</Button>
       </div>
 
       <div className="flex-1 overflow-y-auto">
@@ -61,7 +63,7 @@ export const PlantillasOT = () => {
                     <Button size="sm" variant="ghost" onClick={() => setConfirmId(null)}>No</Button>
                   </div>
                 ) : (
-                  <button onClick={() => setConfirmId(pl.id)} className="p-1.5 rounded-input text-[#606060] hover:text-[#C0392B] hover:bg-[#C0392B]/10"><Trash2 size={14} /></button>
+                  <button onClick={() => setConfirmId(pl.id)} {...ed} className="disabled:opacity-40 disabled:cursor-not-allowed p-1.5 rounded-input text-[#606060] hover:text-[#C0392B] hover:bg-[#C0392B]/10"><Trash2 size={14} /></button>
                 )}
               </div>
             ))}

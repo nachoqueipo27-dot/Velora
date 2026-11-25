@@ -4,6 +4,7 @@ import { useOTStore } from '../../store/otStore'
 import { getDb } from '../../db'
 import { Button } from '../../components/ui/Button'
 import { Modal } from '../../components/ui/Modal'
+import { exigirEditar } from '../../lib/permisos'
 import { Pencil, Trash2, Plus } from 'lucide-react'
 
 const COLORES = ['#C0392B', '#D4921A', '#4CAF7D', '#4A7FA5', '#9B86FF', '#E0598B', '#3FB0AC', '#888888']
@@ -18,6 +19,7 @@ export const EtiquetasOT = () => {
   useEffect(() => { cargarEtiquetas() }, [cargarEtiquetas])
 
   const guardar = async () => {
+    exigirEditar('configuracion')
     if (!editor || !editor.nombre.trim()) return
     const db = await getDb()
     if (editor.id) await db.execute('UPDATE etiquetas_ot SET nombre = ?, color = ? WHERE id = ?', [editor.nombre.trim(), editor.color, editor.id])
@@ -25,6 +27,7 @@ export const EtiquetasOT = () => {
     setEditor(null); await cargarEtiquetas()
   }
   const eliminar = async () => {
+    exigirEditar('configuracion')
     if (!aEliminar) return
     const db = await getDb()
     await db.execute('DELETE FROM etiquetas_ot WHERE id = ?', [aEliminar.id])

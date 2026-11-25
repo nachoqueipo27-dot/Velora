@@ -7,6 +7,7 @@ import { Badge } from '../../components/ui/Badge'
 import { ResumenDia } from './components/ResumenDia'
 import { Lock } from 'lucide-react'
 import { formatearPesos } from '../../lib/dinero'
+import { useEdicion } from '../../lib/permisos'
 
 // Montos en centavos → "$ 1.234,56"
 const money = formatearPesos
@@ -21,6 +22,7 @@ const DESGLOSE: { key: 'totalEfectivo' | 'totalTransferencia' | 'totalTarjeta'; 
 
 export const CierreCaja = () => {
   const { resumenHoy, diaYaCerrado, cerrarCaja, cierresCaja, cargarHistorialCierres } = useCajaStore()
+  const ed = useEdicion('caja-diaria')
   const [notas, setNotas] = useState('')
   const [confirmar, setConfirmar] = useState(false)
   const [cerrando, setCerrando] = useState(false)
@@ -88,7 +90,7 @@ export const CierreCaja = () => {
               className="w-full px-3 py-2 text-sm rounded-input border bg-transparent outline-none resize-none border-[#2A2A2A] text-white focus:border-white light:border-[#E4E4E4] light:text-black" />
           </div>
           <div className="flex justify-end">
-            <Button onClick={() => setConfirmar(true)}><Lock size={14} className="mr-1.5" />Cerrar caja del día</Button>
+            <Button onClick={() => setConfirmar(true)} {...ed}><Lock size={14} className="mr-1.5" />Cerrar caja del día</Button>
           </div>
         </div>
       )}
@@ -96,7 +98,7 @@ export const CierreCaja = () => {
       <Modal open={confirmar} onClose={() => setConfirmar(false)} title="Cerrar caja del día" maxWidth="max-w-md"
         footer={<>
           <Button variant="ghost" onClick={() => setConfirmar(false)} disabled={cerrando}>Cancelar</Button>
-          <Button onClick={confirmarCierre} disabled={cerrando}>{cerrando ? 'Cerrando...' : 'Cerrar caja'}</Button>
+          <Button onClick={confirmarCierre} disabled={cerrando} {...ed}>{cerrando ? 'Cerrando...' : 'Cerrar caja'}</Button>
         </>}>
         <div className="flex flex-col gap-3 pb-1">
           <p className="text-[13px] text-[#A0A0A0] light:text-[#404040]">

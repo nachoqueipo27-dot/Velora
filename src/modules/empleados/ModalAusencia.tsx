@@ -7,6 +7,7 @@ import { Textarea } from '../../components/ui/Textarea'
 import { Modal } from '../../components/ui/Modal'
 import { useEmpleadosStore } from '../../store/empleadosStore'
 import { TIPOS_AUSENCIA, type TipoAusencia } from '../../types/empleados'
+import { useEdicion } from '../../lib/permisos'
 import { Paperclip } from 'lucide-react'
 
 interface ModalAusenciaProps {
@@ -18,6 +19,7 @@ const hoyFecha = () => new Date().toISOString().slice(0, 10)
 
 export const ModalAusencia = ({ open, onClose }: ModalAusenciaProps) => {
   const { empleados, turnos, cargarEmpleados, cargarTurnos, obtenerHorarioVigente, registrarAusencia } = useEmpleadosStore()
+  const ed = useEdicion('empleados')
 
   const [empleadoId, setEmpleadoId] = useState<number | ''>('')
   const [tipo, setTipo] = useState<TipoAusencia>('injustificada')
@@ -79,7 +81,7 @@ export const ModalAusencia = ({ open, onClose }: ModalAusenciaProps) => {
       footer={
         <>
           <Button variant="ghost" onClick={onClose} disabled={guardando}>Cancelar</Button>
-          <Button onClick={handleGuardar} disabled={guardando}>{guardando ? 'Guardando...' : 'Registrar'}</Button>
+          <Button onClick={handleGuardar} disabled={guardando} {...ed}>{guardando ? 'Guardando...' : 'Registrar'}</Button>
         </>
       }
     >

@@ -9,6 +9,7 @@ import { useAuthGlobalStore } from '../../store/authGlobalStore'
 import { ErrorValidacion } from '../../db/acceso'
 import { toast } from '../../store/toastStore'
 import { DIAS_SEMANA, type Empleado, type HorarioFijo } from '../../types/empleados'
+import { useEdicion } from '../../lib/permisos'
 
 interface ModalEmpleadoProps {
   open: boolean
@@ -28,6 +29,7 @@ const horariosPorDefecto = (): HorarioFijo[] =>
 
 export const ModalEmpleado = ({ open, onClose, empleado }: ModalEmpleadoProps) => {
   const { roles, turnos, crearEmpleado, actualizarEmpleado, cargarRoles, cargarTurnos, cargarHorarioFijo } = useEmpleadosStore()
+  const ed = useEdicion('empleados')
   const soyDueno = useAuthGlobalStore(s => s.usuario?.esAdminGeneral ?? false)
   const esEdicion = !!empleado
 
@@ -117,7 +119,7 @@ export const ModalEmpleado = ({ open, onClose, empleado }: ModalEmpleadoProps) =
       footer={
         <>
           <Button variant="ghost" onClick={onClose} disabled={guardando}>Cancelar</Button>
-          <Button onClick={handleGuardar} disabled={guardando}>{guardando ? 'Guardando...' : 'Guardar'}</Button>
+          <Button onClick={handleGuardar} disabled={guardando} {...ed}>{guardando ? 'Guardando...' : 'Guardar'}</Button>
         </>
       }
     >

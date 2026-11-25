@@ -3,6 +3,7 @@ import { useInventarioStore } from '../../store/inventarioStore'
 import { getDb } from '../../db'
 import { Button } from '../../components/ui/Button'
 import { Modal } from '../../components/ui/Modal'
+import { exigirEditar } from '../../lib/permisos'
 import { Pencil, Trash2, Plus } from 'lucide-react'
 
 export const Categorias = () => {
@@ -25,12 +26,14 @@ export const Categorias = () => {
 
   const crear = async () => { if (nueva.trim()) { await crearCategoria(nueva.trim()); setNueva(''); recargar() } }
   const guardarEdit = async () => {
+    exigirEditar('configuracion')
     if (!editando) return
     const db = await getDb()
     await db.execute('UPDATE categorias SET nombre = ? WHERE id = ?', [editando.nombre, editando.id])
     setEditando(null); recargar()
   }
   const eliminar = async () => {
+    exigirEditar('configuracion')
     if (!aEliminar) return
     const db = await getDb()
     await db.execute('UPDATE productos SET categoria_id = NULL WHERE categoria_id = ?', [aEliminar.id])

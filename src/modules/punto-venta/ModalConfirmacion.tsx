@@ -5,6 +5,7 @@ import { usePosStore } from '../../store/posStore'
 import { useSessionStore } from '../../store/sessionStore'
 import { FORMAS_PAGO, type VentaPOS } from '../../types/pos'
 import { aCentavos, formatearPesos } from '../../lib/dinero'
+import { useEdicion } from '../../lib/permisos'
 
 // Montos en centavos → "$ 1.234,56"
 const money = formatearPesos
@@ -17,6 +18,7 @@ interface ModalConfirmacionProps {
 
 export const ModalConfirmacion = ({ open, onClose, onVenta }: ModalConfirmacionProps) => {
   const { carrito, formaPago, procesando, calcularTotal, confirmarVenta, empleadoPOS } = usePosStore()
+  const ed = useEdicion('punto-venta')
   const { usuario } = useSessionStore()
   const [recibido, setRecibido] = useState('')
 
@@ -40,7 +42,7 @@ export const ModalConfirmacion = ({ open, onClose, onVenta }: ModalConfirmacionP
     <Modal open={open} onClose={onClose} title="Confirmar venta" maxWidth="max-w-md"
       footer={<>
         <Button variant="ghost" onClick={onClose} disabled={procesando}>Cancelar</Button>
-        <Button onClick={handleConfirmar} disabled={!puedeConfirmar}>{procesando ? 'Cobrando...' : 'Confirmar y cobrar'}</Button>
+        <Button onClick={handleConfirmar} disabled={!puedeConfirmar} {...ed}>{procesando ? 'Cobrando...' : 'Confirmar y cobrar'}</Button>
       </>}>
       <div className="flex flex-col gap-3 pb-1">
         {/* Items */}

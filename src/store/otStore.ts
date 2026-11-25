@@ -3,6 +3,7 @@ import { aplicarPorcentaje } from '../lib/dinero'
 import { getDb } from '../db'
 import { useSessionStore } from './sessionStore'
 import { registrarActividad } from '../lib/registrarActividad'
+import { exigirEditar, puede } from '../lib/permisos'
 import type {
   OrdenTrabajo, EtiquetaOT, PlantillaOT, EstadoOT, ComponenteCancelacion, NotaOT, GarantiaActiva,
 } from '../types/ordenesTrabajo'
@@ -192,6 +193,7 @@ export const useOTStore = create<OTStore>((set, get) => ({
   },
 
   crearOT: async (data) => {
+    exigirEditar('ordenes-trabajo')
     const db = await getDb()
     const now = new Date().toISOString()
     const maxRows = await db.select<{ max: number | null }[]>('SELECT MAX(numero) as max FROM ordenes_trabajo')
@@ -220,6 +222,7 @@ export const useOTStore = create<OTStore>((set, get) => ({
   },
 
   crearOTDesdePresupuesto: async (presupuestoId) => {
+    exigirEditar('ordenes-trabajo')
     const db = await getDb()
     const now = new Date().toISOString()
     const presRows = await db.select<any[]>('SELECT * FROM presupuestos WHERE id = ?', [presupuestoId])
@@ -243,6 +246,7 @@ export const useOTStore = create<OTStore>((set, get) => ({
   },
 
   duplicarOT: async (otId) => {
+    exigirEditar('ordenes-trabajo')
     const db = await getDb()
     const now = new Date().toISOString()
     const o = get().ots.find(x => x.id === otId)
@@ -261,6 +265,7 @@ export const useOTStore = create<OTStore>((set, get) => ({
   },
 
   crearOTDesdePlantilla: async (plantillaId, clienteId) => {
+    exigirEditar('ordenes-trabajo')
     const db = await getDb()
     const pl = get().plantillas.find(p => p.id === plantillaId)
     if (!pl || !pl.productoId) return
@@ -274,6 +279,7 @@ export const useOTStore = create<OTStore>((set, get) => ({
   },
 
   cambiarEstado: async (id, estado) => {
+    exigirEditar('ordenes-trabajo')
     const db = await getDb()
     const now = new Date().toISOString()
     const o = get().ots.find(x => x.id === id)
@@ -294,6 +300,7 @@ export const useOTStore = create<OTStore>((set, get) => ({
   },
 
   cancelarOT: async (id, motivo, componentes) => {
+    exigirEditar('ordenes-trabajo')
     const db = await getDb()
     const now = new Date().toISOString()
     const o = get().ots.find(x => x.id === id)
@@ -319,6 +326,7 @@ export const useOTStore = create<OTStore>((set, get) => ({
   },
 
   asignarEmpleado: async (otId, empleadoId) => {
+    exigirEditar('ordenes-trabajo')
     const db = await getDb()
     await db.execute('UPDATE ordenes_trabajo SET empleado_id = ?, actualizado_en = ? WHERE id = ?', [empleadoId, new Date().toISOString(), otId])
     await get().cargarOTs()
@@ -327,6 +335,7 @@ export const useOTStore = create<OTStore>((set, get) => ({
   },
 
   asignarEtiquetas: async (otId, etiquetaIds) => {
+    exigirEditar('ordenes-trabajo')
     const db = await getDb()
     await db.execute('DELETE FROM ot_etiquetas WHERE ot_id = ?', [otId])
     for (const eid of etiquetaIds) await db.execute('INSERT INTO ot_etiquetas (ot_id, etiqueta_id) VALUES (?, ?)', [otId, eid])
@@ -334,6 +343,7 @@ export const useOTStore = create<OTStore>((set, get) => ({
   },
 
   agregarNota: async (otId, nota) => {
+    exigirEditar('ordenes-trabajo')
     const db = await getDb()
     const now = new Date().toISOString()
     await db.execute('INSERT INTO ot_notas (ot_id, nota, creado_por, creado_en) VALUES (?, ?, ?, ?)', [otId, nota, usuarioActual(), now])
@@ -347,6 +357,7 @@ export const useOTStore = create<OTStore>((set, get) => ({
   },
 
   configurarRecurrencia: async (otId, frecuencia, proximaFecha) => {
+    exigirEditar('ordenes-trabajo')
     const db = await getDb()
     await db.execute('UPDATE ordenes_trabajo SET es_recurrente = 1, frecuencia = ?, proxima_fecha = ?, actualizado_en = ? WHERE id = ?',
       [frecuencia, proximaFecha, new Date().toISOString(), otId])
@@ -354,6 +365,7 @@ export const useOTStore = create<OTStore>((set, get) => ({
   },
 
   procesarOTsRecurrentes: async () => {
+    if (!puede('ordenes-trabajo', 'editar')) return 0 // automático: sin aviso
     const db = await getDb()
     const now = new Date()
     const rows = await db.select<any[]>(
@@ -397,6 +409,7 @@ export const useOTStore = create<OTStore>((set, get) => ({
   },
 
   crearPlantilla: async (nombre, descripcion, productoId, tipoItem) => {
+    exigirEditar('ordenes-trabajo')
     const db = await getDb()
     await db.execute('INSERT INTO plantillas_ot (nombre, descripcion, producto_id, tipo_item, creado_en) VALUES (?, ?, ?, ?, ?)',
       [nombre, descripcion, productoId, tipoItem, new Date().toISOString()])
@@ -404,6 +417,7 @@ export const useOTStore = create<OTStore>((set, get) => ({
   },
 
   eliminarPlantilla: async (id) => {
+    exigirEditar('ordenes-trabajo')
     const db = await getDb()
     await db.execute('DELETE FROM plantillas_ot WHERE id = ?', [id])
     await get().cargarPlantillas()

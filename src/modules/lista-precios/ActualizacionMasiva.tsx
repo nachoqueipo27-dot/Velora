@@ -10,12 +10,14 @@ import { useListaPreciosStore } from '../../store/listaPreciosStore'
 import { useInventarioStore } from '../../store/inventarioStore'
 import { toast } from '../../store/toastStore'
 import { formatearPesos } from '../../lib/dinero'
+import { useEdicion } from '../../lib/permisos'
 
 // Montos en centavos → "$ 1.234,56"
 const money = formatearPesos
 
 export const ActualizacionMasiva = () => {
   const { previsualizacion, cargarItems, previsualizarAumento, cancelarPrevisualizacion, aplicarAumento } = useListaPreciosStore()
+  const ed = useEdicion('lista-precios')
   const { categorias, cargarCategorias } = useInventarioStore()
   const [porcentaje, setPorcentaje] = useState('')
   const [categoriaId, setCategoriaId] = useState<number | ''>('')
@@ -106,7 +108,7 @@ export const ActualizacionMasiva = () => {
           </div>
           <div className="flex justify-end gap-2 mt-3">
             <Button size="sm" variant="ghost" onClick={cancelarPrevisualizacion}>Cancelar previsualización</Button>
-            <Button size="sm" onClick={() => setConfirmar(true)} disabled={previsualizacion.length === 0}>Aplicar actualización</Button>
+            <Button size="sm" onClick={() => setConfirmar(true)} disabled={previsualizacion.length === 0} {...ed}>Aplicar actualización</Button>
           </div>
         </Card>
       )}
@@ -115,7 +117,7 @@ export const ActualizacionMasiva = () => {
       <Modal open={confirmar} onClose={() => setConfirmar(false)} title="Confirmar actualización"
         footer={<>
           <Button variant="ghost" onClick={() => setConfirmar(false)}>Cancelar</Button>
-          <Button onClick={handleAplicar}>Confirmar</Button>
+          <Button onClick={handleAplicar} {...ed}>Confirmar</Button>
         </>}>
         <p className="text-sm text-white light:text-black pb-1">¿Aplicar aumento de {pct}% a {previsualizacion?.length ?? 0} productos?</p>
         <p className="text-[11px] text-[#606060] pb-2">Esta acción actualizará los precios y quedará registrada en el historial.</p>

@@ -4,6 +4,7 @@ import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
 import { useClientesStore } from '../../store/clientesStore'
 import { useSessionStore } from '../../store/sessionStore'
+import { useEdicion } from '../../lib/permisos'
 import { MessageSquare, Clock } from 'lucide-react'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
@@ -18,6 +19,7 @@ const fmtFecha = (iso: string) => {
 
 export const LogComunicaciones = () => {
   const { clienteSeleccionado, logs, cargarLogs, agregarLog } = useClientesStore()
+  const ed = useEdicion('clientes')
   const { usuario } = useSessionStore()
 
   const [responsable, setResponsable] = useState(usuario?.nombre ?? 'Admin')
@@ -83,7 +85,7 @@ export const LogComunicaciones = () => {
           </div>
         </div>
         <div className="flex justify-end mt-3">
-          <Button size="sm" onClick={handleRegistrar} disabled={registrando || resumen.trim() === ''}>
+          <Button size="sm" onClick={handleRegistrar} disabled={registrando || resumen.trim() === ''} {...ed}>
             {registrando ? 'Registrando...' : 'Registrar'}
           </Button>
         </div>

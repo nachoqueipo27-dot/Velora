@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { puede } from '../lib/permisos'
 
 export type ModuleId =
   | 'dashboard'
@@ -44,7 +45,7 @@ export const GRUPOS_MENU: { id: string; label: string; modulos: ModuleId[]; abie
   { id: 'administracion', label: 'Administración',        modulos: ['dashboard', 'reportes'] },
 ]
 
-// Módulos siempre visibles, independientes de funcionesHabilitadas.
+// Módulos siempre visibles, independientes de funcionesHabilitadas (no de los permisos del rol).
 const SIEMPRE_VISIBLES: ModuleId[] = ['dashboard', 'reportes', 'configuracion', 'uso']
 
 const MAX_HISTORIAL = 50
@@ -60,6 +61,7 @@ interface NavigationStore {
   goBack: () => void
   toggleDropdown: () => void
   closeDropdown: () => void
+  /** Según las funciones del comercio y los permisos de quien ingresó. */
   actualizarModulosVisibles: (funcionesHabilitadas: string[]) => void
 }
 
@@ -102,9 +104,12 @@ export const useNavigationStore = create<NavigationStore>((set, get) => ({
   actualizarModulosVisibles: (funcionesHabilitadas) => {
     const visibles = MODULES
       .map(m => m.id)
-      .filter(id => SIEMPRE_VISIBLES.includes(id) || funcionesHabilitadas.includes(id))
+      .filter(id => (SIEMPRE_VISIBLES.includes(id) || funcionesHabilitadas.includes(id)) && puede(id, 'ver'))
     set({ modulosVisibles: visibles })
-    // Si el módulo activo dejó de ser visible, volver al dashboard.
-    if (!visibles.includes(get().activeModule)) set({ activeModule: 'dashboard' })
+    // Si el módulo activo dejó de ser visible: Resumen General o, si el rol no lo ve, el POS.
+    if (!visibles.includes(get().activeModule)) {
+      const inicio = (['dashboard', 'punto-venta'] as ModuleId[]).find(id => visibles.includes(id)) ?? visibles[0]
+      if (inicio) set({ activeModule: inicio, history: [] })
+    }
   },
 }))

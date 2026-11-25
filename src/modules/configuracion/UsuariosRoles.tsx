@@ -5,7 +5,7 @@ import { useAuthGlobalStore } from '../../store/authGlobalStore'
 import { ErrorValidacion } from '../../db/acceso'
 import { useSessionStore } from '../../store/sessionStore'
 import { MODULES } from '../../store/navigationStore'
-import { getDb } from '../../db'
+import { nivelesDeRol } from '../../lib/permisos'
 import { toast } from '../../store/toastStore'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
@@ -21,6 +21,9 @@ const NIVELES: { value: Nivel; label: string }[] = [
   { value: 'solo_ver',   label: 'Solo ver' },
   { value: 'editar',     label: 'Editar' },
 ]
+
+// Los del menú más Devoluciones, que no es un módulo propio pero tiene su permiso.
+const MODULOS: { id: string; label: string }[] = [...MODULES, { id: 'devoluciones', label: 'Devoluciones' }]
 
 export const UsuariosRoles = () => {
   const { empleados, roles, cargarEmpleados, cargarRoles, crearEmpleado, actualizarEmpleado, eliminarEmpleado, guardarPermisosRol } = useEmpleadosStore()
@@ -104,18 +107,17 @@ export const UsuariosRoles = () => {
   }
 
   const abrirPermisos = async (rid: number) => {
+    const rol = rolDe(rid)
+    if (!rol) return
+    // Si el rol no está configurado se parte de los de fábrica: guardar no le saca accesos.
+    setPermisos(await nivelesDeRol(rol))
     setRolEditando(rid)
-    const db = await getDb()
-    const rows = await db.select<any[]>('SELECT modulo, nivel FROM permisos WHERE rol_id = ?', [rid])
-    const map: Record<string, Nivel> = {}
-    rows.forEach(r => { map[r.modulo] = r.nivel })
-    setPermisos(map)
   }
 
   const guardarPermisos = async () => {
     if (rolEditando == null) return
     try {
-      await guardarPermisosRol(rolEditando, Object.fromEntries(MODULES.map(m => [m.id, permisos[m.id] ?? 'sin_acceso'])))
+      await guardarPermisosRol(rolEditando, Object.fromEntries(MODULOS.map(m => [m.id, permisos[m.id] ?? 'sin_acceso'])))
       setRolEditando(null)
     } catch (e) {
       toast.error(e instanceof ErrorValidacion ? e.message : 'No se pudieron guardar los permisos')
@@ -247,7 +249,7 @@ export const UsuariosRoles = () => {
           <Button onClick={guardarPermisos}>Guardar permisos</Button>
         </>}>
         <div className="flex flex-col gap-1 pb-1 max-h-[50vh] overflow-y-auto">
-          {MODULES.filter(m => m.id !== 'configuracion').map(m => (
+          {MODULOS.filter(m => m.id !== 'configuracion').map(m => (
             <div key={m.id} className="flex items-center justify-between gap-2 py-1.5 border-b border-[#1C1C1C] light:border-[#F0F0F0] last:border-0">
               <span className="text-[13px] text-white light:text-black">{m.label}</span>
               <div className="flex gap-1">

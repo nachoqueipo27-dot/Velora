@@ -5,10 +5,12 @@ import { Badge } from '../../components/ui/Badge'
 import { useProveedoresStore } from '../../store/proveedoresStore'
 import type { Proveedor } from '../../types/proveedores'
 import { ModalProveedor } from './ModalProveedor'
+import { useEdicion } from '../../lib/permisos'
 import { Search, Plus, Pencil, Power, Trash2, Truck } from 'lucide-react'
 
 export const ListadoProveedores = () => {
   const { proveedores, loading, cargarProveedores, toggleActivoProveedor, eliminarProveedor } = useProveedoresStore()
+  const ed = useEdicion('proveedores')
   const [busqueda, setBusqueda] = useState('')
   const [modal, setModal] = useState<{ open: boolean; proveedor: Proveedor | null }>({ open: false, proveedor: null })
   const [confirmId, setConfirmId] = useState<number | null>(null)
@@ -38,7 +40,7 @@ export const ListadoProveedores = () => {
             placeholder="Buscar por nombre o rubro..." value={busqueda} onChange={e => setBusqueda(e.target.value)} />
         </div>
         <div className="flex-1" />
-        <Button size="sm" onClick={() => setModal({ open: true, proveedor: null })}><Plus size={14} className="mr-1.5" /> Nuevo proveedor</Button>
+        <Button size="sm" onClick={() => setModal({ open: true, proveedor: null })} {...ed}><Plus size={14} className="mr-1.5" /> Nuevo proveedor</Button>
       </div>
 
       <div className="flex-1 overflow-y-auto">
@@ -78,9 +80,9 @@ export const ListadoProveedores = () => {
                       <span className="text-[11px] text-[#D4921A] flex items-center justify-end">Tiene órdenes asociadas</span>
                     ) : (
                       <div className="flex items-center justify-end gap-1">
-                        <IconBtn title="Editar" onClick={() => setModal({ open: true, proveedor: p })}><Pencil size={14} /></IconBtn>
-                        <IconBtn title={p.activo ? 'Desactivar' : 'Activar'} onClick={() => toggleActivoProveedor(p.id)}><Power size={14} /></IconBtn>
-                        <IconBtn title="Eliminar" danger onClick={() => setConfirmId(p.id)}><Trash2 size={14} /></IconBtn>
+                        <IconBtn title="Editar" onClick={() => setModal({ open: true, proveedor: p })} {...ed}><Pencil size={14} /></IconBtn>
+                        <IconBtn title={p.activo ? 'Desactivar' : 'Activar'} onClick={() => toggleActivoProveedor(p.id)} {...ed}><Power size={14} /></IconBtn>
+                        <IconBtn title="Eliminar" danger onClick={() => setConfirmId(p.id)} {...ed}><Trash2 size={14} /></IconBtn>
                       </div>
                     )}
                   </td>
@@ -96,9 +98,9 @@ export const ListadoProveedores = () => {
   )
 }
 
-const IconBtn = ({ children, onClick, title, danger }: { children: React.ReactNode; onClick: () => void; title: string; danger?: boolean }) => (
-  <button title={title} onClick={onClick}
-    className={cn('p-1.5 rounded-input transition-all duration-150',
+const IconBtn = ({ children, onClick, title, danger, disabled }: { children: React.ReactNode; onClick: () => void; title: string; danger?: boolean; disabled?: boolean }) => (
+  <button title={title} onClick={onClick} disabled={disabled}
+    className={cn('p-1.5 rounded-input transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed',
       danger ? 'text-[#606060] hover:text-[#C0392B] hover:bg-[#C0392B]/10' : 'text-[#606060] hover:text-white hover:bg-white/10 light:hover:text-black light:hover:bg-black/5')}>
     {children}
   </button>

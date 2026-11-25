@@ -5,6 +5,7 @@ import { Select } from '../../components/ui/Select'
 import { useListaPreciosStore } from '../../store/listaPreciosStore'
 import { Search, FileSpreadsheet, Tag } from 'lucide-react'
 import { aCentavos, aPesos, formatearPesos } from '../../lib/dinero'
+import { useEdicion } from '../../lib/permisos'
 
 // Montos en centavos → "$ 1.234,56"
 const money = formatearPesos
@@ -12,6 +13,7 @@ const margenPct = (costo: number, venta: number) => (costo > 0 ? ((venta - costo
 
 export const PreciosActuales = () => {
   const { items, loading, cargarItems, editarPrecioIndividual } = useListaPreciosStore()
+  const ed = useEdicion('lista-precios')
   const [busqueda, setBusqueda] = useState('')
   const [filtroCat, setFiltroCat] = useState('Todas')
   const [editId, setEditId] = useState<number | null>(null)
@@ -109,8 +111,8 @@ export const PreciosActuales = () => {
                           className="w-24 px-2 py-1 text-sm text-right rounded-input border bg-transparent outline-none border-white text-white light:border-black light:text-black"
                         />
                       ) : (
-                        <button onClick={() => abrirEdicion(i.productoId, i.precioActual)}
-                          className="text-white light:text-black hover:underline decoration-dotted underline-offset-2">
+                        <button onClick={() => abrirEdicion(i.productoId, i.precioActual)} {...ed}
+                          className="disabled:no-underline disabled:cursor-not-allowed text-white light:text-black hover:underline decoration-dotted underline-offset-2">
                           {money(i.precioActual)}
                         </button>
                       )}

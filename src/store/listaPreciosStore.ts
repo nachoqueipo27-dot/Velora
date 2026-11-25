@@ -3,6 +3,7 @@ import { aplicarPorcentaje } from '../lib/dinero'
 import { getDb } from '../db'
 import { useSessionStore } from './sessionStore'
 import type { ItemListaPrecios, HistorialPrecio, SnapshotLista, ItemSnapshotPrecio } from '../types/listaPrecios'
+import { exigirEditar } from '../lib/permisos'
 
 interface ListaPreciosStore {
   items: ItemListaPrecios[]
@@ -70,6 +71,7 @@ export const useListaPreciosStore = create<ListaPreciosStore>((set, get) => ({
   cancelarPrevisualizacion: () => set({ previsualizacion: null }),
 
   aplicarAumento: async (porcentaje, categoriaId, motivo) => {
+    exigirEditar('lista-precios')
     const db = await getDb()
     const now = new Date().toISOString()
     const afectados = get().items.filter(i => categoriaId == null || i.categoriaId === categoriaId)
@@ -96,6 +98,7 @@ export const useListaPreciosStore = create<ListaPreciosStore>((set, get) => ({
   },
 
   editarPrecioIndividual: async (productoId, precioNuevo, motivo) => {
+    exigirEditar('lista-precios')
     const db = await getDb()
     const now = new Date().toISOString()
     const item = get().items.find(i => i.productoId === productoId)
@@ -151,6 +154,7 @@ export const useListaPreciosStore = create<ListaPreciosStore>((set, get) => ({
   },
 
   guardarSnapshot: async (nombre, descripcion) => {
+    exigirEditar('lista-precios')
     const db = await getDb()
     const now = new Date().toISOString()
     await guardarSnapshotInterno(db, nombre, descripcion, usuarioActual(), now)
@@ -158,6 +162,7 @@ export const useListaPreciosStore = create<ListaPreciosStore>((set, get) => ({
   },
 
   restaurarSnapshot: async (snapshotId) => {
+    exigirEditar('lista-precios')
     const db = await getDb()
     const now = new Date().toISOString()
     const snap = get().snapshots.find(s => s.id === snapshotId)

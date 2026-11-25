@@ -8,6 +8,7 @@ import { VistaDiaria } from './VistaDiaria'
 import { VistaSemanal } from './VistaSemanal'
 import { VistaMensual } from './VistaMensual'
 import { ModalCita } from './ModalCita'
+import { useEdicion } from '../../lib/permisos'
 import { Plus } from 'lucide-react'
 
 const VISTAS: { id: VistaAgenda; label: string }[] = [
@@ -18,11 +19,12 @@ const VISTAS: { id: VistaAgenda; label: string }[] = [
 
 const Agenda = () => {
   const { vistaActiva, setVista, fechaActiva, recargarRango, citaSeleccionada, seleccionar } = useAgendaStore()
+  const ed = useEdicion('agenda')
   const [modal, setModal] = useState<{ open: boolean; fecha: Date | null }>({ open: false, fecha: null })
 
   useEffect(() => { recargarRango() }, [recargarRango])
 
-  const nuevaEn = (fecha: Date) => setModal({ open: true, fecha })
+  const nuevaEn = (fecha: Date) => { if (!ed.disabled) setModal({ open: true, fecha }) }
   const verCita = (c: Cita) => { seleccionar(c) }
   const irADia = (fecha: Date) => { useAgendaStore.setState({ fechaActiva: fecha, vistaActiva: 'diaria' }); recargarRango() }
 
@@ -43,7 +45,7 @@ const Agenda = () => {
         </div>
         <NavegadorFecha />
         <div className="flex-1" />
-        <Button size="sm" onClick={() => setModal({ open: true, fecha: new Date(fechaActiva) })}><Plus size={14} className="mr-1.5" /> Nueva cita</Button>
+        <Button size="sm" onClick={() => setModal({ open: true, fecha: new Date(fechaActiva) })} {...ed}><Plus size={14} className="mr-1.5" /> Nueva cita</Button>
       </div>
 
       {/* Vista activa */}

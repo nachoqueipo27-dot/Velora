@@ -4,6 +4,7 @@ import { Input } from '../../components/ui/Input'
 import { Button } from '../../components/ui/Button'
 import { useClientesStore } from '../../store/clientesStore'
 import { CATEGORIAS_CLIENTE, type Cliente, type CategoriaCliente } from '../../types/clientes'
+import { useEdicion } from '../../lib/permisos'
 import { X } from 'lucide-react'
 
 interface ModalClienteProps {
@@ -16,6 +17,7 @@ const labelCls = 'text-xs font-medium text-[#A0A0A0] light:text-[#404040]'
 
 export const ModalCliente = ({ open, onClose, cliente }: ModalClienteProps) => {
   const { crearCliente, actualizarCliente } = useClientesStore()
+  const ed = useEdicion('clientes')
   const esEdicion = !!cliente
 
   const [nombre, setNombre] = useState(cliente?.nombre ?? '')
@@ -122,7 +124,7 @@ export const ModalCliente = ({ open, onClose, cliente }: ModalClienteProps) => {
 
         <div className="flex justify-end gap-2 mt-5">
           <Button variant="ghost" onClick={onClose} disabled={guardando}>Cancelar</Button>
-          <Button onClick={handleGuardar} disabled={guardando}>
+          <Button onClick={handleGuardar} disabled={guardando} {...ed}>
             {guardando ? 'Guardando...' : 'Guardar'}
           </Button>
         </div>

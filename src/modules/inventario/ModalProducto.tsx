@@ -14,6 +14,7 @@ import { ImagenCropper } from './components/ImagenCropper'
 import { ComponentesList } from './components/ComponentesList'
 import { Plus } from 'lucide-react'
 import { aCentavos, aPesos } from '../../lib/dinero'
+import { useEdicion } from '../../lib/permisos'
 
 interface ModalProductoProps {
   open: boolean
@@ -26,6 +27,7 @@ const num = (v: string) => (v === '' ? 0 : Number(v))
 
 export const ModalProducto = ({ open, onClose, producto, tipoInicial = 'simple' }: ModalProductoProps) => {
   const { productos, categorias, crearProducto, actualizarProducto, crearCategoria, cargarCategorias, cargarComponentes } = useInventarioStore()
+  const ed = useEdicion('inventario')
   const esEdicion = !!producto
 
   const [tipo, setTipo] = useState<'simple' | 'conjunto'>(tipoInicial)
@@ -142,7 +144,7 @@ export const ModalProducto = ({ open, onClose, producto, tipoInicial = 'simple' 
       footer={
         <>
           <Button variant="ghost" onClick={onClose} disabled={guardando}>Cancelar</Button>
-          <Button onClick={handleGuardar} disabled={guardando}>{guardando ? 'Guardando...' : 'Guardar'}</Button>
+          <Button onClick={handleGuardar} disabled={guardando} {...ed}>{guardando ? 'Guardando...' : 'Guardar'}</Button>
         </>
       }
     >
@@ -201,7 +203,7 @@ export const ModalProducto = ({ open, onClose, producto, tipoInicial = 'simple' 
               <div className="flex gap-2">
                 <input value={nuevaCat} onChange={e => setNuevaCat(e.target.value)} placeholder="Nombre de categoría"
                   className="flex-1 px-3 py-2 text-sm rounded-input border bg-transparent outline-none border-[#2A2A2A] text-white focus:border-white light:border-[#E4E4E4] light:text-[#0A0A0A]" />
-                <Button size="sm" onClick={agregarCategoria}>Crear</Button>
+                <Button size="sm" onClick={agregarCategoria} {...ed}>Crear</Button>
               </div>
             ) : (
               <Select value={categoriaId} onChange={e => setCategoriaId(e.target.value === '' ? '' : Number(e.target.value))}>

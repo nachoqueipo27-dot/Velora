@@ -5,6 +5,7 @@ import { Textarea } from '../../components/ui/Textarea'
 import { Modal } from '../../components/ui/Modal'
 import { useProveedoresStore } from '../../store/proveedoresStore'
 import type { Proveedor } from '../../types/proveedores'
+import { useEdicion } from '../../lib/permisos'
 
 interface ModalProveedorProps {
   open: boolean
@@ -14,6 +15,7 @@ interface ModalProveedorProps {
 
 export const ModalProveedor = ({ open, onClose, proveedor }: ModalProveedorProps) => {
   const { crearProveedor, actualizarProveedor } = useProveedoresStore()
+  const ed = useEdicion('proveedores')
   const esEdicion = !!proveedor
 
   const [nombre, setNombre] = useState('')
@@ -61,7 +63,7 @@ export const ModalProveedor = ({ open, onClose, proveedor }: ModalProveedorProps
       maxWidth="max-w-md"
       footer={<>
         <Button variant="ghost" onClick={onClose} disabled={guardando}>Cancelar</Button>
-        <Button onClick={handleGuardar} disabled={guardando}>{guardando ? 'Guardando...' : 'Guardar'}</Button>
+        <Button onClick={handleGuardar} disabled={guardando} {...ed}>{guardando ? 'Guardando...' : 'Guardar'}</Button>
       </>}
     >
       <div className="flex flex-col gap-3 pb-1">

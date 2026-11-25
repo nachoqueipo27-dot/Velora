@@ -3,6 +3,7 @@ import { cn } from '../../lib/utils'
 import { useOTStore } from '../../store/otStore'
 import { ESTADOS_OT, UMBRAL_DIAS_SIN_MOVIMIENTO, type EstadoOT, type OrdenTrabajo } from '../../types/ordenesTrabajo'
 import { EtiquetaChip } from './components/EtiquetaChip'
+import { useEdicion } from '../../lib/permisos'
 import { User, Clock } from 'lucide-react'
 
 interface KanbanOTsProps { onVer: (ot: OrdenTrabajo) => void }
@@ -12,6 +13,7 @@ const TERMINALES: EstadoOT[] = ['entregado', 'cancelado']
 
 export const KanbanOTs = ({ onVer }: KanbanOTsProps) => {
   const { ots, cambiarEstado } = useOTStore()
+  const ed = useEdicion('ordenes-trabajo')
   const [dragId, setDragId] = useState<number | null>(null)
   const [overCol, setOverCol] = useState<EstadoOT | null>(null)
 
@@ -54,11 +56,11 @@ export const KanbanOTs = ({ onVer }: KanbanOTsProps) => {
               {items.map(o => {
                 const excedido = o.diasSinMovimiento > UMBRAL_DIAS_SIN_MOVIMIENTO
                 return (
-                  <div key={o.id} draggable
+                  <div key={o.id} draggable={!ed.disabled} title={ed.title}
                     onDragStart={() => setDragId(o.id)}
                     onDragEnd={() => { setDragId(null); setOverCol(null) }}
                     onClick={() => onVer(o)}
-                    className={cn('rounded-card border p-2.5 cursor-grab active:cursor-grabbing transition-all',
+                    className={cn('rounded-card border p-2.5 transition-all', ed.disabled ? 'cursor-pointer' : 'cursor-grab active:cursor-grabbing',
                       'border-[#2A2A2A] bg-[#1C1C1C] hover:border-[#3A3A3A] light:border-[#E4E4E4] light:bg-white',
                       excedido && 'border-[#D4921A]/50 bg-[#D4921A]/[0.06]',
                       dragId === o.id && 'opacity-50 rotate-[1.5deg] shadow-2xl')}>

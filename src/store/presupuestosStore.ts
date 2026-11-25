@@ -4,6 +4,7 @@ import { getDb } from '../db'
 import { useSessionStore } from './sessionStore'
 import { registrarActividad } from '../lib/registrarActividad'
 import { ESTADOS_TERMINALES, type Presupuesto, type ItemPresupuesto, type EstadoPresupuesto } from '../types/presupuestos'
+import { exigirEditar } from '../lib/permisos'
 
 export interface ItemPresupuestoInput {
   productoId: number
@@ -146,6 +147,7 @@ export const usePresupuestosStore = create<PresupuestosStore>((set, get) => ({
   },
 
   crearPresupuesto: async (data) => {
+    exigirEditar('presupuestos')
     const db = await getDb()
     const now = new Date().toISOString()
     const fechaVigencia = new Date(Date.now() + data.vigenciaDias * 86400000).toISOString()
@@ -163,6 +165,7 @@ export const usePresupuestosStore = create<PresupuestosStore>((set, get) => ({
   },
 
   actualizarPresupuesto: async (id, data) => {
+    exigirEditar('presupuestos')
     const db = await getDb()
     const now = new Date().toISOString()
     const { subtotal, totalFinal } = calcularTotales(data.items, data.descuento, data.tipoDescuento)
@@ -175,6 +178,7 @@ export const usePresupuestosStore = create<PresupuestosStore>((set, get) => ({
   },
 
   cambiarEstado: async (id, estado, motivo) => {
+    exigirEditar('presupuestos')
     const db = await getDb()
     const now = new Date().toISOString()
     if (estado === 'rechazado') {
@@ -189,6 +193,7 @@ export const usePresupuestosStore = create<PresupuestosStore>((set, get) => ({
   },
 
   reenviar: async (id) => {
+    exigirEditar('presupuestos')
     const db = await getDb()
     const now = new Date().toISOString()
     const p = get().presupuestos.find(x => x.id === id)
@@ -201,6 +206,8 @@ export const usePresupuestosStore = create<PresupuestosStore>((set, get) => ({
   },
 
   convertirAOT: async (presupuestoId) => {
+    // Antes de tocar nada: si no pudiera crear la OT, quedaría "convertido" sin OT.
+    exigirEditar('presupuestos', 'ordenes-trabajo')
     const db = await getDb()
     const now = new Date().toISOString()
     let otId: number | null = null
@@ -220,6 +227,7 @@ export const usePresupuestosStore = create<PresupuestosStore>((set, get) => ({
   },
 
   eliminarPresupuesto: async (id) => {
+    exigirEditar('presupuestos')
     const db = await getDb()
     const p = get().presupuestos.find(x => x.id === id)
     if (!p || p.estado !== 'borrador') return

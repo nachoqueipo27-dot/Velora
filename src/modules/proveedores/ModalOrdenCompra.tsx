@@ -9,6 +9,7 @@ import { useInventarioStore } from '../../store/inventarioStore'
 import { permiteDecimales } from '../../types/inventario'
 import { Search, Trash2 } from 'lucide-react'
 import { aCentavos, aPesos, formatearPesos, porCantidad } from '../../lib/dinero'
+import { useEdicion } from '../../lib/permisos'
 
 // El form trabaja el costo en pesos (editable); el store y la base, en centavos.
 const subtotalCentavos = (i: { cantidad: number; precioCosto: number }) => porCantidad(aCentavos(i.precioCosto), i.cantidad)
@@ -23,6 +24,7 @@ const money = formatearPesos
 
 export const ModalOrdenCompra = ({ open, onClose }: ModalOrdenCompraProps) => {
   const { proveedores, crearOrden, cargarProveedores } = useProveedoresStore()
+  const ed = useEdicion('proveedores')
   const { productos, cargarProductos } = useInventarioStore()
 
   const [proveedorId, setProveedorId] = useState<number | ''>('')
@@ -87,7 +89,7 @@ export const ModalOrdenCompra = ({ open, onClose }: ModalOrdenCompraProps) => {
       maxWidth="max-w-2xl"
       footer={<>
         <Button variant="ghost" onClick={onClose} disabled={guardando}>Cancelar</Button>
-        <Button onClick={handleGuardar} disabled={guardando}>{guardando ? 'Guardando...' : 'Guardar orden'}</Button>
+        <Button onClick={handleGuardar} disabled={guardando} {...ed}>{guardando ? 'Guardando...' : 'Guardar orden'}</Button>
       </>}
     >
       <div className="flex flex-col gap-4 pb-1">

@@ -4,6 +4,7 @@ import { Input } from '../../components/ui/Input'
 import { Modal } from '../../components/ui/Modal'
 import { useOTStore } from '../../store/otStore'
 import { MOTIVOS_CANCELACION_OT, type OrdenTrabajo, type ComponenteCancelacion } from '../../types/ordenesTrabajo'
+import { useEdicion } from '../../lib/permisos'
 import { AlertTriangle } from 'lucide-react'
 
 interface ModalCancelacionProps {
@@ -14,6 +15,7 @@ interface ModalCancelacionProps {
 
 export const ModalCancelacion = ({ open, onClose, ot }: ModalCancelacionProps) => {
   const { cancelarOT, componentesDeConjunto } = useOTStore()
+  const ed = useEdicion('ordenes-trabajo')
   const [motivo, setMotivo] = useState('')
   const [motivoOtro, setMotivoOtro] = useState('')
   const [recuperarGlobal, setRecuperarGlobal] = useState(true)
@@ -60,7 +62,7 @@ export const ModalCancelacion = ({ open, onClose, ot }: ModalCancelacionProps) =
     <Modal open={open} onClose={onClose} title={`Cancelar OT #${String(ot.numero).padStart(3, '0')}`} maxWidth="max-w-lg"
       footer={<>
         <Button variant="ghost" onClick={onClose} disabled={procesando}>Volver</Button>
-        <Button variant="danger" onClick={handleConfirmar} disabled={!puedeConfirmar}>Confirmar</Button>
+        <Button variant="danger" onClick={handleConfirmar} disabled={!puedeConfirmar} {...ed}>Confirmar</Button>
       </>}>
       <div className="flex flex-col gap-4 pb-1">
         <div className="flex items-start gap-2 rounded-input bg-[#C0392B]/10 px-3 py-2.5">

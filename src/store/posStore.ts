@@ -6,6 +6,7 @@ import { useInventarioStore } from './inventarioStore'
 import { permiteDecimales } from '../types/inventario'
 import type { FormaPago, ItemCarrito, VentaPOS } from '../types/pos'
 import { aCentavos, aplicarPorcentaje, porCantidad } from '../lib/dinero'
+import { exigirEditar } from '../lib/permisos'
 
 interface PosStore {
   carrito: ItemCarrito[]
@@ -148,6 +149,7 @@ export const usePosStore = create<PosStore>((set, get) => ({
   calcularTotal: () => Math.max(0, get().calcularSubtotal() - get().calcularDescuentoGlobal()),
 
   confirmarVenta: async () => {
+    exigirEditar('punto-venta')
     const { carrito, tipoDescuentoGlobal } = get()
     if (carrito.length === 0) return null
     // En la base: centavos si el descuento del ítem es monto, el % tal cual si es porcentaje.

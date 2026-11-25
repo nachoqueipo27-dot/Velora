@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { cn } from '../../lib/utils'
-import { useSessionStore } from '../../store/sessionStore'
 import { useConfigStore } from '../../store/configStore'
 import { DatosNegocio } from './DatosNegocio'
 import { UsuariosRoles } from './UsuariosRoles'
@@ -17,7 +16,7 @@ import { HistorialActividad } from './HistorialActividad'
 import { Backup } from './Backup'
 import {
   Building2, Users, ToggleLeft, Tags, Wallet, Tag, LayoutTemplate,
-  Ban, DollarSign, Bell, FileText, History, DatabaseBackup, Lock,
+  Ban, DollarSign, Bell, FileText, History, DatabaseBackup,
 } from 'lucide-react'
 
 type Seccion =
@@ -50,24 +49,10 @@ const GRUPOS: { titulo: string; items: { id: Seccion; label: string; icon: React
 ]
 
 const Configuracion = () => {
-  const { usuario } = useSessionStore()
   const cargarTodo = useConfigStore(s => s.cargarTodo)
   const [seccion, setSeccion] = useState<Seccion>('negocio')
 
   useEffect(() => { cargarTodo() }, [cargarTodo])
-
-  const esAdmin = usuario?.rol === 'Admin'
-  if (!esAdmin) {
-    return (
-      <div className="h-full flex flex-col items-center justify-center gap-3 text-center">
-        <Lock size={28} className="text-[#606060]" />
-        <div>
-          <p className="text-[15px] text-white light:text-black font-medium">Acceso restringido</p>
-          <p className="text-[13px] text-[#606060]">Solo los administradores pueden ver la configuración.</p>
-        </div>
-      </div>
-    )
-  }
 
   const render = () => {
     switch (seccion) {

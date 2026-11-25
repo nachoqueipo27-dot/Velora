@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { porCantidad } from '../lib/dinero'
 import { getDb } from '../db'
 import type { Proveedor, OrdenCompra, ItemOrdenCompra, EstadoOrdenCompra } from '../types/proveedores'
+import { exigirEditar } from '../lib/permisos'
 
 export interface ItemOrdenInput {
   productoId: number
@@ -92,6 +93,7 @@ export const useProveedoresStore = create<ProveedoresStore>((set, get) => ({
   },
 
   crearProveedor: async (data) => {
+    exigirEditar('proveedores')
     const db = await getDb()
     const now = new Date().toISOString()
     await db.execute(
@@ -103,6 +105,7 @@ export const useProveedoresStore = create<ProveedoresStore>((set, get) => ({
   },
 
   actualizarProveedor: async (id, data) => {
+    exigirEditar('proveedores')
     const db = await getDb()
     const now = new Date().toISOString()
     await db.execute(
@@ -113,6 +116,7 @@ export const useProveedoresStore = create<ProveedoresStore>((set, get) => ({
   },
 
   eliminarProveedor: async (id) => {
+    exigirEditar('proveedores')
     const db = await getDb()
     const rows = await db.select<{ count: number }[]>(
       'SELECT COUNT(*) as count FROM ordenes_compra WHERE proveedor_id = ?', [id]
@@ -124,6 +128,7 @@ export const useProveedoresStore = create<ProveedoresStore>((set, get) => ({
   },
 
   toggleActivoProveedor: async (id) => {
+    exigirEditar('proveedores')
     const db = await getDb()
     const p = get().proveedores.find(x => x.id === id)
     if (!p) return
@@ -149,6 +154,7 @@ export const useProveedoresStore = create<ProveedoresStore>((set, get) => ({
   },
 
   crearOrden: async (proveedorId, items, notas) => {
+    exigirEditar('proveedores')
     const db = await getDb()
     const now = new Date().toISOString()
     const maxRows = await db.select<{ max: number | null }[]>('SELECT MAX(numero) as max FROM ordenes_compra')
@@ -170,6 +176,7 @@ export const useProveedoresStore = create<ProveedoresStore>((set, get) => ({
   },
 
   actualizarEstadoOrden: async (id, estado) => {
+    exigirEditar('proveedores')
     const db = await getDb()
     const now = new Date().toISOString()
     if (estado === 'enviada') {
@@ -186,6 +193,7 @@ export const useProveedoresStore = create<ProveedoresStore>((set, get) => ({
   },
 
   recepcionarMercaderia: async (ordenId) => {
+    exigirEditar('proveedores')
     const db = await getDb()
     const now = new Date().toISOString()
     const orden = get().ordenes.find(o => o.id === ordenId)
@@ -222,6 +230,7 @@ export const useProveedoresStore = create<ProveedoresStore>((set, get) => ({
   },
 
   agregarItemOrden: async (ordenId, productoId, cantidad, precioCosto) => {
+    exigirEditar('proveedores')
     const db = await getDb()
     await db.execute(
       `INSERT INTO items_orden_compra (orden_id, producto_id, cantidad, precio_costo) VALUES (?, ?, ?, ?)`,
@@ -237,6 +246,7 @@ export const useProveedoresStore = create<ProveedoresStore>((set, get) => ({
   // de la pedida originalmente) quede escrita en items_orden_compra ANTES de confirmar
   // la recepción — recepcionarMercaderia() suma a stock justamente ese valor.
   actualizarCantidadItem: async (itemId, cantidad) => {
+    exigirEditar('proveedores')
     const db = await getDb()
     await db.execute('UPDATE items_orden_compra SET cantidad = ? WHERE id = ?', [cantidad, itemId])
     const rows = await db.select<any[]>('SELECT orden_id FROM items_orden_compra WHERE id = ?', [itemId])
@@ -249,6 +259,7 @@ export const useProveedoresStore = create<ProveedoresStore>((set, get) => ({
   },
 
   eliminarItemOrden: async (itemId) => {
+    exigirEditar('proveedores')
     const db = await getDb()
     const rows = await db.select<any[]>('SELECT orden_id FROM items_orden_compra WHERE id = ?', [itemId])
     const ordenId = rows[0]?.orden_id
@@ -261,6 +272,7 @@ export const useProveedoresStore = create<ProveedoresStore>((set, get) => ({
   },
 
   eliminarOrden: async (ordenId) => {
+    exigirEditar('proveedores')
     const db = await getDb()
     await db.execute('DELETE FROM items_orden_compra WHERE orden_id = ?', [ordenId])
     await db.execute('DELETE FROM ordenes_compra WHERE id = ?', [ordenId])

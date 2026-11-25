@@ -9,12 +9,14 @@ import { EstadoBadgeOT } from './components/EstadoBadgeOT'
 import { EtiquetaChip } from './components/EtiquetaChip'
 import { KanbanOTs } from './KanbanOTs'
 import { ModalCancelacion } from './ModalCancelacion'
+import { useEdicion } from '../../lib/permisos'
 import { Search, Plus, Eye, Play, Check, PackageCheck, X, LayoutGrid, List, FileSpreadsheet, ClipboardList } from 'lucide-react'
 
 interface ListadoOTsProps { onVer: (ot: OrdenTrabajo) => void; onNueva: () => void }
 
 export const ListadoOTs = ({ onVer, onNueva }: ListadoOTsProps) => {
   const { ots, etiquetas, loading, cargarOTs, cargarEtiquetas, cambiarEstado } = useOTStore()
+  const ed = useEdicion('ordenes-trabajo')
   const { empleados, cargarEmpleados } = useEmpleadosStore()
   const [vista, setVista] = useState<'lista' | 'kanban'>('lista')
   const [busqueda, setBusqueda] = useState('')
@@ -63,7 +65,7 @@ export const ListadoOTs = ({ onVer, onNueva }: ListadoOTsProps) => {
         </Select></div>
         <div className="flex-1" />
         <Button size="sm" variant="secondary" onClick={() => console.log('Exportar OTs:', filtradas)}><FileSpreadsheet size={14} className="mr-1.5" /> Excel</Button>
-        <Button size="sm" onClick={onNueva}><Plus size={14} className="mr-1.5" /> Nueva OT</Button>
+        <Button size="sm" onClick={onNueva} {...ed}><Plus size={14} className="mr-1.5" /> Nueva OT</Button>
       </div>
 
       <div className="flex-1 overflow-hidden">
@@ -106,17 +108,17 @@ export const ListadoOTs = ({ onVer, onNueva }: ListadoOTsProps) => {
                           <div className="flex items-center justify-end gap-1">
                             <IconBtn title="Ver" onClick={() => onVer(o)}><Eye size={14} /></IconBtn>
                             {o.estado === 'recepcion' && <>
-                              <IconBtn title="A en proceso" onClick={() => cambiarEstado(o.id, 'en_proceso')}><Play size={14} /></IconBtn>
-                              <IconBtn title="Cancelar" danger onClick={() => setCancelar(o)}><X size={14} /></IconBtn>
+                              <IconBtn title="A en proceso" onClick={() => cambiarEstado(o.id, 'en_proceso')} {...ed}><Play size={14} /></IconBtn>
+                              <IconBtn title="Cancelar" danger onClick={() => setCancelar(o)} {...ed}><X size={14} /></IconBtn>
                             </>}
                             {o.estado === 'en_proceso' && <>
-                              <IconBtn title="Finalizar" onClick={() => cambiarEstado(o.id, 'finalizado')}><Check size={14} /></IconBtn>
-                              <IconBtn title="Entregar" onClick={() => cambiarEstado(o.id, 'entregado')}><PackageCheck size={14} /></IconBtn>
-                              <IconBtn title="Cancelar" danger onClick={() => setCancelar(o)}><X size={14} /></IconBtn>
+                              <IconBtn title="Finalizar" onClick={() => cambiarEstado(o.id, 'finalizado')} {...ed}><Check size={14} /></IconBtn>
+                              <IconBtn title="Entregar" onClick={() => cambiarEstado(o.id, 'entregado')} {...ed}><PackageCheck size={14} /></IconBtn>
+                              <IconBtn title="Cancelar" danger onClick={() => setCancelar(o)} {...ed}><X size={14} /></IconBtn>
                             </>}
                             {o.estado === 'finalizado' && <>
-                              <IconBtn title="Entregar" onClick={() => cambiarEstado(o.id, 'entregado')}><PackageCheck size={14} /></IconBtn>
-                              <IconBtn title="Cancelar" danger onClick={() => setCancelar(o)}><X size={14} /></IconBtn>
+                              <IconBtn title="Entregar" onClick={() => cambiarEstado(o.id, 'entregado')} {...ed}><PackageCheck size={14} /></IconBtn>
+                              <IconBtn title="Cancelar" danger onClick={() => setCancelar(o)} {...ed}><X size={14} /></IconBtn>
                             </>}
                           </div>
                         </td>
@@ -135,9 +137,9 @@ export const ListadoOTs = ({ onVer, onNueva }: ListadoOTsProps) => {
   )
 }
 
-const IconBtn = ({ children, onClick, title, danger }: { children: React.ReactNode; onClick: () => void; title: string; danger?: boolean }) => (
-  <button title={title} onClick={onClick}
-    className={cn('p-1.5 rounded-input transition-all duration-150',
+const IconBtn = ({ children, onClick, title, danger, disabled }: { children: React.ReactNode; onClick: () => void; title: string; danger?: boolean; disabled?: boolean }) => (
+  <button title={title} onClick={onClick} disabled={disabled}
+    className={cn('p-1.5 rounded-input transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed',
       danger ? 'text-[#606060] hover:text-[#C0392B] hover:bg-[#C0392B]/10' : 'text-[#606060] hover:text-white hover:bg-white/10 light:hover:text-black light:hover:bg-black/5')}>
     {children}
   </button>

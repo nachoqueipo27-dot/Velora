@@ -12,6 +12,7 @@ import { StockBadge } from './components/StockBadge'
 import { ArrowLeft, Package, Boxes, ImageOff } from 'lucide-react'
 import { format } from 'date-fns'
 import { formatearPesos } from '../../lib/dinero'
+import { useEdicion } from '../../lib/permisos'
 
 interface FichaProductoProps {
   onVolver: () => void
@@ -22,6 +23,7 @@ const LABEL_UNIDAD: Record<string, string> = Object.fromEntries(UNIDADES_MEDIDA.
 
 export const FichaProducto = ({ onVolver }: FichaProductoProps) => {
   const { productoSeleccionado, movimientos, cargarMovimientos, cargarComponentes, ajustarStock } = useInventarioStore()
+  const ed = useEdicion('inventario')
   const [comps, setComps] = useState<ComponenteConjunto[]>([])
   const [ajuste, setAjuste] = useState(false)
 
@@ -56,7 +58,7 @@ export const FichaProducto = ({ onVolver }: FichaProductoProps) => {
             </div>
           </div>
         </div>
-        <Button size="sm" variant="secondary" onClick={() => setAjuste(true)}>Ajustar stock</Button>
+        <Button size="sm" variant="secondary" onClick={() => setAjuste(true)} {...ed}>Ajustar stock</Button>
       </div>
 
       {/* Datos */}

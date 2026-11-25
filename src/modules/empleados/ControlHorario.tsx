@@ -5,6 +5,7 @@ import { Select } from '../../components/ui/Select'
 import { useEmpleadosStore } from '../../store/empleadosStore'
 import { ModalHoraExtra } from './ModalHoraExtra'
 import { formatMinutos } from '../../lib/time'
+import { useEdicion } from '../../lib/permisos'
 import { Plus, Clock } from 'lucide-react'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
@@ -16,6 +17,7 @@ type Tab = 'fichajes' | 'extras'
 
 export const ControlHorario = () => {
   const { empleados, fichajes, horasExtras, cargarEmpleados, cargarFichajes, cargarHorasExtras } = useEmpleadosStore()
+  const ed = useEdicion('empleados')
   const [tab, setTab] = useState<Tab>('extras')
   const now = new Date()
   const [year, setYear] = useState(now.getFullYear())
@@ -60,7 +62,7 @@ export const ControlHorario = () => {
             {[now.getFullYear() - 1, now.getFullYear(), now.getFullYear() + 1].map(y => <option key={y} value={y} className="bg-[#141414] light:bg-white">{y}</option>)}
           </Select></div>
           {tab === 'extras' && (
-            <Button size="sm" onClick={() => setModalExtra(true)}><Plus size={14} className="mr-1.5" /> Registrar hora extra</Button>
+            <Button size="sm" onClick={() => setModalExtra(true)} {...ed}><Plus size={14} className="mr-1.5" /> Registrar hora extra</Button>
           )}
         </div>
       </div>

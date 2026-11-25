@@ -12,6 +12,7 @@ import { ModalPresupuesto } from './ModalPresupuesto'
 import { Search, Plus, Eye, Pencil, Send, Check, X, RefreshCw, ArrowRightCircle, Trash2, FileText } from 'lucide-react'
 import { format } from 'date-fns'
 import { formatearPesos } from '../../lib/dinero'
+import { useEdicion } from '../../lib/permisos'
 
 interface ListadoPresupuestosProps {
   onVer: (p: Presupuesto) => void
@@ -26,6 +27,8 @@ const numFmt = (n: number) => `#${String(n).padStart(3, '0')}`
 
 export const ListadoPresupuestos = ({ onVer, modo = 'todos', abrirNuevo, onNuevoAbierto }: ListadoPresupuestosProps) => {
   const { presupuestos, loading, cargarPresupuestos, cambiarEstado, reenviar, convertirAOT, eliminarPresupuesto } = usePresupuestosStore()
+  const ed = useEdicion('presupuestos')
+  const edConvertir = useEdicion('presupuestos', 'ordenes-trabajo') // convertir crea una OT
   const [busqueda, setBusqueda] = useState('')
   const [filtroEstado, setFiltroEstado] = useState('Todos')
   const [modalEdit, setModalEdit] = useState<{ open: boolean; presupuesto: Presupuesto | null }>({ open: false, presupuesto: null })
@@ -76,7 +79,7 @@ export const ListadoPresupuestos = ({ onVer, modo = 'todos', abrirNuevo, onNuevo
           </Select></div>
         )}
         <div className="flex-1" />
-        {modo === 'todos' && <Button size="sm" onClick={() => setModalEdit({ open: true, presupuesto: null })}><Plus size={14} className="mr-1.5" /> Nuevo presupuesto</Button>}
+        {modo === 'todos' && <Button size="sm" onClick={() => setModalEdit({ open: true, presupuesto: null })} {...ed}><Plus size={14} className="mr-1.5" /> Nuevo presupuesto</Button>}
       </div>
 
       <div className="flex-1 overflow-y-auto">
@@ -118,16 +121,16 @@ export const ListadoPresupuestos = ({ onVer, modo = 'todos', abrirNuevo, onNuevo
                       <div className="flex items-center justify-end gap-1">
                         <IconBtn title="Ver" onClick={() => onVer(p)}><Eye size={14} /></IconBtn>
                         {p.estado === 'borrador' && <>
-                          <IconBtn title="Editar" onClick={() => setModalEdit({ open: true, presupuesto: p })}><Pencil size={14} /></IconBtn>
-                          <IconBtn title="Enviar" onClick={() => cambiarEstado(p.id, 'enviado')}><Send size={14} /></IconBtn>
-                          <IconBtn title="Eliminar" danger onClick={() => setConfirmEliminar(p.id)}><Trash2 size={14} /></IconBtn>
+                          <IconBtn title="Editar" onClick={() => setModalEdit({ open: true, presupuesto: p })} {...ed}><Pencil size={14} /></IconBtn>
+                          <IconBtn title="Enviar" onClick={() => cambiarEstado(p.id, 'enviado')} {...ed}><Send size={14} /></IconBtn>
+                          <IconBtn title="Eliminar" danger onClick={() => setConfirmEliminar(p.id)} {...ed}><Trash2 size={14} /></IconBtn>
                         </>}
                         {p.estado === 'enviado' && <>
-                          <IconBtn title="Reenviar" onClick={() => reenviar(p.id)}><RefreshCw size={14} /></IconBtn>
-                          <IconBtn title="Aprobar" onClick={() => cambiarEstado(p.id, 'aprobado')}><Check size={14} /></IconBtn>
-                          <IconBtn title="Rechazar" danger onClick={() => setRechazar(p)}><X size={14} /></IconBtn>
+                          <IconBtn title="Reenviar" onClick={() => reenviar(p.id)} {...ed}><RefreshCw size={14} /></IconBtn>
+                          <IconBtn title="Aprobar" onClick={() => cambiarEstado(p.id, 'aprobado')} {...ed}><Check size={14} /></IconBtn>
+                          <IconBtn title="Rechazar" danger onClick={() => setRechazar(p)} {...ed}><X size={14} /></IconBtn>
                         </>}
-                        {p.estado === 'aprobado' && <IconBtn title="Convertir a OT" onClick={() => setConvertir(p)}><ArrowRightCircle size={14} /></IconBtn>}
+                        {p.estado === 'aprobado' && <IconBtn title="Convertir a OT" onClick={() => setConvertir(p)} {...edConvertir}><ArrowRightCircle size={14} /></IconBtn>}
                       </div>
                     )}
                   </td>
@@ -165,9 +168,9 @@ export const ListadoPresupuestos = ({ onVer, modo = 'todos', abrirNuevo, onNuevo
   )
 }
 
-const IconBtn = ({ children, onClick, title, danger }: { children: React.ReactNode; onClick: () => void; title: string; danger?: boolean }) => (
-  <button title={title} onClick={onClick}
-    className={cn('p-1.5 rounded-input transition-all duration-150',
+const IconBtn = ({ children, onClick, title, danger, disabled }: { children: React.ReactNode; onClick: () => void; title: string; danger?: boolean; disabled?: boolean }) => (
+  <button title={title} onClick={onClick} disabled={disabled}
+    className={cn('p-1.5 rounded-input transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed',
       danger ? 'text-[#606060] hover:text-[#C0392B] hover:bg-[#C0392B]/10' : 'text-[#606060] hover:text-white hover:bg-white/10 light:hover:text-black light:hover:bg-black/5')}>
     {children}
   </button>

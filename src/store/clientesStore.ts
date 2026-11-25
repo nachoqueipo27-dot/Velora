@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { getDb } from '../db'
 import { registrarActividad } from '../lib/registrarActividad'
 import type { Cliente, LogComunicacion, ClienteIndicadores } from '../types/clientes'
+import { exigirEditar } from '../lib/permisos'
 
 interface ClientesStore {
   clientes: Cliente[]
@@ -50,6 +51,7 @@ export const useClientesStore = create<ClientesStore>((set) => ({
   },
 
   crearCliente: async (data) => {
+    exigirEditar('clientes')
     const db = await getDb()
     const now = new Date().toISOString()
     await db.execute(
@@ -63,6 +65,7 @@ export const useClientesStore = create<ClientesStore>((set) => ({
   },
 
   actualizarCliente: async (id, data) => {
+    exigirEditar('clientes')
     const db = await getDb()
     const now = new Date().toISOString()
     const fields = Object.keys(data)
@@ -82,6 +85,7 @@ export const useClientesStore = create<ClientesStore>((set) => ({
   },
 
   eliminarCliente: async (id) => {
+    exigirEditar('clientes')
     const db = await getDb()
     const previo = useClientesStore.getState().clientes.find(c => c.id === id)
     await db.execute('DELETE FROM clientes WHERE id = ?', [id])
@@ -111,6 +115,7 @@ export const useClientesStore = create<ClientesStore>((set) => ({
   },
 
   agregarLog: async (clienteId, responsable, resumen) => {
+    exigirEditar('clientes')
     const db = await getDb()
     const now = new Date().toISOString()
     await db.execute(

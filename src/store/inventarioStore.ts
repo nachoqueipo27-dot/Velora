@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { porCantidad } from '../lib/dinero'
 import { getDb } from '../db'
 import { registrarActividad } from '../lib/registrarActividad'
+import { exigirEditar } from '../lib/permisos'
 import type {
   Producto, Categoria, ComponenteConjunto, MovimientoStock, InformeRentabilidad, Trazabilidad, UnidadMedida,
 } from '../types/inventario'
@@ -118,6 +119,7 @@ export const useInventarioStore = create<InventarioStore>((set, get) => ({
   },
 
   crearCategoria: async (nombre) => {
+    exigirEditar('inventario')
     const db = await getDb()
     try {
       const res = await db.execute(
@@ -133,6 +135,7 @@ export const useInventarioStore = create<InventarioStore>((set, get) => ({
   },
 
   crearProducto: async (data, componentes) => {
+    exigirEditar('inventario')
     const db = await getDb()
     const now = new Date().toISOString()
     const res = await db.execute(
@@ -149,6 +152,7 @@ export const useInventarioStore = create<InventarioStore>((set, get) => ({
   },
 
   actualizarProducto: async (id, data, componentes) => {
+    exigirEditar('inventario')
     const db = await getDb()
     const now = new Date().toISOString()
     await db.execute(
@@ -166,6 +170,7 @@ export const useInventarioStore = create<InventarioStore>((set, get) => ({
   },
 
   eliminarProducto: async (id) => {
+    exigirEditar('inventario')
     const db = await getDb()
     const previo = get().productos.find(p => p.id === id)
     await db.execute('DELETE FROM productos WHERE id = ?', [id])
@@ -198,6 +203,7 @@ export const useInventarioStore = create<InventarioStore>((set, get) => ({
   },
 
   ajustarStock: async (productoId, cantidad, tipo, motivo) => {
+    exigirEditar('inventario')
     const db = await getDb()
     const now = new Date().toISOString()
     const prod = get().productos.find(p => p.id === productoId)

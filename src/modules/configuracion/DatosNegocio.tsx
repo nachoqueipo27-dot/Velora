@@ -8,6 +8,7 @@ import { ImagenCropper } from '../inventario/components/ImagenCropper'
 import { registrarActividad } from '../../lib/registrarActividad'
 import { realizarBackup } from '../../lib/backup'
 import { getDb } from '../../db'
+import { exigirEditar } from '../../lib/permisos'
 import { AlertTriangle, Check, Save } from 'lucide-react'
 
 const TABLAS = [
@@ -37,12 +38,14 @@ export const DatosNegocio = () => {
   const set = (k: keyof typeof form, v: string) => setForm(f => ({ ...f, [k]: v }))
 
   const guardar = async () => {
+    exigirEditar('configuracion')
     updateData({ ...form, logo })
     await registrarActividad({ modulo: 'Configuración', accion: 'Editó datos del negocio' })
     setGuardado(true); setTimeout(() => setGuardado(false), 2200)
   }
 
   const ejecutarReset = async () => {
+    exigirEditar('configuracion')
     if (confirmTexto !== 'RESETEAR') return
     setReseteando(true)
     try {

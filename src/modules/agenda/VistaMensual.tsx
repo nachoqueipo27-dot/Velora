@@ -4,6 +4,7 @@ import { useAgendaStore } from '../../store/agendaStore'
 import { gridMensual, esHoy, mismoDia } from '../../lib/fecha'
 import { CitaCard } from './components/CitaCard'
 import type { Cita } from '../../types/agenda'
+import { useEdicion } from '../../lib/permisos'
 
 interface VistaMensualProps {
   onIrADia: (fecha: Date) => void
@@ -13,6 +14,7 @@ interface VistaMensualProps {
 
 export const VistaMensual = ({ onIrADia, onVerCita, onNuevaEn }: VistaMensualProps) => {
   const { citas, fechaActiva } = useAgendaStore()
+  const ed = useEdicion('agenda')
   const dias = useMemo(() => gridMensual(fechaActiva), [fechaActiva])
   const mesActivo = fechaActiva.getMonth()
 
@@ -50,8 +52,8 @@ export const VistaMensual = ({ onIrADia, onVerCita, onNuevaEn }: VistaMensualPro
                   </button>
                 )}
                 {delDia.length === 0 && !fueraMes && (
-                  <button onClick={() => { const f = new Date(d); f.setHours(9, 0, 0, 0); onNuevaEn(f) }}
-                    className="text-[10px] text-transparent hover:text-[#606060] text-left pl-1">+ cita</button>
+                  <button onClick={() => { const f = new Date(d); f.setHours(9, 0, 0, 0); onNuevaEn(f) }} {...ed}
+                    className="disabled:opacity-40 disabled:cursor-not-allowed text-[10px] text-transparent hover:text-[#606060] text-left pl-1">+ cita</button>
                 )}
               </div>
             </div>

@@ -10,6 +10,7 @@ import { ModalOrdenCompra } from './ModalOrdenCompra'
 import { Plus, Eye, Send, PackageCheck, Trash2, FileText } from 'lucide-react'
 import { format } from 'date-fns'
 import { formatearPesos } from '../../lib/dinero'
+import { useEdicion } from '../../lib/permisos'
 
 interface OrdenesCompraProps {
   onVerDetalle: (o: OrdenCompra) => void
@@ -27,6 +28,7 @@ const estadoBadge = (e: EstadoOrdenCompra) => {
 
 export const OrdenesCompra = ({ onVerDetalle }: OrdenesCompraProps) => {
   const { ordenes, proveedores, loading, cargarOrdenes, cargarProveedores, actualizarEstadoOrden, eliminarOrden } = useProveedoresStore()
+  const ed = useEdicion('proveedores')
   const [filtroEstado, setFiltroEstado] = useState('Todos')
   const [filtroProv, setFiltroProv] = useState('Todos')
   const [modalNueva, setModalNueva] = useState(false)
@@ -55,7 +57,7 @@ export const OrdenesCompra = ({ onVerDetalle }: OrdenesCompraProps) => {
           {proveedores.map(p => <option key={p.id} value={p.nombre} className="bg-[#141414] light:bg-white">{p.nombre}</option>)}
         </Select></div>
         <div className="flex-1" />
-        <Button size="sm" onClick={() => setModalNueva(true)}><Plus size={14} className="mr-1.5" /> Nueva orden</Button>
+        <Button size="sm" onClick={() => setModalNueva(true)} {...ed}><Plus size={14} className="mr-1.5" /> Nueva orden</Button>
       </div>
 
       <div className="flex-1 overflow-y-auto">
@@ -96,12 +98,12 @@ export const OrdenesCompra = ({ onVerDetalle }: OrdenesCompraProps) => {
                         <IconBtn title="Ver detalle" onClick={() => onVerDetalle(o)}><Eye size={14} /></IconBtn>
                         {o.estado === 'borrador' && (
                           <>
-                            <IconBtn title="Marcar como enviada" onClick={() => actualizarEstadoOrden(o.id, 'enviada')}><Send size={14} /></IconBtn>
-                            <IconBtn title="Eliminar" danger onClick={() => setConfirmEliminar(o.id)}><Trash2 size={14} /></IconBtn>
+                            <IconBtn title="Marcar como enviada" onClick={() => actualizarEstadoOrden(o.id, 'enviada')} {...ed}><Send size={14} /></IconBtn>
+                            <IconBtn title="Eliminar" danger onClick={() => setConfirmEliminar(o.id)} {...ed}><Trash2 size={14} /></IconBtn>
                           </>
                         )}
                         {o.estado === 'enviada' && (
-                          <IconBtn title="Marcar como recibida" onClick={() => setConfirmRecibir(o)}><PackageCheck size={14} /></IconBtn>
+                          <IconBtn title="Marcar como recibida" onClick={() => setConfirmRecibir(o)} {...ed}><PackageCheck size={14} /></IconBtn>
                         )}
                       </div>
                     )}
@@ -132,9 +134,9 @@ export const OrdenesCompra = ({ onVerDetalle }: OrdenesCompraProps) => {
   )
 }
 
-const IconBtn = ({ children, onClick, title, danger }: { children: React.ReactNode; onClick: () => void; title: string; danger?: boolean }) => (
-  <button title={title} onClick={onClick}
-    className={cn('p-1.5 rounded-input transition-all duration-150',
+const IconBtn = ({ children, onClick, title, danger, disabled }: { children: React.ReactNode; onClick: () => void; title: string; danger?: boolean; disabled?: boolean }) => (
+  <button title={title} onClick={onClick} disabled={disabled}
+    className={cn('p-1.5 rounded-input transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed',
       danger ? 'text-[#606060] hover:text-[#C0392B] hover:bg-[#C0392B]/10' : 'text-[#606060] hover:text-white hover:bg-white/10 light:hover:text-black light:hover:bg-black/5')}>
     {children}
   </button>

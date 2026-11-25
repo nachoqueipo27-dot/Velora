@@ -6,6 +6,7 @@ import { Card } from '../../components/ui/Card'
 import { useEmpleadosStore } from '../../store/empleadosStore'
 import { ModalAusencia } from './ModalAusencia'
 import { TIPOS_AUSENCIA, type TipoAusencia } from '../../types/empleados'
+import { useEdicion } from '../../lib/permisos'
 import { Plus, CalendarOff, FileSpreadsheet } from 'lucide-react'
 import { format } from 'date-fns'
 
@@ -16,6 +17,7 @@ type Tab = 'registro' | 'dashboard'
 
 export const AusenciasVacaciones = () => {
   const { empleados, ausencias, cargarEmpleados, cargarAusencias } = useEmpleadosStore()
+  const ed = useEdicion('empleados')
   const [tab, setTab] = useState<Tab>('registro')
   const now = new Date()
   const [year, setYear] = useState(now.getFullYear())
@@ -76,7 +78,7 @@ export const AusenciasVacaciones = () => {
             {[now.getFullYear() - 1, now.getFullYear(), now.getFullYear() + 1].map(y => <option key={y} value={y} className="bg-[#141414] light:bg-white">{y}</option>)}
           </Select></div>
           {tab === 'registro' ? (
-            <Button size="sm" onClick={() => setModal(true)}><Plus size={14} className="mr-1.5" /> Nueva falta/vacación</Button>
+            <Button size="sm" onClick={() => setModal(true)} {...ed}><Plus size={14} className="mr-1.5" /> Nueva falta/vacación</Button>
           ) : (
             <Button size="sm" variant="secondary" onClick={() => console.log('Exportar ausencias:', porEmpleado)}>
               <FileSpreadsheet size={14} className="mr-1.5" /> Excel

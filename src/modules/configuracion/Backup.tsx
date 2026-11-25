@@ -8,6 +8,7 @@ import { Button } from '../../components/ui/Button'
 import { Modal } from '../../components/ui/Modal'
 import { Badge } from '../../components/ui/Badge'
 import { toast } from '../../store/toastStore'
+import { exigirEditar } from '../../lib/permisos'
 import { DatabaseBackup, Upload, Download, Check, Package } from 'lucide-react'
 import { format } from 'date-fns'
 
@@ -38,6 +39,7 @@ export const Backup = () => {
   }
 
   const restaurarArchivo = async () => {
+    exigirEditar('configuracion')
     setTrabajando(true)
     const r = await restaurarBackup()
     setTrabajando(false)
@@ -46,6 +48,7 @@ export const Backup = () => {
   }
 
   const restaurarFila = async () => {
+    exigirEditar('configuracion')
     if (!restaurar) return
     setTrabajando(true)
     try {

@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { getDb } from '../db'
 import { useSessionStore } from './sessionStore'
 import { useInventarioStore } from './inventarioStore'
+import { exigirEditar } from '../lib/permisos'
 import type {
   Devolucion, ItemDevolucion, OrigenDevolucion, NuevaDevolucion,
 } from '../types/devoluciones'
@@ -102,6 +103,7 @@ export const useDevolucionesStore = create<DevolucionesStore>((set, get) => ({
   },
 
   crearDevolucion: async (data) => {
+    exigirEditar('devoluciones')
     const db = await getDb()
     const now = new Date().toISOString()
     try {

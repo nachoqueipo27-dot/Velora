@@ -3,6 +3,7 @@ import { getDb } from '../db'
 import { useSessionStore } from './sessionStore'
 import { inicioDia, finDia, inicioSemana, finSemana, inicioMes, finMes } from '../lib/fecha'
 import type { Cita, VistaAgenda } from '../types/agenda'
+import { exigirEditar } from '../lib/permisos'
 
 export interface NuevaCita {
   titulo: string
@@ -99,6 +100,7 @@ export const useAgendaStore = create<AgendaStore>((set, get) => ({
   },
 
   crearCita: async (data) => {
+    exigirEditar('agenda')
     const db = await getDb()
     const now = new Date().toISOString()
     await db.execute(
@@ -110,6 +112,7 @@ export const useAgendaStore = create<AgendaStore>((set, get) => ({
   },
 
   actualizarCita: async (id, data) => {
+    exigirEditar('agenda')
     const db = await getDb()
     const now = new Date().toISOString()
     await db.execute(
@@ -120,6 +123,7 @@ export const useAgendaStore = create<AgendaStore>((set, get) => ({
   },
 
   eliminarCita: async (id) => {
+    exigirEditar('agenda')
     const db = await getDb()
     await db.execute('DELETE FROM citas WHERE id = ?', [id])
     await get().recargarRango()

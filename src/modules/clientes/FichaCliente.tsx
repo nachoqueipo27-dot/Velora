@@ -9,6 +9,7 @@ import { HistorialDevoluciones } from '../devoluciones/HistorialDevoluciones'
 import { ArrowLeft, Phone, Mail, MapPin, DollarSign, ClipboardList, CalendarClock, Package, MessageSquare, RotateCcw } from 'lucide-react'
 import { format } from 'date-fns'
 import { formatearPesos } from '../../lib/dinero'
+import { useEdicion, usePermiso } from '../../lib/permisos'
 
 interface FichaClienteProps {
   onVolver: () => void
@@ -34,6 +35,8 @@ const ContactoRow = ({ icon, value }: { icon: React.ReactNode; value: string }) 
 
 export const FichaCliente = ({ onVolver, onIrLog }: FichaClienteProps) => {
   const { clienteSeleccionado, actualizarCliente, seleccionarCliente, obtenerIndicadores } = useClientesStore()
+  const ed = useEdicion('clientes')
+  const verDevoluciones = usePermiso('devoluciones') !== 'sin_acceso'
   const [notas, setNotas] = useState(clienteSeleccionado?.notas ?? '')
   const [guardando, setGuardando] = useState(false)
   const [ind, setInd] = useState<ClienteIndicadores | null>(null)
@@ -101,7 +104,7 @@ export const FichaCliente = ({ onVolver, onIrLog }: FichaClienteProps) => {
         <div className="flex items-center justify-between">
           <span className="text-[11px] font-semibold uppercase tracking-wider text-[#606060]">Notas</span>
           {notasCambiaron && (
-            <Button size="sm" onClick={guardarNotas} disabled={guardando}>
+            <Button size="sm" onClick={guardarNotas} disabled={guardando} {...ed}>
               {guardando ? 'Guardando...' : 'Guardar notas'}
             </Button>
           )}
@@ -121,12 +124,14 @@ export const FichaCliente = ({ onVolver, onIrLog }: FichaClienteProps) => {
       </Card>
 
       {/* Devoluciones */}
-      <div className="mt-5">
-        <span className="text-[11px] font-semibold uppercase tracking-wider text-[#606060] mb-2 flex items-center gap-1.5">
-          <RotateCcw size={12} /> Devoluciones
-        </span>
-        <HistorialDevoluciones filtroClienteId={c.id} compacto />
-      </div>
+      {verDevoluciones && (
+        <div className="mt-5">
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-[#606060] mb-2 flex items-center gap-1.5">
+            <RotateCcw size={12} /> Devoluciones
+          </span>
+          <HistorialDevoluciones filtroClienteId={c.id} compacto />
+        </div>
+      )}
     </div>
   )
 }

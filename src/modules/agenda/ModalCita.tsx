@@ -12,6 +12,7 @@ import { useOTStore } from '../../store/otStore'
 import { COLORES_CITA, type Cita } from '../../types/agenda'
 import { isoLocal, horaDe, fechaInput } from '../../lib/fecha'
 import { AlertaSuperposicion } from './components/AlertaSuperposicion'
+import { useEdicion } from '../../lib/permisos'
 import { Trash2 } from 'lucide-react'
 
 interface ModalCitaProps {
@@ -23,6 +24,7 @@ interface ModalCitaProps {
 
 export const ModalCita = ({ open, onClose, cita, fechaInicial }: ModalCitaProps) => {
   const { crearCita, actualizarCita, eliminarCita, detectarSuperposicion } = useAgendaStore()
+  const ed = useEdicion('agenda')
   const { clientes, cargarClientes } = useClientesStore()
   const { empleados, cargarEmpleados } = useEmpleadosStore()
   const { ots, cargarOTs } = useOTStore()
@@ -114,10 +116,10 @@ export const ModalCita = ({ open, onClose, cita, fechaInicial }: ModalCitaProps)
     <Modal open={open} onClose={onClose} title={esEdicion ? 'Editar cita' : 'Nueva cita'} maxWidth="max-w-lg"
       footer={<>
         {esEdicion && cita && (
-          <Button variant="danger" onClick={() => { eliminarCita(cita.id); onClose() }} className="mr-auto"><Trash2 size={14} className="mr-1.5" /> Eliminar</Button>
+          <Button variant="danger" onClick={() => { eliminarCita(cita.id); onClose() }} className="mr-auto" {...ed}><Trash2 size={14} className="mr-1.5" /> Eliminar</Button>
         )}
         <Button variant="ghost" onClick={onClose} disabled={guardando}>Cancelar</Button>
-        <Button onClick={handleGuardar} disabled={guardando}>{guardando ? 'Guardando...' : 'Guardar'}</Button>
+        <Button onClick={handleGuardar} disabled={guardando} {...ed}>{guardando ? 'Guardando...' : 'Guardar'}</Button>
       </>}>
       <div className="flex flex-col gap-3 pb-1">
         <Input label="Título *" value={titulo} onChange={e => setTitulo(e.target.value)}

@@ -7,6 +7,7 @@ import { Modal } from '../../components/ui/Modal'
 import { useEmpleadosStore, type HorarioVigente } from '../../store/empleadosStore'
 import { useSessionStore } from '../../store/sessionStore'
 import { minutosEntre, formatMinutos } from '../../lib/time'
+import { useEdicion } from '../../lib/permisos'
 import { Clock, AlertTriangle, Check } from 'lucide-react'
 
 interface ModalHoraExtraProps {
@@ -22,6 +23,7 @@ const TIPOS = [
 
 export const ModalHoraExtra = ({ open, onClose }: ModalHoraExtraProps) => {
   const { empleados, turnos, cargarEmpleados, cargarTurnos, obtenerHorarioVigente, registrarHoraExtra } = useEmpleadosStore()
+  const ed = useEdicion('empleados')
   const { usuario } = useSessionStore()
 
   const [empleadoId, setEmpleadoId] = useState<number | ''>('')
@@ -91,7 +93,7 @@ export const ModalHoraExtra = ({ open, onClose }: ModalHoraExtraProps) => {
       footer={confirmado ? (
         <>
           <Button variant="ghost" onClick={onClose} disabled={guardando}>Cancelar</Button>
-          <Button onClick={handleRegistrar} disabled={guardando || !salidaValida}>
+          <Button onClick={handleRegistrar} disabled={guardando || !salidaValida} {...ed}>
             {guardando ? 'Registrando...' : 'Registrar'}
           </Button>
         </>

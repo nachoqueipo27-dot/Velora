@@ -8,6 +8,7 @@ import { useCajaStore } from '../../../store/cajaStore'
 import { CATEGORIAS_GASTO, type GastoOperativo } from '../../../types/caja'
 import { Paperclip } from 'lucide-react'
 import { aCentavos, aPesos } from '../../../lib/dinero'
+import { useEdicion } from '../../../lib/permisos'
 
 interface ModalGastoProps {
   open: boolean
@@ -19,6 +20,7 @@ const hoy = () => new Date().toISOString().split('T')[0]
 
 export const ModalGasto = ({ open, onClose, gasto }: ModalGastoProps) => {
   const { agregarGasto, editarGasto } = useCajaStore()
+  const ed = useEdicion('caja-diaria')
   const [categoria, setCategoria] = useState<string>(CATEGORIAS_GASTO[0])
   const [descripcion, setDescripcion] = useState('')
   const [monto, setMonto] = useState('')
@@ -56,7 +58,7 @@ export const ModalGasto = ({ open, onClose, gasto }: ModalGastoProps) => {
     <Modal open={open} onClose={onClose} title={gasto ? 'Editar gasto' : 'Nuevo gasto'} maxWidth="max-w-md"
       footer={<>
         <Button variant="ghost" onClick={onClose} disabled={guardando}>Cancelar</Button>
-        <Button onClick={guardar} disabled={!valido || guardando}>{guardando ? 'Guardando...' : 'Guardar'}</Button>
+        <Button onClick={guardar} disabled={!valido || guardando} {...ed}>{guardando ? 'Guardando...' : 'Guardar'}</Button>
       </>}>
       <div className="flex flex-col gap-3 pb-1">
         <Select label="Categoría" value={categoria} onChange={e => setCategoria(e.target.value)}>

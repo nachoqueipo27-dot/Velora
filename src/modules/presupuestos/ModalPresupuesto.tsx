@@ -12,6 +12,7 @@ import { permiteDecimales } from '../../types/inventario'
 import type { Presupuesto } from '../../types/presupuestos'
 import { Search, Trash2 } from 'lucide-react'
 import { aCentavos, aPesos, formatearPesos } from '../../lib/dinero'
+import { useEdicion } from '../../lib/permisos'
 
 // El form trabaja en pesos (lo que tipea el usuario); el store y la base, en centavos.
 const itemACentavos = (i: ItemPresupuestoInput): ItemPresupuestoInput =>
@@ -30,6 +31,7 @@ const money = formatearPesos
 
 export const ModalPresupuesto = ({ open, onClose, presupuesto }: ModalPresupuestoProps) => {
   const { crearPresupuesto, actualizarPresupuesto, cargarItems, items: itemsStore } = usePresupuestosStore()
+  const ed = useEdicion('presupuestos')
   const { clientes, cargarClientes } = useClientesStore()
   const { productos, cargarProductos } = useInventarioStore()
   const esEdicion = !!presupuesto
@@ -120,7 +122,7 @@ export const ModalPresupuesto = ({ open, onClose, presupuesto }: ModalPresupuest
     <Modal open={open} onClose={onClose} title={esEdicion ? `Editar presupuesto #${String(presupuesto?.numero).padStart(3, '0')}` : 'Nuevo presupuesto'} maxWidth="max-w-2xl"
       footer={<>
         <Button variant="ghost" onClick={onClose} disabled={guardando}>Cancelar</Button>
-        <Button onClick={handleGuardar} disabled={guardando}>{guardando ? 'Guardando...' : 'Guardar'}</Button>
+        <Button onClick={handleGuardar} disabled={guardando} {...ed}>{guardando ? 'Guardando...' : 'Guardar'}</Button>
       </>}>
       <div className="flex flex-col gap-4 pb-1">
         <div className="grid grid-cols-[1fr_120px] gap-3">

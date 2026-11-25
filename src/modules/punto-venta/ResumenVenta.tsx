@@ -3,6 +3,7 @@ import { Button } from '../../components/ui/Button'
 import { usePosStore } from '../../store/posStore'
 import { FORMAS_PAGO } from '../../types/pos'
 import { formatearPesos } from '../../lib/dinero'
+import { useEdicion } from '../../lib/permisos'
 
 // Montos en centavos → "$ 1.234,56"
 const money = formatearPesos
@@ -14,6 +15,7 @@ export const ResumenVenta = ({ onConfirmar }: ResumenVentaProps) => {
     carrito, descuentoGlobal, tipoDescuentoGlobal, formaPago,
     setDescuentoGlobal, setFormaPago, calcularSubtotal, calcularDescuentoGlobal, calcularTotal,
   } = usePosStore()
+  const ed = useEdicion('punto-venta')
 
   const subtotal = calcularSubtotal()
   const desc = calcularDescuentoGlobal()
@@ -66,7 +68,7 @@ export const ResumenVenta = ({ onConfirmar }: ResumenVentaProps) => {
         ))}
       </div>
 
-      <Button size="lg" onClick={onConfirmar} disabled={vacio} className="w-full">Confirmar venta</Button>
+      <Button size="lg" onClick={onConfirmar} disabled={vacio} className="w-full" {...ed}>Confirmar venta</Button>
     </div>
   )
 }

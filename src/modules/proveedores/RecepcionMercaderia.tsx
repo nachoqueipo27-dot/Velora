@@ -9,6 +9,7 @@ import { permiteDecimales } from '../../types/inventario'
 import { ArrowLeft, Send, PackageCheck, Search, Trash2, Plus } from 'lucide-react'
 import { format } from 'date-fns'
 import { formatearPesos, porCantidad } from '../../lib/dinero'
+import { useEdicion } from '../../lib/permisos'
 
 interface RecepcionMercaderiaProps {
   onVolver: () => void
@@ -20,6 +21,7 @@ const numFmt = (n: number) => `#${String(n).padStart(3, '0')}`
 
 export const RecepcionMercaderia = ({ onVolver }: RecepcionMercaderiaProps) => {
   const { ordenSeleccionada, items, cargarItemsOrden, actualizarEstadoOrden, agregarItemOrden, actualizarCantidadItem, eliminarItemOrden } = useProveedoresStore()
+  const ed = useEdicion('proveedores')
   const { productos, cargarProductos } = useInventarioStore()
   const [confirmRecibir, setConfirmRecibir] = useState(false)
   const [busqueda, setBusqueda] = useState('')
@@ -79,8 +81,8 @@ export const RecepcionMercaderia = ({ onVolver }: RecepcionMercaderiaProps) => {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {o.estado === 'borrador' && <Button size="sm" variant="secondary" onClick={() => actualizarEstadoOrden(o.id, 'enviada')}><Send size={14} className="mr-1.5" /> Marcar como enviada</Button>}
-          {o.estado === 'enviada' && <Button size="sm" onClick={() => setConfirmRecibir(true)}><PackageCheck size={14} className="mr-1.5" /> Confirmar recepción</Button>}
+          {o.estado === 'borrador' && <Button size="sm" variant="secondary" onClick={() => actualizarEstadoOrden(o.id, 'enviada')} {...ed}><Send size={14} className="mr-1.5" /> Marcar como enviada</Button>}
+          {o.estado === 'enviada' && <Button size="sm" onClick={() => setConfirmRecibir(true)} {...ed}><PackageCheck size={14} className="mr-1.5" /> Confirmar recepción</Button>}
         </div>
       </div>
 
@@ -102,8 +104,8 @@ export const RecepcionMercaderia = ({ onVolver }: RecepcionMercaderiaProps) => {
           {disponibles.length > 0 && (
             <div className={cn('absolute z-10 mt-1 w-full rounded-card border shadow-lg overflow-hidden', 'border-[#2A2A2A] bg-[#1C1C1C] light:border-[#E4E4E4] light:bg-white')}>
               {disponibles.map(p => (
-                <button key={p.id} type="button" onClick={() => { agregarItemOrden(o.id, p.id, 1, p.precioCosto); setBusqueda('') }}
-                  className="w-full text-left px-3 py-2 text-[13px] text-[#A0A0A0] hover:text-white hover:bg-white/[0.06] light:text-[#404040] light:hover:text-black light:hover:bg-black/[0.04] flex items-center gap-1.5">
+                <button key={p.id} type="button" onClick={() => { agregarItemOrden(o.id, p.id, 1, p.precioCosto); setBusqueda('') }} {...ed}
+                  className="disabled:opacity-40 disabled:cursor-not-allowed w-full text-left px-3 py-2 text-[13px] text-[#A0A0A0] hover:text-white hover:bg-white/[0.06] light:text-[#404040] light:hover:text-black light:hover:bg-black/[0.04] flex items-center gap-1.5">
                   <Plus size={12} /> {p.nombre}
                 </button>
               ))}
@@ -133,7 +135,7 @@ export const RecepcionMercaderia = ({ onVolver }: RecepcionMercaderiaProps) => {
                       type="number" min={permite ? 0.01 : 1} step={permite ? '0.01' : '1'}
                       value={edits[it.id] ?? String(it.cantidad)}
                       onChange={e => setEdits(prev => ({ ...prev, [it.id]: e.target.value }))}
-                      onBlur={() => commitCantidad(it)}
+                      onBlur={() => commitCantidad(it)} {...ed}
                       className="w-20 px-2 py-1 text-[13px] text-right rounded-input border bg-transparent outline-none border-[#2A2A2A] text-white focus:border-white light:border-[#E4E4E4] light:text-[#0A0A0A]"
                     />
                   ) : it.cantidad}
@@ -142,7 +144,7 @@ export const RecepcionMercaderia = ({ onVolver }: RecepcionMercaderiaProps) => {
                 <td className="px-3 py-2.5 text-right text-[#A0A0A0] light:text-[#404040]">{money(porCantidad(it.precioCosto, it.cantidad))}</td>
                 {esBorrador && (
                   <td className="px-3 py-2.5 text-right">
-                    <button onClick={() => eliminarItemOrden(it.id)} className="w-6 h-6 rounded inline-flex items-center justify-center text-[#606060] hover:text-[#C0392B] hover:bg-[#C0392B]/10"><Trash2 size={13} /></button>
+                    <button onClick={() => eliminarItemOrden(it.id)} {...ed} className="disabled:opacity-40 disabled:cursor-not-allowed w-6 h-6 rounded inline-flex items-center justify-center text-[#606060] hover:text-[#C0392B] hover:bg-[#C0392B]/10"><Trash2 size={13} /></button>
                   </td>
                 )}
               </tr>

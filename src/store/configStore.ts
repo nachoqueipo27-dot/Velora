@@ -4,6 +4,7 @@ import { useSessionStore } from './sessionStore'
 import { useInventarioStore } from './inventarioStore'
 import { registrarActividad } from '../lib/registrarActividad'
 import { porCantidad } from '../lib/dinero'
+import { exigirEditar } from '../lib/permisos'
 
 export interface BloqueConfig {
   id: string
@@ -114,6 +115,7 @@ export const useConfigStore = create<ConfigStore>((set, get) => ({
   },
 
   guardarPDF: async (tipo, bloques) => {
+    exigirEditar('configuracion')
     const db = await getDb()
     const now = new Date().toISOString()
     await db.execute(
@@ -126,6 +128,7 @@ export const useConfigStore = create<ConfigStore>((set, get) => ({
   },
 
   crearMotivo: async (nombre) => {
+    exigirEditar('configuracion')
     const db = await getDb()
     await db.execute('INSERT INTO motivos_cancelacion (nombre, fijo, creado_en) VALUES (?, 0, ?)', [nombre, new Date().toISOString()])
     const mRows = await db.select<any[]>('SELECT * FROM motivos_cancelacion ORDER BY fijo DESC, nombre ASC')
@@ -133,12 +136,14 @@ export const useConfigStore = create<ConfigStore>((set, get) => ({
   },
 
   eliminarMotivo: async (id) => {
+    exigirEditar('configuracion')
     const db = await getDb()
     await db.execute('DELETE FROM motivos_cancelacion WHERE id = ? AND fijo = 0', [id])
     set({ motivos: get().motivos.filter(m => m.id !== id) })
   },
 
   actualizarTipoCambio: async (valor, recalcular) => {
+    exigirEditar('configuracion')
     const db = await getDb()
     const now = new Date().toISOString()
     const usuario = useSessionStore.getState().usuario?.nombre ?? 'Administrador'
@@ -167,6 +172,7 @@ export const useConfigStore = create<ConfigStore>((set, get) => ({
   },
 
   guardarAlertas: async (cfg) => {
+    exigirEditar('configuracion')
     const db = await getDb()
     await setKV(db, 'alertas', cfg)
     set({ alertas: cfg })
@@ -174,12 +180,14 @@ export const useConfigStore = create<ConfigStore>((set, get) => ({
   },
 
   guardarBackupCfg: async (cfg) => {
+    exigirEditar('configuracion')
     const db = await getDb()
     await setKV(db, 'backup', cfg)
     set({ backupCfg: cfg })
   },
 
   crearCatGasto: async (nombre) => {
+    exigirEditar('configuracion')
     const db = await getDb()
     const lista = Array.from(new Set([...get().categoriasGastos, nombre]))
     await setKV(db, 'categorias_gastos', lista)
@@ -187,6 +195,7 @@ export const useConfigStore = create<ConfigStore>((set, get) => ({
   },
 
   editarCatGasto: async (anterior, nuevo) => {
+    exigirEditar('configuracion')
     const db = await getDb()
     const lista = get().categoriasGastos.map(c => c === anterior ? nuevo : c)
     await setKV(db, 'categorias_gastos', lista)
@@ -194,6 +203,7 @@ export const useConfigStore = create<ConfigStore>((set, get) => ({
   },
 
   eliminarCatGasto: async (nombre) => {
+    exigirEditar('configuracion')
     const db = await getDb()
     const lista = get().categoriasGastos.filter(c => c !== nombre)
     await setKV(db, 'categorias_gastos', lista)

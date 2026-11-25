@@ -7,6 +7,7 @@ import { useEmpleadosStore, type HorarioVigente } from '../../store/empleadosSto
 import { DIAS_SEMANA, type HorarioFijo } from '../../types/empleados'
 import { useAuthGlobalStore } from '../../store/authGlobalStore'
 import { ModalEmpleado } from './ModalEmpleado'
+import { useEdicion } from '../../lib/permisos'
 import { ArrowLeft, Pencil, ClipboardList, Timer, DollarSign } from 'lucide-react'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
@@ -28,6 +29,7 @@ const Metrica = ({ icon, label, value }: { icon: React.ReactNode; label: string;
 
 export const FichaEmpleado = ({ onVolver }: FichaEmpleadoProps) => {
   const { empleadoSeleccionado, roles, cargarHorarioFijo, obtenerHorarioVigente } = useEmpleadosStore()
+  const ed = useEdicion('empleados')
   const soyDueno = useAuthGlobalStore(s => s.usuario?.esAdminGeneral ?? false)
   const [horarioFijo, setHorarioFijo] = useState<HorarioFijo[]>([])
   const [turnoVigente, setTurnoVigente] = useState<HorarioVigente | null>(null)
@@ -66,7 +68,7 @@ export const FichaEmpleado = ({ onVolver }: FichaEmpleadoProps) => {
           </div>
         </div>
         <Button size="sm" variant="secondary" onClick={() => setEditar(true)}
-          {...(!soyDueno && roles.find(r => r.id === e.rolId)?.esAdmin ? { disabled: true, title: 'Solo el dueño puede editar administradores' } : {})}>
+          {...(!soyDueno && roles.find(r => r.id === e.rolId)?.esAdmin ? { disabled: true, title: 'Solo el dueño puede editar administradores' } : {})} {...ed}>
           <Pencil size={14} className="mr-1.5" /> Editar empleado
         </Button>
       </div>

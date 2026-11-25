@@ -15,6 +15,7 @@ import { Search, AlertTriangle } from 'lucide-react'
 import { getDb } from '../../db'
 import { format } from 'date-fns'
 import { aCentavos, aplicarPorcentaje, formatearPesos } from '../../lib/dinero'
+import { useEdicion } from '../../lib/permisos'
 
 interface CrearOTProps { onCreada: () => void }
 
@@ -23,6 +24,7 @@ const money = formatearPesos
 
 export const CrearOT = ({ onCreada }: CrearOTProps) => {
   const { plantillas, etiquetas, cargarPlantillas, cargarEtiquetas, crearOT, crearOTDesdePresupuesto } = useOTStore()
+  const ed = useEdicion('ordenes-trabajo')
   const { clientes, cargarClientes } = useClientesStore()
   const { productos, cargarProductos } = useInventarioStore()
   const { presupuestos, cargarPresupuestos } = usePresupuestosStore()
@@ -115,7 +117,7 @@ export const CrearOT = ({ onCreada }: CrearOTProps) => {
     <div className="flex flex-col h-full overflow-y-auto pr-1">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold text-white light:text-black">Crear orden de trabajo</h2>
-        <Button size="sm" variant="secondary" onClick={() => { cargarPresupuestos(); setModalPres(true) }}>Crear desde presupuesto</Button>
+        <Button size="sm" variant="secondary" onClick={() => { cargarPresupuestos(); setModalPres(true) }} {...ed}>Crear desde presupuesto</Button>
       </div>
 
       <div className="grid grid-cols-2 gap-4 max-w-3xl">
@@ -240,7 +242,7 @@ export const CrearOT = ({ onCreada }: CrearOTProps) => {
       {/* Total + acción */}
       <div className="flex items-center justify-between mt-6 max-w-3xl pt-4 border-t border-[#2A2A2A] light:border-[#E4E4E4]">
         <span className="text-lg font-semibold text-white light:text-black">Total: {money(total)}</span>
-        <Button onClick={handleCrear} disabled={guardando}>{guardando ? 'Creando...' : 'Crear OT'}</Button>
+        <Button onClick={handleCrear} disabled={guardando} {...ed}>{guardando ? 'Creando...' : 'Crear OT'}</Button>
       </div>
 
       {/* Modal desde presupuesto */}

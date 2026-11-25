@@ -10,6 +10,7 @@ import { MOTIVOS_DEVOLUCION, type Devolucion, type OrigenDevolucion, type TipoDe
 import { ArrowLeft, ArrowRight, Search, Minus, Plus, CheckCircle2, Download, RotateCcw, User, Package, CalendarDays } from 'lucide-react'
 import { format } from 'date-fns'
 import { formatearPesos, porCantidad } from '../../lib/dinero'
+import { useEdicion } from '../../lib/permisos'
 
 // Montos en centavos → "$ 1.234,56"
 const money = formatearPesos
@@ -23,6 +24,7 @@ interface ModalDevolucionProps {
 
 export const ModalDevolucion = ({ open, onClose, otNumeroInicial, onDevolucion }: ModalDevolucionProps) => {
   const { buscarOT, buscarVentaPOS, crearDevolucion } = useDevolucionesStore()
+  const ed = useEdicion('devoluciones')
   const negocio = useNegocio()
   const { descargar, generando } = usePDF()
 
@@ -147,7 +149,7 @@ export const ModalDevolucion = ({ open, onClose, otNumeroInicial, onDevolucion }
       ) : <span />}
       {paso === 1 && <Button onClick={() => setPaso(2)} disabled={!origen}>Siguiente<ArrowRight size={14} className="ml-1" /></Button>}
       {paso === 2 && <Button onClick={() => setPaso(3)} disabled={itemsADevolver.length === 0}>Siguiente<ArrowRight size={14} className="ml-1" /></Button>}
-      {paso === 3 && <Button onClick={confirmar} disabled={!puedeConfirmar}>{procesando ? 'Procesando...' : 'Confirmar devolución'}</Button>}
+      {paso === 3 && <Button onClick={confirmar} disabled={!puedeConfirmar} {...ed}>{procesando ? 'Procesando...' : 'Confirmar devolución'}</Button>}
     </div>
   )
 

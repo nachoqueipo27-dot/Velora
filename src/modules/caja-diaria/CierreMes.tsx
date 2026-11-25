@@ -10,6 +10,7 @@ import { PDFCierreMes } from '../../lib/pdf/documentos/PDFCierreMes'
 import { MESES, type CierreMes as TCierreMes, type ResumenMes } from '../../types/caja'
 import { Calculator, Lock, FileDown, TrendingUp, TrendingDown, CheckCircle2, XCircle, Package, Award } from 'lucide-react'
 import { formatearPesos } from '../../lib/dinero'
+import { useEdicion } from '../../lib/permisos'
 
 // Montos en centavos → "$ 1.234,56"
 const money = formatearPesos
@@ -19,6 +20,7 @@ const ANIOS = Array.from({ length: 5 }, (_, i) => ahora.getFullYear() - i)
 
 export const CierreMes = () => {
   const { cierresMes, cargarCierresMes, calcularResumenMes, cerrarMes, mesYaCerrado } = useCajaStore()
+  const ed = useEdicion('caja-diaria')
   const negocio = useNegocio()
   const { descargar } = usePDF()
   const [anio, setAnio] = useState(ahora.getFullYear())
@@ -109,7 +111,7 @@ export const CierreMes = () => {
                 <FileDown size={14} className="mr-1.5" />Descargar PDF
               </Button>
             ) : (
-              <Button onClick={() => setConfirmar(true)}><Lock size={14} className="mr-1.5" />Cerrar mes</Button>
+              <Button onClick={() => setConfirmar(true)} {...ed}><Lock size={14} className="mr-1.5" />Cerrar mes</Button>
             )}
           </div>
         </>
@@ -118,7 +120,7 @@ export const CierreMes = () => {
       <Modal open={confirmar} onClose={() => setConfirmar(false)} title="Cerrar mes" maxWidth="max-w-md"
         footer={<>
           <Button variant="ghost" onClick={() => setConfirmar(false)} disabled={cerrando}>Cancelar</Button>
-          <Button onClick={confirmarCierre} disabled={cerrando}>{cerrando ? 'Cerrando...' : 'Cerrar mes'}</Button>
+          <Button onClick={confirmarCierre} disabled={cerrando} {...ed}>{cerrando ? 'Cerrando...' : 'Cerrar mes'}</Button>
         </>}>
         <div className="flex flex-col gap-2 pb-1">
           <p className="text-[13px] text-[#A0A0A0] light:text-[#404040]">

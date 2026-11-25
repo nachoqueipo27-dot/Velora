@@ -6,6 +6,7 @@ import { ModalGasto } from './components/ModalGasto'
 import { CATEGORIAS_GASTO, type GastoOperativo } from '../../types/caja'
 import { Plus, Pencil, Trash2, Paperclip } from 'lucide-react'
 import { formatearPesos } from '../../lib/dinero'
+import { useEdicion } from '../../lib/permisos'
 
 // Montos en centavos → "$ 1.234,56"
 const money = formatearPesos
@@ -13,6 +14,7 @@ const hora = (iso: string) => new Date(iso).toLocaleTimeString('es-AR', { hour: 
 
 export const GastosOperativos = () => {
   const { gastosHoy, diaYaCerrado, eliminarGasto } = useCajaStore()
+  const ed = useEdicion('caja-diaria')
   const [modalOpen, setModalOpen] = useState(false)
   const [editando, setEditando] = useState<GastoOperativo | null>(null)
   const [aEliminar, setAEliminar] = useState<GastoOperativo | null>(null)
@@ -36,7 +38,7 @@ export const GastosOperativos = () => {
             <div className="text-[11px] uppercase tracking-wider text-[#606060]">Total gastos</div>
             <div className="text-xl font-bold text-[#C0392B] tabular-nums">{money(total)}</div>
           </div>
-          {!diaYaCerrado && <Button size="sm" onClick={abrirNuevo}><Plus size={14} className="mr-1" />Nuevo gasto</Button>}
+          {!diaYaCerrado && <Button size="sm" onClick={abrirNuevo} {...ed}><Plus size={14} className="mr-1" />Nuevo gasto</Button>}
         </div>
       </header>
 
@@ -77,8 +79,8 @@ export const GastosOperativos = () => {
                 <td className="px-4 py-2.5">
                   {!diaYaCerrado && (
                     <div className="flex items-center justify-end gap-1">
-                      <button onClick={() => abrirEditar(g)} className="p-1 rounded text-[#606060] hover:text-white hover:bg-white/10 light:hover:text-black light:hover:bg-black/5 transition-all"><Pencil size={13} /></button>
-                      <button onClick={() => setAEliminar(g)} className="p-1 rounded text-[#606060] hover:text-[#C0392B] hover:bg-[#C0392B]/10 transition-all"><Trash2 size={13} /></button>
+                      <button onClick={() => abrirEditar(g)} {...ed} className="disabled:opacity-40 disabled:cursor-not-allowed p-1 rounded text-[#606060] hover:text-white hover:bg-white/10 light:hover:text-black light:hover:bg-black/5 transition-all"><Pencil size={13} /></button>
+                      <button onClick={() => setAEliminar(g)} {...ed} className="disabled:opacity-40 disabled:cursor-not-allowed p-1 rounded text-[#606060] hover:text-[#C0392B] hover:bg-[#C0392B]/10 transition-all"><Trash2 size={13} /></button>
                     </div>
                   )}
                 </td>

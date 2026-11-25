@@ -3,6 +3,7 @@ import { formatearPesos } from '../lib/dinero'
 import { getDb } from '../db'
 import { useSessionStore } from './sessionStore'
 import { registrarActividad } from '../lib/registrarActividad'
+import { exigirEditar } from '../lib/permisos'
 import type {
   CobroCaja, GastoOperativo, ResumenCaja, CierreCaja, CierreMes, ResumenMes,
   DatosComparativo, FormaPago,
@@ -134,6 +135,7 @@ export const useCajaStore = create<CajaStore>((set, get) => ({
   },
 
   agregarCobro: async (data) => {
+    exigirEditar('caja-diaria')
     const db = await getDb()
     const now = new Date().toISOString()
     const usuario = useSessionStore.getState().usuario
@@ -146,6 +148,7 @@ export const useCajaStore = create<CajaStore>((set, get) => ({
   },
 
   eliminarCobro: async (id) => {
+    exigirEditar('caja-diaria')
     const cobro = get().cobrosHoy.find(c => c.id === id)
     if (!cobro || cobro.otId != null || cobro.ventaPosId != null) return // OT/POS no se eliminan
     const db = await getDb()
@@ -154,6 +157,7 @@ export const useCajaStore = create<CajaStore>((set, get) => ({
   },
 
   agregarGasto: async (data) => {
+    exigirEditar('caja-diaria')
     const db = await getDb()
     const now = new Date().toISOString()
     const usuario = useSessionStore.getState().usuario
@@ -167,6 +171,7 @@ export const useCajaStore = create<CajaStore>((set, get) => ({
   },
 
   editarGasto: async (id, data) => {
+    exigirEditar('caja-diaria')
     const db = await getDb()
     const fecha = data.fecha ? `${data.fecha}T00:00:00.000Z` : undefined
     if (fecha) {
@@ -184,12 +189,14 @@ export const useCajaStore = create<CajaStore>((set, get) => ({
   },
 
   eliminarGasto: async (id) => {
+    exigirEditar('caja-diaria')
     const db = await getDb()
     await db.execute(`DELETE FROM gastos_operativos WHERE id = ?`, [id])
     await get().cargarCajaHoy()
   },
 
   cerrarCaja: async (notas) => {
+    exigirEditar('caja-diaria')
     if (get().diaYaCerrado) return false
     const db = await getDb()
     const hoy = hoyISO()
@@ -265,6 +272,7 @@ export const useCajaStore = create<CajaStore>((set, get) => ({
   },
 
   cerrarMes: async (anio, mes) => {
+    exigirEditar('caja-diaria')
     if (get().mesYaCerrado(anio, mes)) return null
     const db = await getDb()
     const now = new Date().toISOString()

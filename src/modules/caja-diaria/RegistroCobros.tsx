@@ -7,6 +7,7 @@ import { Modal } from '../../components/ui/Modal'
 import { FORMAS_PAGO_CAJA, type CobroCaja, type FormaPago } from '../../types/caja'
 import { Plus, Trash2 } from 'lucide-react'
 import { aCentavos, formatearPesos } from '../../lib/dinero'
+import { useEdicion } from '../../lib/permisos'
 
 // Montos en centavos → "$ 1.234,56"
 const money = formatearPesos
@@ -20,13 +21,14 @@ const origenDe = (c: CobroCaja): { label: string; variant: 'default' | 'success'
 
 export const RegistroCobros = () => {
   const { cobrosHoy, resumenHoy, diaYaCerrado, agregarCobro, eliminarCobro } = useCajaStore()
+  const ed = useEdicion('caja-diaria')
   const [monto, setMonto] = useState('')
   const [formaPago, setFormaPago] = useState<FormaPago>('efectivo')
   const [concepto, setConcepto] = useState('')
   const [aEliminar, setAEliminar] = useState<CobroCaja | null>(null)
 
   const montoNum = aCentavos(Number(monto) || 0) // el input es en pesos; se guarda en centavos
-  const valido = montoNum > 0 && !diaYaCerrado
+  const valido = montoNum > 0 && !diaYaCerrado && !ed.disabled
 
   const registrar = async () => {
     if (!valido) return
@@ -75,7 +77,7 @@ export const RegistroCobros = () => {
               onKeyDown={e => e.key === 'Enter' && registrar()}
               className="px-2.5 py-1.5 text-sm rounded-input border bg-transparent outline-none border-[#2A2A2A] text-white focus:border-white light:border-[#E4E4E4] light:text-black" />
           </div>
-          <Button size="sm" onClick={registrar} disabled={!valido}><Plus size={14} className="mr-1" />Registrar</Button>
+          <Button size="sm" onClick={registrar} disabled={!valido} {...ed}><Plus size={14} className="mr-1" />Registrar</Button>
         </div>
       )}
 
@@ -108,7 +110,7 @@ export const RegistroCobros = () => {
                   <td className="px-4 py-2.5 text-right font-semibold text-[#4CAF7D] tabular-nums">{money(c.monto)}</td>
                   <td className="px-4 py-2.5 text-right">
                     {manual && !diaYaCerrado && (
-                      <button onClick={() => setAEliminar(c)} className="p-1 rounded text-[#606060] hover:text-[#C0392B] hover:bg-[#C0392B]/10 transition-all">
+                      <button onClick={() => setAEliminar(c)} {...ed} className="disabled:opacity-40 disabled:cursor-not-allowed p-1 rounded text-[#606060] hover:text-[#C0392B] hover:bg-[#C0392B]/10 transition-all">
                         <Trash2 size={14} />
                       </button>
                     )}

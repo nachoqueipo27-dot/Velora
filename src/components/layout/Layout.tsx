@@ -6,7 +6,9 @@ import { PantallaErrorBase } from './PantallaErrorBase'
 import { useNavigationStore } from '../../store/navigationStore'
 import { useOnboardingStore } from '../../store/onboardingStore'
 import { useInitDb } from '../../hooks/useInitDb'
+import { usePermisosStore } from '../../lib/permisos'
 import { ToastContainer } from '../ui/ToastContainer'
+import { AccesoRestringido } from '../ui/AccesoRestringido'
 import { VeloraLogo } from '../ui/VeloraLogo'
 import { cn } from '../../lib/utils'
 
@@ -50,16 +52,17 @@ export const Layout = () => {
   const funcionesHabilitadas = useOnboardingStore(s => s.data.funcionesHabilitadas)
   const ActiveComponent = MODULE_COMPONENTS[activeModule]
   const { ready, error } = useInitDb()
+  const { niveles, listo: permisosListos } = usePermisosStore()
 
-  // Filtrar módulos visibles según funciones habilitadas en el onboarding/config.
+  // Filtrar módulos visibles según funciones habilitadas en el onboarding/config y permisos del rol.
   useEffect(() => {
-    actualizarModulosVisibles(funcionesHabilitadas ?? [])
-  }, [funcionesHabilitadas, actualizarModulosVisibles])
+    if (permisosListos) actualizarModulosVisibles(funcionesHabilitadas ?? [])
+  }, [funcionesHabilitadas, niveles, permisosListos, actualizarModulosVisibles])
 
   // Primero el error: si la base no abrió, `ready` nunca llega a true.
   if (error) return <PantallaErrorBase error={error} />
 
-  if (!ready) return (
+  if (!ready || !permisosListos) return (
     <div className="flex h-screen flex-col items-center justify-center gap-6 bg-[#0A0A0A] light:bg-[#FAFAFA]">
       <div className="animate-pulse">
         <VeloraLogo size={64} variant="auto" />
@@ -77,7 +80,7 @@ export const Layout = () => {
       <AvisoActualizacion />
       <Navbar />
       <main className="flex-1 overflow-hidden">
-        <ActiveComponent />
+        {niveles[activeModule] === 'sin_acceso' ? <AccesoRestringido /> : <ActiveComponent />}
       </main>
       <StatusBar />
 
