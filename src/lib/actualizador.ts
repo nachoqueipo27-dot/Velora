@@ -2,8 +2,8 @@ import { check, type Update } from '@tauri-apps/plugin-updater'
 import { relaunch } from '@tauri-apps/plugin-process'
 
 // Actualizador automático de Velora.
-// La app consulta `latest.json` del último Release publicado en el repo público
-// nachoqueipo27-dot/velora-actualizaciones (el código vive en un repo privado)
+// La app consulta `latest.json` del último Release publicado en el repo
+// nachoqueipo27-dot/Velora
 // (endpoint y clave pública en src-tauri/tauri.conf.json → plugins.updater).
 // Los Releases se crean en borrador desde CI y solo llegan a los comercios
 // cuando Ignacio los publica a mano.

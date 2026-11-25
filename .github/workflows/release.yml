@@ -44,18 +44,12 @@ jobs:
 
       - uses: tauri-apps/tauri-action@v0
         env:
-          # El código es privado: los instaladores se publican en el repo PÚBLICO
-          # velora-actualizaciones (solo Releases), que es de donde descarga el actualizador.
-          # RELEASES_TOKEN: token con escritura solo sobre ese repo.
-          GITHUB_TOKEN: ${{ secrets.RELEASES_TOKEN }}
+          # Los Releases se publican en este mismo repo (público): de ahí descarga el actualizador.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # Firma de las actualizaciones (ver plugins.updater.pubkey en tauri.conf.json).
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
-          owner: nachoqueipo27-dot
-          repo: velora-actualizaciones
-          # El tag se crea en velora-actualizaciones; el commit de Velora no existe allá.
-          releaseCommitish: main
           tagName: v__VERSION__
           releaseName: 'Velora v__VERSION__'
           releaseBody: |
