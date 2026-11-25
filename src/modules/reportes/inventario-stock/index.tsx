@@ -42,7 +42,7 @@ const InventarioStock = () => {
   const negocio = useNegocio()
   const { descargar, generando } = usePDF()
   const {
-    cargando, productosStockCritico, valorizacionInventario, productosStockEstancado,
+    cargando, productosStockCritico, valorizacionInventario, valorizacionVenta, productosStockEstancado,
     movimientosEntrada, movimientosSalida, movimientos, totalMovimientos,
     cargarReporte, obtenerTodosLosMovimientos,
   } = useReporteInventarioStore()
@@ -72,6 +72,7 @@ const InventarioStock = () => {
         desde={desde} hasta={hasta}
         productosStockCritico={productosStockCritico}
         valorizacionInventario={valorizacionInventario}
+        valorizacionVenta={valorizacionVenta}
         productosStockEstancado={productosStockEstancado}
         movimientosEntrada={movimientosEntrada}
         movimientosSalida={movimientosSalida}
@@ -101,8 +102,12 @@ const InventarioStock = () => {
         <div className="grid grid-cols-3 gap-3">
           <CardMetrica titulo="Stock crítico" valor={productosStockCritico} subtitulo="bajo el mínimo"
             color={productosStockCritico > 0 ? 'error' : 'default'} icono={<PackageX size={15} />} />
-          <CardMetrica titulo="Valorización" valor={valorizacionInventario} formato={money} subtitulo="a precio de costo"
-            icono={<DollarSign size={15} />} />
+          {/* A costo solo con editar en inventario (o admin); si no, a precio de venta. */}
+          {valorizacionInventario !== null
+            ? <CardMetrica titulo="Valorización" valor={valorizacionInventario} formato={money} subtitulo="a precio de costo"
+                icono={<DollarSign size={15} />} />
+            : <CardMetrica titulo="Valorización" valor={valorizacionVenta} formato={money} subtitulo="a precio de venta"
+                icono={<DollarSign size={15} />} />}
           <CardMetrica titulo="Stock estancado" valor={productosStockEstancado} subtitulo="sin movimiento en 90 días"
             color={productosStockEstancado > 0 ? 'warning' : 'default'} icono={<Clock size={15} />} />
         </div>

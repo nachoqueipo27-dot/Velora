@@ -50,4 +50,5 @@ if (push.status !== 0) {
 const remoto = runCapture('git remote get-url origin').replace(/\.git$/, '').replace(/\/\/[^/@]+@/, '//')
 console.log(`\nTag ${tag} publicado. GitHub está compilando Windows y macOS (~15-20 min).`)
 console.log(`Progreso:   ${remoto}/actions`)
-console.log(`Instaladores (Release en borrador): ${remoto}/releases`)
+// Los Releases se publican en el repo público de actualizaciones (el código es privado).
+console.log('Instaladores (Release en borrador): https://github.com/nachoqueipo27-dot/velora-actualizaciones/releases')

@@ -9,6 +9,7 @@ import { labelPreguntaSeguridad } from '../../lib/preguntasSeguridad'
 import { Button } from '../../components/ui/Button'
 import { cn } from '../../lib/utils'
 import { FUNCIONES_DISPONIBLES } from './types'
+import { useNegocioStore, datosDesdeOnboarding } from '../../store/negocioStore'
 
 // Guarda el Admin General nacido del onboarding: empleado en la DB del negocio
 // (acceso operativo) + usuario en master.db por DNI, rol admin_master (login del
@@ -144,6 +145,12 @@ export const ResumenFinal = ({ onBack }: ResumenFinalProps) => {
         empleadoId: null,
       },
     })
+    // Datos del negocio a la base (desde la 1.3.5 se leen solo de ahí).
+    try {
+      await useNegocioStore.getState().guardar(datosDesdeOnboarding(data))
+    } catch (e) {
+      console.error('[onboarding] No se pudieron guardar los datos del negocio:', e)
+    }
     completarOnboarding()
   }
 

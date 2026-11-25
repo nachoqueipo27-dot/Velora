@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useOnboardingStore } from '../../store/onboardingStore'
+import { useNegocioStore } from '../../store/negocioStore'
 import { useSessionStore } from '../../store/sessionStore'
 import { useAuthGlobalStore } from '../../store/authGlobalStore'
 import { esClaveDelDueno } from '../../db/acceso'
@@ -25,14 +26,15 @@ const TABLAS = [
 ]
 
 export const DatosNegocio = () => {
-  const { data, updateData, resetOnboarding, relanzarOnboarding } = useOnboardingStore()
+  const { updateData, resetOnboarding, relanzarOnboarding } = useOnboardingStore()
+  const { datos, guardar: guardarNegocio } = useNegocioStore()
   const dueno = useAuthGlobalStore(s => s.usuario?.esAdminGeneral ? s.usuario : null)
   const { cerrarSesion } = useSessionStore()
   const [form, setForm] = useState({
-    nombreNegocio: data.nombreNegocio ?? '', rubro: data.rubro ?? '', direccion: data.direccion ?? '',
-    telefono: data.telefono ?? '', email: data.email ?? '',
+    nombreNegocio: datos.nombreNegocio, rubro: datos.rubro, direccion: datos.direccion,
+    telefono: datos.telefono, email: datos.email,
   })
-  const [logo, setLogo] = useState<string | null>(data.logo ?? null)
+  const [logo, setLogo] = useState<string | null>(datos.logo)
   const [guardado, setGuardado] = useState(false)
   const [resetOpen, setResetOpen] = useState(false)
   const [confirmTexto, setConfirmTexto] = useState('')
@@ -46,7 +48,7 @@ export const DatosNegocio = () => {
 
   const guardar = async () => {
     exigirEditar('configuracion')
-    updateData({ ...form, logo })
+    await guardarNegocio({ ...form, logo })
     await registrarActividad({ modulo: 'Configuración', accion: 'Editó datos del negocio' })
     setGuardado(true); setTimeout(() => setGuardado(false), 2200)
   }
@@ -60,6 +62,8 @@ export const DatosNegocio = () => {
   const relanzar = async () => {
     if (!dueno || !(await claveCorrecta())) return
     await registrarActividad({ modulo: 'Configuración', accion: 'Volvió a correr la configuración inicial' })
+    // El onboarding arranca con los datos actuales de la base (al terminar se vuelven a guardar ahí).
+    updateData({ ...datos, funcionesHabilitadas: datos.funcionesHabilitadas ?? undefined })
     relanzarOnboarding(dueno)
   }
 

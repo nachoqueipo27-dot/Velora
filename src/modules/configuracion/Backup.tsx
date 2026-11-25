@@ -1,16 +1,16 @@
 import { useEffect, useState } from 'react'
 import { cn } from '../../lib/utils'
 import { useConfigStore, type BackupConfig } from '../../store/configStore'
-import { realizarBackup, restaurarBackup } from '../../lib/backup'
-import { copyFile } from '@tauri-apps/plugin-fs'
-import { appDataDir, join } from '@tauri-apps/api/path'
+import {
+  realizarBackup, restaurarBackup, elegirCarpetaBackup, elegirArchivoBackup, origenDesdeRuta, type OrigenBackup,
+} from '../../lib/backup'
 import { Button } from '../../components/ui/Button'
 import { Modal } from '../../components/ui/Modal'
 import { Badge } from '../../components/ui/Badge'
 import { toast } from '../../store/toastStore'
 import { exigirEditar } from '../../lib/permisos'
 import { useAuthGlobalStore } from '../../store/authGlobalStore'
-import { DatabaseBackup, Upload, Download, Check, Package } from 'lucide-react'
+import { DatabaseBackup, Upload, Download, Check, Package, FileClock } from 'lucide-react'
 import { format } from 'date-fns'
 
 const FRECUENCIAS: { value: BackupConfig['frecuencia']; label: string }[] = [
@@ -27,6 +27,7 @@ export const Backup = () => {
   const [trabajando, setTrabajando] = useState(false)
   const soyDueno = useAuthGlobalStore(s => s.usuario?.esAdminGeneral ?? false)
   const exportar = soyDueno ? {} : { disabled: true, title: 'Solo el dueño puede exportar la base' }
+  const restaurarProps = soyDueno ? {} : { disabled: true, title: 'Solo el dueño puede restaurar un backup' }
 
   useEffect(() => { setCfg(backupCfg) }, [backupCfg])
   useEffect(() => { cargarBackups() }, [cargarBackups])
@@ -41,30 +42,26 @@ export const Backup = () => {
     else toast.info('Backup cancelado')
   }
 
-  const restaurarArchivo = async () => {
+  // Restaurar reemplaza las bases y reinicia la app (restaurarBackup no vuelve si sale bien).
+  const restaurarDesde = async (obtenerOrigen: () => Promise<OrigenBackup | null>) => {
     exigirEditar('configuracion')
     setTrabajando(true)
-    const r = await restaurarBackup()
-    setTrabajando(false)
-    if (r) { toast.success('Backup restaurado. Reiniciando…'); setTimeout(() => window.location.reload(), 1200) }
-    else toast.info('Restauración cancelada')
+    try {
+      const origen = await obtenerOrigen()
+      if (!origen) { toast.info('Restauración cancelada'); return }
+      toast.success('Restaurando backup. Velora se va a reiniciar…')
+      await restaurarBackup(origen)
+    } catch (e) {
+      console.error('restaurar', e)
+      toast.error(e instanceof Error ? e.message : 'Error al restaurar')
+    } finally { setTrabajando(false) }
   }
 
   const restaurarFila = async () => {
-    exigirEditar('configuracion')
     if (!restaurar) return
-    setTrabajando(true)
-    try {
-      await realizarBackup('pre_operacion')
-      const dataDir = await appDataDir()
-      const destino = await join(dataDir, 'velora.db')
-      await copyFile(restaurar.ruta, destino)
-      setRestaurar(null)
-      toast.success('Backup restaurado. Reiniciando…')
-      setTimeout(() => window.location.reload(), 1200)
-    } catch (e) {
-      console.error('restaurarFila', e); toast.error('Error al restaurar')
-    } finally { setTrabajando(false) }
+    const { ruta } = restaurar
+    setRestaurar(null)
+    await restaurarDesde(() => origenDesdeRuta(ruta))
   }
 
   const num = (k: keyof BackupConfig, v: string) => setCfg(c => ({ ...c, [k]: Number(v) }))
@@ -79,9 +76,15 @@ export const Backup = () => {
       {/* Acciones manuales */}
       <div className="flex gap-2">
         <Button onClick={backupAhora} disabled={trabajando} {...exportar}><DatabaseBackup size={15} className="mr-1.5" />Hacer backup ahora</Button>
-        <Button variant="secondary" onClick={restaurarArchivo} disabled={trabajando}><Upload size={15} className="mr-1.5" />Restaurar desde archivo</Button>
+        <Button variant="secondary" onClick={() => restaurarDesde(elegirCarpetaBackup)} disabled={trabajando} {...restaurarProps}><Upload size={15} className="mr-1.5" />Restaurar backup</Button>
+        <Button variant="secondary" onClick={() => restaurarDesde(elegirArchivoBackup)} disabled={trabajando} {...restaurarProps}><FileClock size={15} className="mr-1.5" />Restaurar .db anterior</Button>
         <Button variant="secondary" onClick={backupAhora} disabled={trabajando} {...exportar}><Package size={15} className="mr-1.5" />Exportar paquete completo</Button>
       </div>
+      <p className="text-[12px] text-[#606060] -mt-4">
+        El backup guarda los datos del comercio y los usuarios en una carpeta con fecha.
+        «Restaurar backup» usa esa carpeta; «Restaurar .db anterior» acepta los backups de versiones viejas (solo datos, sin usuarios).
+        Antes de restaurar se guarda una copia de lo actual en backups/ y Velora se reinicia.
+      </p>
 
       {/* Configuración */}
       <div className="rounded-card border border-[#2A2A2A] bg-[#141414] light:border-[#E4E4E4] light:bg-white p-4 flex flex-col gap-3">
@@ -152,7 +155,7 @@ export const Backup = () => {
       <Modal open={restaurar != null} onClose={() => setRestaurar(null)} title="Restaurar backup" maxWidth="max-w-md"
         footer={<><Button variant="ghost" onClick={() => setRestaurar(null)} disabled={trabajando}>Cancelar</Button>
           <Button onClick={restaurarFila} disabled={trabajando}>{trabajando ? 'Restaurando…' : 'Restaurar'}</Button></>}>
-        <p className="text-[13px] text-[#A0A0A0] light:text-[#404040] pb-1">Se hará un backup pre-operación automático y luego se reemplazará la base actual. La app se reiniciará.</p>
+        <p className="text-[13px] text-[#A0A0A0] light:text-[#404040] pb-1">Se guarda una copia de lo actual en backups/ y se reemplazan los datos{' '}(y los usuarios, si el backup los incluye). Velora se reiniciará.</p>
         <p className="text-[11px] text-[#606060] break-all">{restaurar?.ruta}</p>
       </Modal>
     </div>

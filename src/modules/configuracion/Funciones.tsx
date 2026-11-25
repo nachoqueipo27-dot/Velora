@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { cn } from '../../lib/utils'
-import { useOnboardingStore } from '../../store/onboardingStore'
+import { useNegocioStore } from '../../store/negocioStore'
 import { Button } from '../../components/ui/Button'
 import { Check, Minus, ChevronDown, ChevronRight } from 'lucide-react'
 import { FUNCIONES_DISPONIBLES, TODOS_LOS_IDS, type FuncionDisponible } from '../onboarding/types'
@@ -17,10 +17,10 @@ const CheckBox = ({ state, onClick }: { state: 'on' | 'off' | 'partial'; onClick
 )
 
 export const Funciones = () => {
-  const { data, updateData } = useOnboardingStore()
+  const { datos, guardar } = useNegocioStore()
   const [expanded, setExpanded] = useState<string[]>([])
-  const enabled = data.funcionesHabilitadas ?? TODOS_LOS_IDS
-  const setEnabled = (next: string[]) => updateData({ funcionesHabilitadas: next })
+  const enabled = datos.funcionesHabilitadas ?? TODOS_LOS_IDS
+  const setEnabled = (next: string[]) => { guardar({ funcionesHabilitadas: next }).catch(e => console.error('funciones', e)) }
 
   const moduleState = (f: FuncionDisponible): 'on' | 'off' | 'partial' => {
     const moduleOn = enabled.includes(f.id)

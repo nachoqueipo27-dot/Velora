@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { format, subDays } from 'date-fns'
 import { getDb } from '../db'
+import { puede } from '../lib/permisos'
 import type { UnidadMedida } from '../types/inventario'
 
 export interface MovimientoStockResumen {
@@ -19,7 +20,10 @@ const DIAS_ESTANCADO = 90
 interface ReporteInventarioStore {
   cargando: boolean
   productosStockCritico: number
-  valorizacionInventario: number
+  /** A precio de costo, en centavos. null si el usuario no puede ver costos (editar en inventario). */
+  valorizacionInventario: number | null
+  /** A precio de venta, en centavos: la que ve quien no puede ver costos. */
+  valorizacionVenta: number
   productosStockEstancado: number
   movimientosEntrada: number
   movimientosSalida: number
@@ -38,7 +42,8 @@ const mapMovimiento = (r: any): MovimientoStockResumen => ({
 export const useReporteInventarioStore = create<ReporteInventarioStore>((set) => ({
   cargando: false,
   productosStockCritico: 0,
-  valorizacionInventario: 0,
+  valorizacionInventario: null,
+  valorizacionVenta: 0,
   productosStockEstancado: 0,
   movimientosEntrada: 0,
   movimientosSalida: 0,
@@ -59,11 +64,19 @@ export const useReporteInventarioStore = create<ReporteInventarioStore>((set) =>
       const productosStockCritico = stockCriticoRows[0]?.n ?? 0
 
       // Valorización a precio de costo (precio_costo) — no al precio de venta, que incluye margen.
-      const valorizacionRows = await db.select<{ total: number | null }[]>(
-        // Centavos: cada producto se redondea (stock puede ser fraccionario).
-        `SELECT COALESCE(SUM(CAST(ROUND(stock * precio_costo) AS INTEGER)), 0) as total FROM productos WHERE tipo = 'simple' AND activo = 1`
+      // Los costos solo los ve quien edita inventario (o admin): sin eso ni se consultan.
+      // Centavos: cada producto se redondea (stock puede ser fraccionario).
+      let valorizacionInventario: number | null = null
+      if (puede('inventario', 'editar')) {
+        const valorizacionRows = await db.select<{ total: number | null }[]>(
+          `SELECT COALESCE(SUM(CAST(ROUND(stock * precio_costo) AS INTEGER)), 0) as total FROM productos WHERE tipo = 'simple' AND activo = 1`
+        )
+        valorizacionInventario = valorizacionRows[0]?.total ?? 0
+      }
+      const ventaRows = await db.select<{ total: number | null }[]>(
+        `SELECT COALESCE(SUM(CAST(ROUND(stock * precio) AS INTEGER)), 0) as total FROM productos WHERE tipo = 'simple' AND activo = 1`
       )
-      const valorizacionInventario = valorizacionRows[0]?.total ?? 0
+      const valorizacionVenta = ventaRows[0]?.total ?? 0
 
       const haceNDias = format(subDays(new Date(), DIAS_ESTANCADO), 'yyyy-MM-dd')
       const estancadoRows = await db.select<{ n: number }[]>(
@@ -101,6 +114,7 @@ export const useReporteInventarioStore = create<ReporteInventarioStore>((set) =>
       set({
         productosStockCritico,
         valorizacionInventario,
+        valorizacionVenta,
         productosStockEstancado,
         movimientosEntrada,
         movimientosSalida,

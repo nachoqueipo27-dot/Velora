@@ -18,7 +18,9 @@ interface Props {
   desde: string
   hasta: string
   productosStockCritico: number
-  valorizacionInventario: number
+  /** A costo; null si quien lo genera no puede ver costos. */
+  valorizacionInventario: number | null
+  valorizacionVenta: number
   productosStockEstancado: number
   movimientosEntrada: number
   movimientosSalida: number
@@ -27,7 +29,7 @@ interface Props {
 }
 
 export const PDFReporteInventario = ({
-  negocio, desde, hasta, productosStockCritico, valorizacionInventario, productosStockEstancado,
+  negocio, desde, hasta, productosStockCritico, valorizacionInventario, valorizacionVenta, productosStockEstancado,
   movimientosEntrada, movimientosSalida, movimientos, fecha,
 }: Props) => (
   <Document>
@@ -50,8 +52,8 @@ export const PDFReporteInventario = ({
             <Text style={s.totalValor}>{productosStockEstancado}</Text>
           </View>
           <View style={[s.filaTotal, { marginTop: 4 }]}>
-            <Text style={s.totalFinalLabel}>Valorización (a costo)</Text>
-            <Text style={s.totalFinalValor}>{money(valorizacionInventario)}</Text>
+            <Text style={s.totalFinalLabel}>{valorizacionInventario !== null ? 'Valorización (a costo)' : 'Valorización (a precio de venta)'}</Text>
+            <Text style={s.totalFinalValor}>{money(valorizacionInventario ?? valorizacionVenta)}</Text>
           </View>
         </View>
       </View>

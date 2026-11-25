@@ -4,7 +4,7 @@ import { StatusBar } from './StatusBar'
 import { AvisoActualizacion } from './AvisoActualizacion'
 import { PantallaErrorBase } from './PantallaErrorBase'
 import { useNavigationStore } from '../../store/navigationStore'
-import { useOnboardingStore } from '../../store/onboardingStore'
+import { useNegocioStore } from '../../store/negocioStore'
 import { useInitDb } from '../../hooks/useInitDb'
 import { usePermisosStore } from '../../lib/permisos'
 import { ToastContainer } from '../ui/ToastContainer'
@@ -50,21 +50,25 @@ const MODULE_COMPONENTS = {
 
 export const Layout = () => {
   const { activeModule, actualizarModulosVisibles, isDropdownOpen, closeDropdown } = useNavigationStore()
-  const funcionesHabilitadas = useOnboardingStore(s => s.data.funcionesHabilitadas)
+  const funcionesHabilitadas = useNegocioStore(s => s.datos.funcionesHabilitadas)
+  const { cargado: negocioCargado, cargar: cargarNegocio } = useNegocioStore()
   const ActiveComponent = MODULE_COMPONENTS[activeModule]
   const { ready, error } = useInitDb()
   const { niveles, listo: permisosListos } = usePermisosStore()
 
+  // Datos del negocio (nombre, logo, funciones) desde la base, apenas abre.
+  useEffect(() => { if (ready) cargarNegocio().catch(e => console.error('cargarNegocio', e)) }, [ready, cargarNegocio])
+
   // Filtrar módulos visibles según funciones habilitadas en el onboarding/config y permisos del rol.
   useEffect(() => {
     // Sin configurar (p. ej. se borraron los datos locales): todas, igual que en Funciones.
-    if (permisosListos) actualizarModulosVisibles(funcionesHabilitadas ?? TODOS_LOS_IDS)
-  }, [funcionesHabilitadas, niveles, permisosListos, actualizarModulosVisibles])
+    if (permisosListos && negocioCargado) actualizarModulosVisibles(funcionesHabilitadas ?? TODOS_LOS_IDS)
+  }, [funcionesHabilitadas, niveles, permisosListos, negocioCargado, actualizarModulosVisibles])
 
   // Primero el error: si la base no abrió, `ready` nunca llega a true.
   if (error) return <PantallaErrorBase error={error} />
 
-  if (!ready || !permisosListos) return (
+  if (!ready || !permisosListos || !negocioCargado) return (
     <div className="flex h-screen flex-col items-center justify-center gap-6 bg-[#0A0A0A] light:bg-[#FAFAFA]">
       <div className="animate-pulse">
         <VeloraLogo size={64} variant="auto" />
