@@ -67,7 +67,7 @@ export const ModalDevolucion = ({ open, onClose, otNumeroInicial, onDevolucion }
   const aplicarOrigen = (o: OrigenDevolucion) => {
     setOrigen(o)
     const init: Record<number, number> = {}
-    o.items.forEach(it => { init[it.productoId] = it.cantidadOriginal })
+    o.items.forEach(it => { init[it.itemId] = it.cantidadOriginal })
     setCantidades(init)
   }
 
@@ -81,16 +81,16 @@ export const ModalDevolucion = ({ open, onClose, otNumeroInicial, onDevolucion }
     else setErrorBusqueda(tipo === 'ot' ? `No se encontró la OT #${num}` : `No se encontró la venta POS #${num}`)
   }
 
-  const setCantidad = (productoId: number, cant: number, max: number) =>
-    setCantidades(c => ({ ...c, [productoId]: Math.max(0, Math.min(max, cant)) }))
+  const setCantidad = (itemId: number, cant: number, max: number) =>
+    setCantidades(c => ({ ...c, [itemId]: Math.max(0, Math.min(max, cant)) }))
 
   const totalDevuelto = useMemo(() => {
     if (!origen) return 0
-    return origen.items.reduce((s, it) => s + porCantidad(it.precioUnitario, cantidades[it.productoId] ?? 0), 0)
+    return origen.items.reduce((s, it) => s + porCantidad(it.precioUnitario, cantidades[it.itemId] ?? 0), 0)
   }, [origen, cantidades])
 
   const itemsADevolver = useMemo(() =>
-    origen ? origen.items.filter(it => (cantidades[it.productoId] ?? 0) > 0) : [],
+    origen ? origen.items.filter(it => (cantidades[it.itemId] ?? 0) > 0) : [],
   [origen, cantidades])
 
   const motivoFinal = motivo === 'Otro' ? motivoOtro.trim() : motivo
@@ -108,9 +108,9 @@ export const ModalDevolucion = ({ open, onClose, otNumeroInicial, onDevolucion }
       motivo: motivoFinal,
       observacion: observacion.trim() || null,
       items: itemsADevolver.map(it => {
-        const cd = cantidades[it.productoId] ?? 0
+        const cd = cantidades[it.itemId] ?? 0
         return {
-          productoId: it.productoId, nombre: it.nombre, cantidadOriginal: it.cantidadOriginal,
+          itemOrigenId: it.itemId, productoId: it.productoId, nombre: it.nombre, cantidadOriginal: it.cantidadOriginal,
           cantidadDevuelta: cd, precioUnitario: it.precioUnitario, subtotalDevuelto: porCantidad(it.precioUnitario, cd),
         }
       }),
@@ -223,19 +223,19 @@ export const ModalDevolucion = ({ open, onClose, otNumeroInicial, onDevolucion }
           <p className="text-[13px] text-[#A0A0A0] light:text-[#404040]">Seleccioná los items y la cantidad a devolver.</p>
           <div className="flex flex-col gap-2">
             {origen.items.map(it => {
-              const cd = cantidades[it.productoId] ?? 0
+              const cd = cantidades[it.itemId] ?? 0
               return (
-                <div key={it.productoId} className="rounded-input border border-[#2A2A2A] light:border-[#E4E4E4] p-3 flex items-center justify-between gap-3">
+                <div key={it.itemId} className="rounded-input border border-[#2A2A2A] light:border-[#E4E4E4] p-3 flex items-center justify-between gap-3">
                   <div className="min-w-0">
                     <div className="text-[13px] font-medium text-white light:text-black truncate">{it.nombre}</div>
                     <div className="text-[11px] text-[#606060]">Original: {it.cantidadOriginal} · {money(it.precioUnitario)} c/u</div>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
                     <div className="flex items-center gap-1">
-                      <button onClick={() => setCantidad(it.productoId, cd - 1, it.cantidadOriginal)} disabled={cd <= 0}
+                      <button onClick={() => setCantidad(it.itemId, cd - 1, it.cantidadOriginal)} disabled={cd <= 0}
                         className="w-6 h-6 rounded flex items-center justify-center text-[#A0A0A0] hover:text-white hover:bg-white/10 disabled:opacity-30 light:hover:text-black light:hover:bg-black/5"><Minus size={12} /></button>
                       <span className="w-6 text-center text-[13px] text-white light:text-black tabular-nums">{cd}</span>
-                      <button onClick={() => setCantidad(it.productoId, cd + 1, it.cantidadOriginal)} disabled={cd >= it.cantidadOriginal}
+                      <button onClick={() => setCantidad(it.itemId, cd + 1, it.cantidadOriginal)} disabled={cd >= it.cantidadOriginal}
                         className="w-6 h-6 rounded flex items-center justify-center text-[#A0A0A0] hover:text-white hover:bg-white/10 disabled:opacity-30 light:hover:text-black light:hover:bg-black/5"><Plus size={12} /></button>
                     </div>
                     <span className="w-20 text-right text-[13px] font-semibold text-white light:text-black tabular-nums">{money(porCantidad(it.precioUnitario, cd))}</span>
@@ -286,10 +286,11 @@ export const ModalDevolucion = ({ open, onClose, otNumeroInicial, onDevolucion }
             <div className="flex justify-between text-[13px]"><span className="text-[#A0A0A0] light:text-[#404040]">Items a devolver</span><span className="text-white light:text-black">{itemsADevolver.length}</span></div>
             <div className="flex flex-col gap-1">
               {itemsADevolver.map(it => (
-                <div key={it.productoId} className="flex items-center gap-1.5 text-[12px] text-[#606060]">
+                <div key={it.itemId} className="flex items-center gap-1.5 text-[12px] text-[#606060]">
                   <RotateCcw size={11} className="text-[#4CAF7D]" />
-                  <span className="text-[#A0A0A0] light:text-[#404040]">+{cantidades[it.productoId]} {it.nombre}</span>
-                  <span className="ml-auto">stock recuperado</span>
+                  <span className="text-[#A0A0A0] light:text-[#404040]">+{cantidades[it.itemId]} {it.nombre}</span>
+                  {/* "Producto X" (producto_id 0) no está en el inventario: no recupera stock. */}
+                  <span className="ml-auto">{it.productoId === 0 ? 'sin stock (Producto X)' : 'stock recuperado'}</span>
                 </div>
               ))}
             </div>

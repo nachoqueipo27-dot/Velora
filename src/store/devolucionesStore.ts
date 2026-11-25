@@ -70,6 +70,7 @@ export const useDevolucionesStore = create<DevolucionesStore>((set, get) => ({
       fecha: o.creado_en,
       totalOriginal: o.total_final,
       items: [{
+        itemId: o.id,
         productoId: o.producto_id,
         nombre: o.producto_nombre,
         cantidadOriginal: 1,
@@ -94,6 +95,7 @@ export const useDevolucionesStore = create<DevolucionesStore>((set, get) => ({
       fecha: v.fecha,
       totalOriginal: v.total_final,
       items: itemRows.map(r => ({
+        itemId: r.id,
         productoId: r.producto_id,
         nombre: r.nombre,
         cantidadOriginal: r.cantidad,

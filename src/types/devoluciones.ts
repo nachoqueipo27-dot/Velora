@@ -38,6 +38,9 @@ export interface Devolucion {
 // ─── Origen encontrado al buscar (paso 1 del modal) ────────────
 
 export interface OrigenItem {
+  /** Clave del ítem en el origen: items_venta_pos.id (POS) u ordenes_trabajo.id (OT, un solo ítem).
+   *  No se usa productoId: dos "Producto X" de la misma venta tienen productoId 0. */
+  itemId: number
   productoId: number
   nombre: string
   cantidadOriginal: number
@@ -59,6 +62,8 @@ export interface OrigenDevolucion {
 // ─── Payload para crear una devolución ─────────────────────────
 
 export interface ItemNuevaDevolucion {
+  /** OrigenItem.itemId del que sale (para no confundir ítems con el mismo producto). */
+  itemOrigenId: number
   productoId: number
   nombre: string
   cantidadOriginal: number
