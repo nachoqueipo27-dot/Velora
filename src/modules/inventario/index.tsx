@@ -15,14 +15,19 @@ import { AltaRapida } from '../../components/escaneo/AltaRapida'
 import { useIngresoStore, numeroIngreso, type ResumenIngresoAbierto } from '../../store/ingresoStore'
 import { SesionIngreso } from './ingreso/SesionIngreso'
 import { HistorialIngresos } from './ingreso/HistorialIngresos'
-import { Package, Boxes, TrendingUp, BarChart3, PackagePlus } from 'lucide-react'
+import { ImprimirEtiquetas } from './etiquetas/ImprimirEtiquetas'
+import { HojaMostrador } from './etiquetas/HojaMostrador'
+import { useEtiquetasStore, type DestinoEtiquetas, type PedidoItem } from '../../store/etiquetasStore'
+import { Package, Boxes, TrendingUp, BarChart3, PackagePlus, Tags, ClipboardList } from 'lucide-react'
 
-type Seccion = 'productos' | 'conjuntos' | 'ingresos' | 'rotacion' | 'rentabilidad'
+type Seccion = 'productos' | 'conjuntos' | 'ingresos' | 'etiquetas' | 'mostrador' | 'rotacion' | 'rentabilidad'
 
 const SUBMENU: { id: Seccion; label: string; icon: React.ReactNode }[] = [
   { id: 'productos',    label: 'Productos',              icon: <Package size={15} /> },
   { id: 'conjuntos',    label: 'Conjuntos',              icon: <Boxes size={15} /> },
   { id: 'ingresos',     label: 'Ingresos',               icon: <PackagePlus size={15} /> },
+  { id: 'etiquetas',    label: 'Imprimir etiquetas',     icon: <Tags size={15} /> },
+  { id: 'mostrador',    label: 'Hoja de mostrador',      icon: <ClipboardList size={15} /> },
   { id: 'rotacion',     label: 'Reporte de rotación',    icon: <TrendingUp size={15} /> },
   { id: 'rentabilidad', label: 'Informe de rentabilidad', icon: <BarChart3 size={15} /> },
 ]
@@ -80,19 +85,41 @@ const Inventario = () => {
     if (pendiente && puedeDarAlta) setAltaCodigo(pendiente)
   }, [puedeDarAlta])
 
+  // ─── Etiquetas y hoja de mostrador ────────────────────────────────────
+  // La lista inicial llega de la ficha, del lote de códigos o del aviso de reimprimir.
+  const [listaInicial, setListaInicial] = useState<PedidoItem[]>([])
+  const [claveLista, setClaveLista] = useState(0)
+  const irAImprimir = (items: PedidoItem[], destino: DestinoEtiquetas = 'etiquetas') => {
+    setListaInicial(items)
+    setClaveLista(k => k + 1)
+    seleccionarProducto(null)
+    setSeccion(destino)
+  }
+  const pedidoEtiquetas = useEtiquetasStore(s => s.pedido)
+  useEffect(() => {
+    if (!pedidoEtiquetas) return
+    const pedido = useEtiquetasStore.getState().tomarPedido()
+    if (pedido) irAImprimir(pedido.items, pedido.destino)
+  }, [pedidoEtiquetas]) // eslint-disable-line react-hooks/exhaustive-deps
+
   const irA = (id: Seccion) => {
     seleccionarProducto(null)
+    if (id === 'etiquetas' || id === 'mostrador') { setListaInicial([]); setClaveLista(k => k + 1) }
     setSeccion(id)
   }
 
   const renderContenido = () => {
     if ((seccion === 'productos' || seccion === 'conjuntos') && productoSeleccionado) {
-      return <FichaProducto onVolver={() => seleccionarProducto(null)} />
+      return <FichaProducto onVolver={() => seleccionarProducto(null)}
+        onImprimirEtiqueta={(productoId, codigo) => irAImprimir([{ productoId, codigo }])} />
     }
     switch (seccion) {
-      case 'productos':    return <ListadoProductos tipo="simple" onVer={verFicha} onAgregarStock={puedeDarAlta ? () => void iniciarIngreso() : undefined} />
+      case 'productos':    return <ListadoProductos tipo="simple" onVer={verFicha} onAgregarStock={puedeDarAlta ? () => void iniciarIngreso() : undefined}
+        onImprimirEtiquetas={ids => irAImprimir(ids.map(productoId => ({ productoId })))} />
       case 'conjuntos':    return <ListadoProductos tipo="conjunto" onVer={verFicha} />
       case 'ingresos':     return <HistorialIngresos />
+      case 'etiquetas':    return <ImprimirEtiquetas key={claveLista} inicial={listaInicial} />
+      case 'mostrador':    return <HojaMostrador key={claveLista} inicial={listaInicial} />
       case 'rotacion':     return <ReporteRotacion />
       case 'rentabilidad': return verCostos ? <InformeRentabilidad /> : <AccesoRestringido />
     }

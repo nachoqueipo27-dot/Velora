@@ -3,6 +3,8 @@ import { Navbar } from './Navbar'
 import { StatusBar } from './StatusBar'
 import { AvisoActualizacion } from './AvisoActualizacion'
 import { AvisoEscaneo } from './AvisoEscaneo'
+import { AvisoReimprimir } from './AvisoReimprimir'
+import { useEtiquetasStore } from '../../store/etiquetasStore'
 import { useLectorCodigos } from '../../hooks/useLectorCodigos'
 import { useEscaneoStore } from '../../store/escaneoStore'
 import { PantallaErrorBase } from './PantallaErrorBase'
@@ -66,6 +68,9 @@ export const Layout = () => {
   useLectorCodigos()
   const cargarEscaneo = useEscaneoStore(s => s.cargar)
   useEffect(() => { if (ready) cargarEscaneo().catch(e => console.error('cargarEscaneo', e)) }, [ready, cargarEscaneo])
+  // Preferencias de etiquetas (para el aviso de reimprimir después de un aumento).
+  const cargarEtiquetas = useEtiquetasStore(s => s.cargar)
+  useEffect(() => { if (ready) cargarEtiquetas().catch(e => console.error('cargarEtiquetas', e)) }, [ready, cargarEtiquetas])
 
   // Filtrar módulos visibles según funciones habilitadas en el onboarding/config y permisos del rol.
   useEffect(() => {
@@ -115,6 +120,7 @@ export const Layout = () => {
         )}
       />
 
+      <AvisoReimprimir />
       <AvisoEscaneo />
       <ToastContainer />
     </div>

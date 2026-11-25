@@ -1,5 +1,10 @@
 import { create } from 'zustand'
 import { aplicarPorcentaje } from '../lib/dinero'
+import { useEtiquetasStore } from './etiquetasStore'
+
+/** Etiquetas con precio: avisa que hay que reimprimir las de estos productos. */
+const avisarEtiquetas = (ids: number[]) =>
+  useEtiquetasStore.getState().registrarCambioPrecio(ids).catch(e => console.error('registrarCambioPrecio', e))
 import { getDb } from '../db'
 import { useSessionStore } from './sessionStore'
 import type { ItemListaPrecios, HistorialPrecio, SnapshotLista, ItemSnapshotPrecio } from '../types/listaPrecios'
@@ -75,11 +80,13 @@ export const useListaPreciosStore = create<ListaPreciosStore>((set, get) => ({
     const db = await getDb()
     const now = new Date().toISOString()
     const afectados = get().items.filter(i => categoriaId == null || i.categoriaId === categoriaId)
+    const cambiados: number[] = []
     const por = usuarioActual()
 
     for (const i of afectados) {
       const precioNuevo = i.precioActual + aplicarPorcentaje(i.precioActual, porcentaje)
       if (precioNuevo === i.precioActual) continue
+      cambiados.push(i.productoId)
       await db.execute('UPDATE productos SET precio = ?, actualizado_en = ? WHERE id = ?', [precioNuevo, now, i.productoId])
       await db.execute(
         `INSERT INTO historial_precios (producto_id, precio_anterior, precio_nuevo, porcentaje, motivo, aplicado_por, fecha, creado_en)
@@ -90,6 +97,7 @@ export const useListaPreciosStore = create<ListaPreciosStore>((set, get) => ({
 
     // Snapshot automático
     await guardarSnapshotInterno(db, `Actualización ${formatFecha(now)}`, `Aumento del ${porcentaje}%`, por, now)
+    await avisarEtiquetas(cambiados)
 
     set({ previsualizacion: null })
     await get().cargarItems()
@@ -105,6 +113,7 @@ export const useListaPreciosStore = create<ListaPreciosStore>((set, get) => ({
     if (!item || precioNuevo === item.precioActual) { await get().cargarItems(); return }
     const por = usuarioActual()
     await db.execute('UPDATE productos SET precio = ?, actualizado_en = ? WHERE id = ?', [precioNuevo, now, productoId])
+    await avisarEtiquetas([productoId])
     await db.execute(
       `INSERT INTO historial_precios (producto_id, precio_anterior, precio_nuevo, porcentaje, motivo, aplicado_por, fecha, creado_en)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -168,18 +177,21 @@ export const useListaPreciosStore = create<ListaPreciosStore>((set, get) => ({
     const snap = get().snapshots.find(s => s.id === snapshotId)
     if (!snap) return
     const por = usuarioActual()
+    const restaurados: number[] = []
     for (const item of snap.snapshot) {
       const rows = await db.select<any[]>('SELECT precio FROM productos WHERE id = ?', [item.productoId])
       if (rows.length === 0) continue
       const precioAnterior = rows[0].precio
       if (precioAnterior === item.precio) continue
       await db.execute('UPDATE productos SET precio = ?, actualizado_en = ? WHERE id = ?', [item.precio, now, item.productoId])
+      restaurados.push(item.productoId)
       await db.execute(
         `INSERT INTO historial_precios (producto_id, precio_anterior, precio_nuevo, porcentaje, motivo, aplicado_por, fecha, creado_en)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
         [item.productoId, precioAnterior, item.precio, null, `Restauración de lista: ${snap.nombre}`, por, now, now]
       )
     }
+    await avisarEtiquetas(restaurados)
     await get().cargarItems()
     await get().cargarHistorial()
   },

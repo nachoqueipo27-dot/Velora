@@ -4,6 +4,7 @@ import { useSessionStore } from './sessionStore'
 import { useInventarioStore } from './inventarioStore'
 import { registrarActividad } from '../lib/registrarActividad'
 import { porCantidad } from '../lib/dinero'
+import { useEtiquetasStore } from './etiquetasStore'
 import { exigirEditar } from '../lib/permisos'
 
 export interface BloqueConfig {
@@ -153,9 +154,11 @@ export const useConfigStore = create<ConfigStore>((set, get) => ({
     )
     if (recalcular) {
       const prods = await db.select<any[]>(`SELECT id, precio, precio_costo FROM productos WHERE moneda_costo = 'USD'`)
+      const cambiados: number[] = []
       for (const p of prods) {
         // precio_costo en centavos de USD × ARS por USD → centavos de ARS.
         const nuevo = porCantidad(p.precio_costo, valor)
+        if (nuevo !== p.precio) cambiados.push(p.id)
         await db.execute('UPDATE productos SET precio = ?, actualizado_en = ? WHERE id = ?', [nuevo, now, p.id])
         await db.execute(
           `INSERT INTO historial_precios (producto_id, precio_anterior, precio_nuevo, motivo, aplicado_por, fecha, creado_en)
@@ -164,6 +167,7 @@ export const useConfigStore = create<ConfigStore>((set, get) => ({
         )
       }
       await useInventarioStore.getState().cargarProductos()
+      await useEtiquetasStore.getState().registrarCambioPrecio(cambiados)
     }
     await registrarActividad({ modulo: 'Configuración', accion: 'Actualizó el tipo de cambio', detalle: `$${valor}${recalcular ? ' (recalculó precios USD)' : ''}` })
     const tcRows = await db.select<any[]>('SELECT * FROM tipos_cambio ORDER BY creado_en DESC')

@@ -6,6 +6,7 @@ import { exigirEditar } from '../lib/permisos'
 import { ErrorValidacion } from '../db/acceso'
 import type { CodigoProducto } from '../lib/codigos'
 import { esCodigoDeBalanza, PREFIJO_BALANZA } from '../lib/codigosInternos'
+import { useEtiquetasStore } from './etiquetasStore'
 import type {
   Producto, Categoria, ComponenteConjunto, MovimientoStock, InformeRentabilidad, Trazabilidad, UnidadMedida,
 } from '../types/inventario'
@@ -220,7 +221,8 @@ export const useInventarioStore = create<InventarioStore>((set, get) => ({
     const now = new Date().toISOString()
     const codigos = data.codigos ? await validarCodigos(db, id, data.codigos) : null
     // Un borrador sigue siéndolo hasta que tenga nombre propio y precio.
-    const eraBorrador = get().productos.find(p => p.id === id)?.borrador ?? false
+    const previo = get().productos.find(p => p.id === id)
+    const eraBorrador = previo?.borrador ?? false
     const sigueBorrador = eraBorrador && !estaCompleto(data)
     await db.execute(
       `UPDATE productos SET nombre=?, tipo=?, descripcion=?, categoria_id=?, precio=?, precio_costo=?, moneda_costo=?,
@@ -232,6 +234,10 @@ export const useInventarioStore = create<InventarioStore>((set, get) => ({
     if (data.tipo === 'conjunto') await guardarComponentes(db, id, componentes)
     else await db.execute('DELETE FROM conjunto_componentes WHERE conjunto_id = ?', [id])
     if (codigos) await guardarCodigos(db, id, codigos)
+    // Etiquetas con precio: avisar que la de este producto quedó vieja.
+    if (previo && previo.precio !== data.precio) {
+      await useEtiquetasStore.getState().registrarCambioPrecio([id]).catch(e => console.error('registrarCambioPrecio', e))
+    }
     await registrarActividad({ modulo: 'Inventario', accion: 'Editó un producto', detalle: data.nombre, entidadTipo: 'producto', entidadId: id })
     await get().cargarProductos()
     const sel = get().productoSeleccionado

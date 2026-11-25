@@ -19,12 +19,14 @@ import { useEdicion, usePermiso } from '../../lib/permisos'
 
 interface FichaProductoProps {
   onVolver: () => void
+  /** Abre Imprimir etiquetas con este código. */
+  onImprimirEtiqueta?: (productoId: number, codigo: string) => void
 }
 
 const TIPO_MOV: Record<string, string> = { entrada: 'Entrada', salida: 'Salida', ajuste: 'Ajuste' }
 const LABEL_UNIDAD: Record<string, string> = Object.fromEntries(UNIDADES_MEDIDA.map(u => [u.value, u.label]))
 
-export const FichaProducto = ({ onVolver }: FichaProductoProps) => {
+export const FichaProducto = ({ onVolver, onImprimirEtiqueta }: FichaProductoProps) => {
   const { productoSeleccionado, movimientos, cargarMovimientos, cargarComponentes, ajustarStock } = useInventarioStore()
   const ed = useEdicion('inventario')
   const verCostos = usePermiso('inventario') === 'editar'
@@ -111,6 +113,12 @@ export const FichaProducto = ({ onVolver }: FichaProductoProps) => {
       {/* Códigos de barras dibujados (escaneables desde la pantalla) */}
       <div className="mb-4">
         <CodigosDibujados productoId={p.id} version={`${p.actualizadoEn}-${versionCodigos}`}
+          accion={c => onImprimirEtiqueta ? (
+            <button type="button" onClick={() => onImprimirEtiqueta(p.id, c.codigo)}
+              className="h-8 rounded-pastilla border border-borde-fuerte bg-superficie px-3 text-[12px] font-medium text-texto hover:bg-superficie-suave">
+              Imprimir etiqueta
+            </button>
+          ) : null}
           sinCodigos={verCostos ? (
             <button type="button" onClick={() => void generarCodigo()}
               className="self-start h-9 rounded-pastilla bg-texto px-4 text-cuerpo font-medium text-superficie hover:opacity-90">
