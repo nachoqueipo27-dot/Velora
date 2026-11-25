@@ -2,6 +2,9 @@ import { useEffect } from 'react'
 import { Navbar } from './Navbar'
 import { StatusBar } from './StatusBar'
 import { AvisoActualizacion } from './AvisoActualizacion'
+import { AvisoEscaneo } from './AvisoEscaneo'
+import { useLectorCodigos } from '../../hooks/useLectorCodigos'
+import { useEscaneoStore } from '../../store/escaneoStore'
 import { PantallaErrorBase } from './PantallaErrorBase'
 import { useNavigationStore } from '../../store/navigationStore'
 import { useNegocioStore } from '../../store/negocioStore'
@@ -59,6 +62,11 @@ export const Layout = () => {
   // Datos del negocio (nombre, logo, funciones) desde la base, apenas abre.
   useEffect(() => { if (ready) cargarNegocio().catch(e => console.error('cargarNegocio', e)) }, [ready, cargarNegocio])
 
+  // Lector de códigos de barras: uno solo para toda la app, con sus opciones (sonido, etc.).
+  useLectorCodigos()
+  const cargarEscaneo = useEscaneoStore(s => s.cargar)
+  useEffect(() => { if (ready) cargarEscaneo().catch(e => console.error('cargarEscaneo', e)) }, [ready, cargarEscaneo])
+
   // Filtrar módulos visibles según funciones habilitadas en el onboarding/config y permisos del rol.
   useEffect(() => {
     // Sin configurar (p. ej. se borraron los datos locales): todas, igual que en Funciones.
@@ -107,6 +115,7 @@ export const Layout = () => {
         )}
       />
 
+      <AvisoEscaneo />
       <ToastContainer />
     </div>
   )

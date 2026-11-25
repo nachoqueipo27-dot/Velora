@@ -8,6 +8,8 @@ import { ReporteRotacion } from './ReporteRotacion'
 import { InformeRentabilidad } from './InformeRentabilidad'
 import { AccesoRestringido } from '../../components/ui/AccesoRestringido'
 import { usePermiso } from '../../lib/permisos'
+import { useEscaneoEnModulo } from '../../lib/escaneo'
+import { toast } from '../../store/toastStore'
 import { Package, Boxes, TrendingUp, BarChart3 } from 'lucide-react'
 
 type Seccion = 'productos' | 'conjuntos' | 'rotacion' | 'rentabilidad'
@@ -31,6 +33,16 @@ const Inventario = () => {
   }, [cargarProductos, cargarCategorias])
 
   const verFicha = (p: Producto) => seleccionarProducto(p)
+
+  // Lector: código conocido → abre la ficha del producto.
+  useEscaneoEnModulo('inventario', ({ codigo, resultado }) => {
+    if (resultado) {
+      setSeccion(resultado.producto.tipo === 'conjunto' ? 'conjuntos' : 'productos')
+      seleccionarProducto(resultado.producto)
+    } else {
+      toast.info(`El código ${codigo} no está registrado`)
+    }
+  })
 
   const irA = (id: Seccion) => {
     seleccionarProducto(null)

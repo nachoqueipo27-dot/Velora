@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { cn } from '../../../lib/utils'
+import { useCapturaEscaneo } from '../../../lib/escaneo'
 import { codigoEnUso, normalizarCodigo, avisarSiVerificadorInvalido, type CodigoProducto } from '../../../lib/codigos'
 import { Plus, X } from 'lucide-react'
 
@@ -32,6 +33,9 @@ export const SeccionCodigos = ({ productoId, value, onChange, disabled }: Seccio
       setVerificando(false)
     }
   }
+
+  // Con el formulario abierto, lo que se escanea se suma acá (no abre otra pantalla).
+  useCapturaEscaneo(!disabled, codigo => { void agregar(codigo) })
 
   const cambiar = (codigo: string, patch: Partial<CodigoProducto>) =>
     onChange(value.map(c => (c.codigo === codigo ? { ...c, ...patch } : c)))
