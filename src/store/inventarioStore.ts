@@ -5,6 +5,7 @@ import { registrarActividad } from '../lib/registrarActividad'
 import { exigirEditar } from '../lib/permisos'
 import { ErrorValidacion } from '../db/acceso'
 import type { CodigoProducto } from '../lib/codigos'
+import { esCodigoDeBalanza, PREFIJO_BALANZA } from '../lib/codigosInternos'
 import type {
   Producto, Categoria, ComponenteConjunto, MovimientoStock, InformeRentabilidad, Trazabilidad, UnidadMedida,
 } from '../types/inventario'
@@ -115,6 +116,9 @@ async function validarCodigos(db: Db, productoId: number | null, codigos: Codigo
   const vistos = new Set<string>()
   for (const c of limpios) {
     if (vistos.has(c.codigo)) throw new ErrorValidacion(`El código ${c.codigo} está cargado dos veces.`)
+    if (esCodigoDeBalanza(c.codigo)) {
+      throw new ErrorValidacion(`Los códigos que empiezan con ${PREFIJO_BALANZA} quedan reservados para la balanza (${c.codigo}).`)
+    }
     vistos.add(c.codigo)
     const otros = await db.select<{ nombre: string }[]>(
       `SELECT p.nombre FROM productos_codigos pc JOIN productos p ON p.id = pc.producto_id

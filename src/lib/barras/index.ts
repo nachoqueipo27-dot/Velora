@@ -188,6 +188,9 @@ export function probarBarras(): number {
     ['dígito de 779812345678', digitoVerificadorGS1('779812345678'), 3],
     ['dígito de 1779007001234', digitoVerificadorGS1('1779007001234'), 7],
     ['verificador inválido 7790070012341', verificadorValido('7790070012341'), false],
+    // Código interno: 29 + correlativo de 10 dígitos + verificador (ver codigosInternos.ts).
+    ['interno nº 1', '290000000001' + digitoVerificadorGS1('290000000001'), '2900000000018'],
+    ['interno nº 2', '290000000002' + digitoVerificadorGS1('290000000002'), '2900000000025'],
     // Detección del tipo.
     ['tipo 13 dígitos', detectarTipo('7790070012340'), 'ean13'],
     ['tipo 8 dígitos', detectarTipo('96385074'), 'ean8'],

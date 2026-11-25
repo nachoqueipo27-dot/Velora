@@ -10,6 +10,8 @@ import { useInventarioStore } from '../../store/inventarioStore'
 import { UNIDADES_MEDIDA, type ComponenteConjunto } from '../../types/inventario'
 import { StockBadge } from './components/StockBadge'
 import { CodigosDibujados } from './components/CodigosDibujados'
+import { asignarCodigoInterno } from '../../lib/codigosInternos'
+import { toast } from '../../store/toastStore'
 import { ArrowLeft, Package, Boxes, ImageOff } from 'lucide-react'
 import { format } from 'date-fns'
 import { formatearPesos } from '../../lib/dinero'
@@ -28,6 +30,17 @@ export const FichaProducto = ({ onVolver }: FichaProductoProps) => {
   const verCostos = usePermiso('inventario') === 'editar'
   const [comps, setComps] = useState<ComponenteConjunto[]>([])
   const [ajuste, setAjuste] = useState(false)
+  const [versionCodigos, setVersionCodigos] = useState(0)
+  const generarCodigo = async () => {
+    if (!p) return
+    try {
+      const codigo = await asignarCodigoInterno(p.id)
+      toast.success(`Código ${codigo} generado`)
+      setVersionCodigos(v => v + 1)
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'No se pudo generar el código')
+    }
+  }
 
   const p = productoSeleccionado
 
@@ -97,7 +110,13 @@ export const FichaProducto = ({ onVolver }: FichaProductoProps) => {
 
       {/* Códigos de barras dibujados (escaneables desde la pantalla) */}
       <div className="mb-4">
-        <CodigosDibujados productoId={p.id} version={p.actualizadoEn} />
+        <CodigosDibujados productoId={p.id} version={`${p.actualizadoEn}-${versionCodigos}`}
+          sinCodigos={verCostos ? (
+            <button type="button" onClick={() => void generarCodigo()}
+              className="self-start h-9 rounded-pastilla bg-texto px-4 text-cuerpo font-medium text-superficie hover:opacity-90">
+              Generar código
+            </button>
+          ) : null} />
       </div>
 
       {/* Componentes (conjunto) */}

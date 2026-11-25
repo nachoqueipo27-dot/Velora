@@ -3,12 +3,14 @@ import { useInventarioStore } from '../../store/inventarioStore'
 import { productoDesdeCodigo, crearDesdeCodigo } from '../../lib/altaDesdeEscaneo'
 import { useCapturaEscaneo } from '../../lib/escaneo'
 import { aCentavos } from '../../lib/dinero'
+import { generarCodigoInterno } from '../../lib/codigosInternos'
 import { toast } from '../../store/toastStore'
 import { UNIDADES_MEDIDA, permiteDecimales, type Producto, type UnidadMedida } from '../../types/inventario'
 import { cn } from '../../lib/utils'
 
 interface AltaRapidaProps {
-  codigo: string
+  /** Código escaneado; null si se da de alta sin escanear (ofrece generar uno interno). */
+  codigo: string | null
   /** 'pos': se suma a la venta. 'inventario': solo se crea. 'ingreso' (Agregar stock): después
    *  se pide la cantidad que ingresa, así que no hay "Stock inicial". */
   contexto: 'pos' | 'inventario' | 'ingreso'
@@ -34,6 +36,7 @@ export const AltaRapida = ({ codigo, contexto, onCerrar, onCreado }: AltaRapidaP
   const [stock, setStock] = useState('')
   const [guardando, setGuardando] = useState(false)
   const [errores, setErrores] = useState<{ nombre?: string; precio?: string }>({})
+  const [generarCodigo, setGenerarCodigo] = useState(true)
 
   useEffect(() => { void cargarCategorias() }, [cargarCategorias])
   useEffect(() => {
@@ -60,7 +63,9 @@ export const AltaRapida = ({ codigo, contexto, onCerrar, onCreado }: AltaRapidaP
     }
     setGuardando(true)
     try {
-      const datos = productoDesdeCodigo(codigo, {
+      // Sin escanear: código interno 29… si la casilla está marcada.
+      const codigoFinal = codigo ?? (generarCodigo ? await generarCodigoInterno() : null)
+      const datos = productoDesdeCodigo(codigoFinal, {
         ...(nombre.trim() ? { nombre: nombre.trim() } : {}),
         precio: precioC,
         precioCosto: costoC,
@@ -94,9 +99,21 @@ export const AltaRapida = ({ codigo, contexto, onCerrar, onCreado }: AltaRapidaP
             className="h-9 w-9 rounded-pastilla border border-borde-fuerte bg-superficie text-[16px] text-texto-2 hover:text-texto">×</button>
         </div>
 
-        <label className={etiqueta}>Código de barras
-          <input value={codigo} readOnly className={cn(campo, 'bg-fondo font-mono')} />
-        </label>
+        {codigo ? (
+          <label className={etiqueta}>Código de barras
+            <input value={codigo} readOnly className={cn(campo, 'bg-fondo font-mono')} />
+          </label>
+        ) : (
+          <label className="flex cursor-pointer items-start gap-3 rounded-control border border-borde bg-fondo p-3">
+            <input type="checkbox" checked={generarCodigo} onChange={e => setGenerarCodigo(e.target.checked)} className="mt-1 accent-acento" />
+            <span>
+              <span className="block text-seccion font-medium text-texto">Generar código interno</span>
+              <span className="mt-0.5 block text-[12px] text-texto-2">
+                Para productos sin código (sueltos, embolsados, hechos en el local). Velora le asigna un código 29… que podés imprimir en una etiqueta.
+              </span>
+            </span>
+          </label>
+        )}
 
         <label className={etiqueta}>Nombre
           <input value={nombre} onChange={e => { setNombre(e.target.value); setErrores(x => ({ ...x, nombre: undefined })) }}

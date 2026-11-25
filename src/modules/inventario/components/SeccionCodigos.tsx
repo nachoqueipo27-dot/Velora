@@ -4,6 +4,7 @@ import { useCapturaEscaneo } from '../../../lib/escaneo'
 import { codigoEnUso, normalizarCodigo, avisarSiVerificadorInvalido, type CodigoProducto } from '../../../lib/codigos'
 import { Plus, X } from 'lucide-react'
 import { CodigoBarras } from '../../../components/barras/CodigoBarras'
+import { esCodigoDeBalanza, generarCodigoInterno, PREFIJO_BALANZA } from '../../../lib/codigosInternos'
 import { detectarTipo } from '../../../lib/barras'
 
 interface SeccionCodigosProps {
@@ -24,6 +25,7 @@ export const SeccionCodigos = ({ productoId, value, onChange, disabled }: Seccio
     const codigo = normalizarCodigo(texto)
     if (!codigo || disabled) return
     if (value.some(c => c.codigo === codigo)) { setError('Ese código ya está en la lista.'); return }
+    if (esCodigoDeBalanza(codigo)) { setError(`Los códigos que empiezan con ${PREFIJO_BALANZA} quedan reservados para la balanza.`); return }
     setVerificando(true)
     try {
       const otro = await codigoEnUso(codigo, productoId)
@@ -98,6 +100,22 @@ export const SeccionCodigos = ({ productoId, value, onChange, disabled }: Seccio
         </button>
       </div>
       {error && <span className="text-[12px] text-error" role="alert">{error}</span>}
+      {value.length === 0 && !disabled && (
+        <button type="button" disabled={verificando}
+          onClick={async () => {
+            setVerificando(true)
+            try {
+              const codigo = await generarCodigoInterno()
+              onChange([...value, { codigo, tipo: 'unidad', unidadesPorPack: 1 }])
+              setError(null)
+            } catch (e) {
+              setError(e instanceof Error ? e.message : 'No se pudo generar el código')
+            } finally { setVerificando(false) }
+          }}
+          className="self-start text-[12px] font-medium text-acento-texto underline-offset-2 hover:underline">
+          ¿No tiene código? Generar código interno (29…)
+        </button>
+      )}
     </div>
   )
 }

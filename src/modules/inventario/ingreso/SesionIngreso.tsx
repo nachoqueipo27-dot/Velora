@@ -26,7 +26,8 @@ export const SesionIngreso = ({ onSalir }: { onSalir: () => void }) => {
 
   const [pedido, setPedido] = useState<Pedido | null>(null)
   const [desconocido, setDesconocido] = useState<string | null>(null)
-  const [alta, setAlta] = useState<string | null>(null)
+  // Alta rápida: con el código escaneado, o sin código (desde el buscador; ofrece generar uno interno).
+  const [alta, setAlta] = useState<{ codigo: string | null } | null>(null)
   const [resaltado, setResaltado] = useState<number | null>(null)
   const [busqueda, setBusqueda] = useState('')
   const [notas, setNotas] = useState('')
@@ -62,7 +63,7 @@ export const SesionIngreso = ({ onSalir }: { onSalir: () => void }) => {
     const codigo = desconocido
     if (!codigo) return
     setDesconocido(null)
-    if (opcion === 'alta') { setAlta(codigo); return }
+    if (opcion === 'alta') { setAlta({ codigo }); return }
     if (opcion === 'borrador') {
       try {
         const p = await crearBorrador(codigo)
@@ -198,6 +199,15 @@ export const SesionIngreso = ({ onSalir }: { onSalir: () => void }) => {
             className="min-w-0 flex-1 bg-transparent text-[15px] text-texto outline-none placeholder:text-texto-3" />
           <span className="font-mono text-etiqueta uppercase text-ok">● Lector listo</span>
         </label>
+        {busqueda.trim().length >= 2 && coincidencias.length === 0 && (
+          <div className="absolute left-0 right-0 top-[56px] z-10 flex items-center justify-between gap-3 rounded-tarjeta border border-borde bg-superficie px-4 py-2.5 shadow-lg">
+            <span className="text-texto-2">Ningún producto se llama así.</span>
+            <button type="button" onClick={() => { setBusqueda(''); setAlta({ codigo: null }) }}
+              className="h-8 rounded-pastilla border border-borde-fuerte px-3 text-[12px] font-medium hover:bg-superficie-suave">
+              Dar de alta sin código
+            </button>
+          </div>
+        )}
         {coincidencias.length > 0 && (
           <div className="absolute left-0 right-0 top-[56px] z-10 overflow-hidden rounded-tarjeta border border-borde bg-superficie shadow-lg">
             {coincidencias.map(p => (
@@ -267,11 +277,11 @@ export const SesionIngreso = ({ onSalir }: { onSalir: () => void }) => {
           onCerrar={() => setPedido(null)} onConfirmar={n => void confirmarCantidad(n)} />
       )}
       {alta && (
-        <AltaRapida codigo={alta} contexto="ingreso" onCerrar={() => setAlta(null)}
+        <AltaRapida codigo={alta.codigo} contexto="ingreso" onCerrar={() => setAlta(null)}
           onCreado={(p, borrador) => {
             setAlta(null)
             toast.success(borrador ? 'Borrador creado: queda en Productos por completar.' : `«${p.nombre}» dado de alta`)
-            pedirCantidad(p, alta, null)
+            pedirCantidad(p, alta.codigo, null)
           }} />
       )}
       {preguntarDescartar && (

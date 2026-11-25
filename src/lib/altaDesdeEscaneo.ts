@@ -3,10 +3,10 @@ import type { Producto } from '../types/inventario'
 
 // Altas de productos a partir de un código escaneado (Alta rápida y Borrador).
 
-/** Producto simple con el código escaneado como único código (tipo unidad). */
-export function productoDesdeCodigo(codigo: string, datos: Partial<NuevoProducto> = {}): NuevoProducto {
+/** Producto simple con el código escaneado como único código (tipo unidad). Sin código: sin códigos. */
+export function productoDesdeCodigo(codigo: string | null, datos: Partial<NuevoProducto> = {}): NuevoProducto {
   return {
-    nombre: `${PREFIJO_BORRADOR} · ${codigo}`,
+    nombre: codigo ? `${PREFIJO_BORRADOR} · ${codigo}` : PREFIJO_BORRADOR,
     tipo: 'simple',
     descripcion: '',
     categoriaId: null,
@@ -20,7 +20,7 @@ export function productoDesdeCodigo(codigo: string, datos: Partial<NuevoProducto
     trazabilidad: 'ninguna',
     unidadMedida: 'unidad',
     activo: true,
-    codigos: [{ codigo, tipo: 'unidad', unidadesPorPack: 1 }],
+    codigos: codigo ? [{ codigo, tipo: 'unidad', unidadesPorPack: 1 }] : [],
     ...datos,
   }
 }

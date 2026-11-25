@@ -9,6 +9,8 @@ import { ModalProducto } from './ModalProducto'
 import { Search, Plus, Eye, Pencil, Trash2, ImageOff, AlertTriangle, PackageX, PackagePlus } from 'lucide-react'
 import { formatearPesos } from '../../lib/dinero'
 import { useEdicion } from '../../lib/permisos'
+import { asignarCodigosEnLote, productosConCodigo } from '../../lib/codigosInternos'
+import { toast } from '../../store/toastStore'
 
 const LABEL_UNIDAD: Record<string, string> = Object.fromEntries(UNIDADES_MEDIDA.map(u => [u.value, u.label]))
 
@@ -17,9 +19,11 @@ interface ListadoProductosProps {
   onVer: (p: Producto) => void
   /** "Agregar stock" por escaneo. Sin esto (sin editar en inventario) el botón no aparece. */
   onAgregarStock?: () => void
+  /** Después de generar códigos en lote: imprimir las etiquetas de esos productos. */
+  onImprimirEtiquetas?: (productoIds: number[]) => void
 }
 
-export const ListadoProductos = ({ tipo, onVer, onAgregarStock }: ListadoProductosProps) => {
+export const ListadoProductos = ({ tipo, onVer, onAgregarStock, onImprimirEtiquetas }: ListadoProductosProps) => {
   const { productos, categorias, loading, cargarComponentes, eliminarProducto } = useInventarioStore()
   const ed = useEdicion('inventario')
   const [busqueda, setBusqueda] = useState('')
@@ -32,6 +36,37 @@ export const ListadoProductos = ({ tipo, onVer, onAgregarStock }: ListadoProduct
   const cantBorradores = useMemo(() => productos.filter(p => p.tipo === tipo && p.borrador).length, [productos, tipo])
   useEffect(() => { if (cantBorradores === 0) setSoloBorradores(false) }, [cantBorradores])
 
+  // Códigos internos en lote: filtro "Sin código de barras" + selección múltiple.
+  const puedeEditar = !('disabled' in ed)
+  const [conCodigo, setConCodigo] = useState<Set<number> | null>(null)
+  const [soloSinCodigo, setSoloSinCodigo] = useState(false)
+  const [seleccion, setSeleccion] = useState<Set<number>>(new Set())
+  const [generando, setGenerando] = useState(false)
+  const [generados, setGenerados] = useState<Map<number, string> | null>(null)
+  useEffect(() => {
+    productosConCodigo().then(setConCodigo).catch(e => console.error('productosConCodigo', e))
+  }, [productos])
+  const cantSinCodigo = useMemo(
+    () => (conCodigo ? productos.filter(p => p.tipo === tipo && !conCodigo.has(p.id)).length : 0),
+    [productos, tipo, conCodigo])
+  useEffect(() => { setSeleccion(new Set()) }, [soloSinCodigo, tipo])
+
+  const generarEnLote = async () => {
+    if (seleccion.size === 0) return
+    setGenerando(true)
+    try {
+      const asignados = await asignarCodigosEnLote([...seleccion])
+      setGenerados(asignados)
+      setSeleccion(new Set())
+      setConCodigo(await productosConCodigo())
+      toast.success(`Se generaron ${asignados.size} código${asignados.size === 1 ? '' : 's'}`)
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'No se pudieron generar los códigos')
+    } finally {
+      setGenerando(false)
+    }
+  }
+
   const prodMap = useMemo(() => {
     const m = new Map<number, Producto>()
     productos.forEach(p => m.set(p.id, p))
@@ -43,10 +78,11 @@ export const ListadoProductos = ({ tipo, onVer, onAgregarStock }: ListadoProduct
     return productos.filter(p =>
       p.tipo === tipo &&
       (!soloBorradores || p.borrador) &&
+      (!soloSinCodigo || (conCodigo !== null && !conCodigo.has(p.id))) &&
       (filtroCat === 'Todas' || p.categoriaNombre === filtroCat) &&
       (q === '' || p.nombre.toLowerCase().includes(q) || p.codigoSku.toLowerCase().includes(q))
     )
-  }, [productos, tipo, busqueda, filtroCat, soloBorradores])
+  }, [productos, tipo, busqueda, filtroCat, soloBorradores, soloSinCodigo, conCodigo])
 
   // Advertencia de componentes bajo mínimo para conjuntos
   useEffect(() => {
@@ -79,6 +115,13 @@ export const ListadoProductos = ({ tipo, onVer, onAgregarStock }: ListadoProduct
             onChange={e => setBusqueda(e.target.value)}
           />
         </div>
+        {cantSinCodigo > 0 && (
+          <button type="button" onClick={() => setSoloSinCodigo(v => !v)} aria-pressed={soloSinCodigo}
+            className={cn('h-9 rounded-pastilla border px-3 text-[12px] transition-colors',
+              soloSinCodigo ? 'border-texto bg-texto text-superficie' : 'border-borde-fuerte bg-superficie text-texto-2 hover:text-texto')}>
+            Sin código de barras · {cantSinCodigo}
+          </button>
+        )}
         <div className="w-44">
           <Select value={filtroCat} onChange={e => setFiltroCat(e.target.value)}>
             <option value="Todas" className="bg-[#141414] light:bg-white">Todas las categorías</option>
@@ -95,6 +138,39 @@ export const ListadoProductos = ({ tipo, onVer, onAgregarStock }: ListadoProduct
           <Plus size={14} className="mr-1.5" /> {tipo === 'conjunto' ? 'Nuevo conjunto' : 'Nuevo producto'}
         </Button>
       </div>
+
+      {soloSinCodigo && puedeEditar && (
+        <div className="mb-4 flex flex-wrap items-center gap-3 rounded-tarjeta border border-borde bg-superficie px-4 py-3 text-cuerpo text-texto">
+          <span className="flex-[1_1_260px] text-texto-2">
+            Elegí los productos y Velora les genera un código interno (29…) para imprimir en etiquetas.
+          </span>
+          <button type="button" onClick={() => setSeleccion(seleccion.size === filtrados.length ? new Set() : new Set(filtrados.map(p => p.id)))}
+            className="h-[34px] rounded-pastilla border border-borde-fuerte px-3.5 hover:bg-superficie-suave">
+            {seleccion.size === filtrados.length && filtrados.length > 0 ? 'Quitar selección' : 'Elegir todos'}
+          </button>
+          <button type="button" onClick={() => void generarEnLote()} disabled={generando || seleccion.size === 0}
+            className="h-[34px] rounded-pastilla bg-texto px-3.5 font-medium text-superficie hover:opacity-90 disabled:opacity-40">
+            {generando ? 'Generando…' : `Generar códigos (${seleccion.size})`}
+          </button>
+        </div>
+      )}
+
+      {generados && generados.size > 0 && (
+        <div className="mb-4 flex flex-wrap items-center gap-3 rounded-tarjeta border border-ok/30 bg-ok-suave px-4 py-3 text-cuerpo text-texto">
+          <span className="flex-[1_1_260px]">
+            <strong className="font-semibold">Se generaron {generados.size} código{generados.size === 1 ? '' : 's'}.</strong>{' '}
+            <span className="font-mono text-[12px] text-texto-2">{[...generados.values()].slice(0, 4).join(' · ')}{generados.size > 4 ? ' …' : ''}</span>
+          </span>
+          {onImprimirEtiquetas && (
+            <button type="button" onClick={() => { onImprimirEtiquetas([...generados.keys()]); setGenerados(null) }}
+              className="h-[34px] rounded-pastilla bg-texto px-3.5 font-medium text-superficie hover:opacity-90">
+              Imprimir etiquetas de estos productos
+            </button>
+          )}
+          <button type="button" onClick={() => setGenerados(null)} aria-label="Cerrar aviso"
+            className="h-[34px] rounded-pastilla px-2 text-texto-3 hover:text-texto">×</button>
+        </div>
+      )}
 
       {cantBorradores > 0 && (
         <div className="mb-4 flex flex-wrap items-center gap-3 rounded-tarjeta border border-acento/30 bg-superficie px-4 py-3 text-cuerpo text-texto">
@@ -121,6 +197,7 @@ export const ListadoProductos = ({ tipo, onVer, onAgregarStock }: ListadoProduct
           <table className="w-full text-sm border-collapse">
             <thead>
               <tr className="text-[11px] uppercase tracking-wider text-[#606060]">
+                {soloSinCodigo && puedeEditar && <th className="w-8 px-3 py-2" aria-label="Elegir" />}
                 <th className="text-left font-medium px-3 py-2">Producto</th>
                 <th className="text-left font-medium px-3 py-2">Categoría</th>
                 <th className="text-right font-medium px-3 py-2">Precio</th>
@@ -132,6 +209,12 @@ export const ListadoProductos = ({ tipo, onVer, onAgregarStock }: ListadoProduct
             <tbody>
               {filtrados.map(p => (
                 <tr key={p.id} className={cn('border-t transition-colors', 'border-[#2A2A2A] hover:bg-white/[0.03]', 'light:border-[#E4E4E4] light:hover:bg-black/[0.02]')}>
+                  {soloSinCodigo && puedeEditar && (
+                    <td className="px-3 py-2.5">
+                      <input type="checkbox" checked={seleccion.has(p.id)} aria-label={`Elegir ${p.nombre}`} className="accent-acento"
+                        onChange={() => setSeleccion(s => { const n = new Set(s); if (n.has(p.id)) n.delete(p.id); else n.add(p.id); return n })} />
+                    </td>
+                  )}
                   <td className="px-3 py-2.5">
                     <div className="flex items-center gap-2.5">
                       <div className="w-10 h-10 rounded-input overflow-hidden flex items-center justify-center bg-[#1C1C1C] light:bg-[#F4F4F4] shrink-0">
