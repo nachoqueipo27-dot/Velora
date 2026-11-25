@@ -44,7 +44,8 @@ export const UsuariosRoles = () => {
   const rolDe = (id: number) => roles.find(r => r.id === id)
   const adminRol = roles.find(r => r.esAdmin)
   const dniValido = /^\d{7,}$/.test(dni.trim())
-  const faltaClave = !editando && password.trim() === ''
+  const reactivando = !!editando && !editando.activo && activo
+  const faltaClave = (!editando || reactivando) && password.trim() === ''
 
   const abrirNuevo = () => {
     setEditando(null)
@@ -210,7 +211,7 @@ export const UsuariosRoles = () => {
             type="password"
             value={password}
             onChange={e => setPassword(e.target.value)}
-            hint={editando ? 'Dejá vacío para mantener la actual.' : 'Obligatoria. La usa para iniciar sesión.'}
+            hint={reactivando ? 'Obligatoria para reactivarlo.' : editando ? 'Dejá vacío para mantener la actual.' : 'Obligatoria. La usa para iniciar sesión.'}
           />
           <Select label="Rol" value={rolId ?? ''} onChange={e => setRolId(Number(e.target.value) || null)}>
             <option value="">Seleccionar rol…</option>

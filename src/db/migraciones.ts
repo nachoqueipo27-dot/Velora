@@ -1,5 +1,6 @@
 import type Database from '@tauri-apps/plugin-sql'
 import { getMasterDb } from './master'
+import { CLAVE_POR_DEFECTO } from './claves'
 import { hashPassword, esBcrypt, decodificarLegacy } from '../lib/crypto'
 
 // Migraciones versionadas de velora.db.
@@ -188,6 +189,8 @@ export const _sqlCentavosParaPruebas = sqlCentavos
 // Pasa a bcrypt las claves que quedaron en btoa: empleados.password (velora.db) y
 // usuarios_master.password / respuesta_seguridad_hash (velora_master.db).
 // Un valor corrupto queda como estaba y solo se cuenta en el historial.
+// A los empleados con la contraseña por defecto se les marca debe_cambiar_clave (la columna
+// la agrega initSchema antes de migrar).
 //
 // Son dos archivos, así que no hay una transacción común: primero va master y al final
 // velora.db junto con la marca. Cada UPDATE solo toca valores que todavía no son bcrypt,
@@ -198,6 +201,7 @@ const FORMATO_BCRYPT = /^\$2[ab]\$\d{2}\$[./A-Za-z0-9]{53}$/
 async function convertirClaves(tabla: string, columna: string, filas: { id: number; valor: string | null }[]) {
   const updates: string[] = []
   let corruptas = 0
+  let porDefecto = 0
   for (const { id, valor } of filas) {
     if (valor === null || esBcrypt(valor)) continue
     const texto = decodificarLegacy(valor)
@@ -207,9 +211,11 @@ async function convertirClaves(tabla: string, columna: string, filas: { id: numb
     if (!FORMATO_BCRYPT.test(hash) || !Number.isInteger(id)) {
       throw new Error(`Hash o id inesperado en ${tabla}.${columna}`)
     }
-    updates.push(`UPDATE ${tabla} SET ${columna} = '${hash}' WHERE id = ${id} AND ${columna} NOT LIKE '$2_$%';`)
+    const marcar = tabla === 'empleados' && texto === CLAVE_POR_DEFECTO
+    if (marcar) porDefecto++
+    updates.push(`UPDATE ${tabla} SET ${columna} = '${hash}'${marcar ? ', debe_cambiar_clave = 1' : ''} WHERE id = ${id} AND ${columna} NOT LIKE '$2_$%';`)
   }
-  return { updates, corruptas }
+  return { updates, corruptas, porDefecto }
 }
 
 async function sqlHashClaves(ahora: string, db: Database): Promise<string> {
@@ -242,7 +248,7 @@ async function sqlHashClaves(ahora: string, db: Database): Promise<string> {
     ...empleados.updates,
     `INSERT INTO historial_actividad (usuario, modulo, accion, detalle, fecha, creado_en)
       VALUES ('Sistema', 'Sistema', 'Protegió las contraseñas con hash',
-        'Migración 2026_12_hash_claves. Contraseñas de empleados: ${resumen(empleados)}. Contraseñas de usuarios del sistema: ${resumen(usuarios)}. Respuestas de seguridad: ${resumen(respuestas)}.',
+        'Migración 2026_12_hash_claves. Contraseñas de empleados: ${resumen(empleados)}; ${empleados.porDefecto} con la contraseña por defecto (la cambian al ingresar). Contraseñas de usuarios del sistema: ${resumen(usuarios)}. Respuestas de seguridad: ${resumen(respuestas)}.',
         '${ahora}', '${ahora}');`,
     `INSERT INTO _migraciones (id, aplicada_en) VALUES ('2026_12_hash_claves', '${ahora}');`,
     'COMMIT;',

@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { Navbar } from './Navbar'
 import { StatusBar } from './StatusBar'
 import { AvisoActualizacion } from './AvisoActualizacion'
+import { PantallaErrorBase } from './PantallaErrorBase'
 import { useNavigationStore } from '../../store/navigationStore'
 import { useOnboardingStore } from '../../store/onboardingStore'
 import { useInitDb } from '../../hooks/useInitDb'
@@ -55,18 +56,15 @@ export const Layout = () => {
     actualizarModulosVisibles(funcionesHabilitadas ?? [])
   }, [funcionesHabilitadas, actualizarModulosVisibles])
 
+  // Primero el error: si la base no abrió, `ready` nunca llega a true.
+  if (error) return <PantallaErrorBase error={error} />
+
   if (!ready) return (
     <div className="flex h-screen flex-col items-center justify-center gap-6 bg-[#0A0A0A] light:bg-[#FAFAFA]">
       <div className="animate-pulse">
         <VeloraLogo size={64} variant="auto" />
       </div>
       <span className="text-[11px] text-[#606060] tracking-widest uppercase">Iniciando...</span>
-    </div>
-  )
-
-  if (error) return (
-    <div className="flex h-screen items-center justify-center bg-[#0A0A0A]">
-      <span className="text-[11px] text-[#C0392B]">Error al iniciar la base de datos: {error}</span>
     </div>
   )
 

@@ -74,7 +74,8 @@ export const ModalEmpleado = ({ open, onClose, empleado }: ModalEmpleadoProps) =
 
   const nombreInvalido = nombre.trim() === ''
   const dniInvalido = !/^\d{7,}$/.test(dni.trim())
-  const passwordInvalido = !esEdicion && password.trim() === ''
+  const reactivando = !!empleado && !empleado.activo && activo
+  const passwordInvalido = (!esEdicion || reactivando) && password.trim() === ''
   const rolInvalido = rolId === ''
   const invalido = nombreInvalido || dniInvalido || passwordInvalido || rolInvalido
 
@@ -138,7 +139,7 @@ export const ModalEmpleado = ({ open, onClose, empleado }: ModalEmpleadoProps) =
         />
         <div className="grid grid-cols-2 gap-3">
           <Input
-            label={esEdicion ? 'Nueva contraseña (opcional)' : 'Contraseña *'}
+            label={reactivando ? 'Nueva contraseña *' : esEdicion ? 'Nueva contraseña (opcional)' : 'Contraseña *'}
             type="password"
             value={password}
             onChange={e => setPassword(e.target.value)}

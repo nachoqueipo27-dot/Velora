@@ -3,7 +3,10 @@ import { cn, iniciales } from '../../lib/utils'
 import { Button } from '../../components/ui/Button'
 import { Badge } from '../../components/ui/Badge'
 import { Select } from '../../components/ui/Select'
-import { useEmpleadosStore } from '../../store/empleadosStore'
+import { Input } from '../../components/ui/Input'
+import { Modal } from '../../components/ui/Modal'
+import { useEmpleadosStore, ErrorFaltaClave } from '../../store/empleadosStore'
+import { toast } from '../../store/toastStore'
 import { useOTStore } from '../../store/otStore'
 import type { Empleado } from '../../types/empleados'
 import { ModalEmpleado } from './ModalEmpleado'
@@ -26,6 +29,10 @@ export const ListadoEmpleados = ({ onVer }: ListadoEmpleadosProps) => {
   const [busqueda, setBusqueda] = useState('')
   const [filtroRol, setFiltroRol] = useState('Todos')
   const [modal, setModal] = useState<{ open: boolean; empleado: Empleado | null }>({ open: false, empleado: null })
+  // Reactivar pide contraseña nueva: al dar de baja se quitó el acceso anterior.
+  const [aReactivar, setAReactivar] = useState<Empleado | null>(null)
+  const [claveNueva, setClaveNueva] = useState('')
+  const [guardando, setGuardando] = useState(false)
   const [carga, setCarga] = useState<Map<number, number>>(new Map())
 
   useEffect(() => {
@@ -33,6 +40,25 @@ export const ListadoEmpleados = ({ onVer }: ListadoEmpleadosProps) => {
     cargarRoles()
     cargaPorEmpleado().then(setCarga)
   }, [cargarEmpleados, cargarRoles, cargaPorEmpleado])
+
+  const cambiarEstado = async (e: Empleado, clave?: string) => {
+    setGuardando(true)
+    try {
+      await toggleActivo(e.id, clave)
+      setAReactivar(null)
+    } catch (err) {
+      toast.error(err instanceof ErrorFaltaClave ? err.message : 'No se pudo cambiar el estado del empleado')
+      console.error(err)
+    } finally {
+      setGuardando(false)
+    }
+  }
+
+  const alternarActivo = (e: Empleado) => {
+    if (e.activo) { cambiarEstado(e); return }
+    setClaveNueva('')
+    setAReactivar(e)
+  }
 
   const filtrados = useMemo(() => {
     const q = busqueda.trim().toLowerCase()
@@ -118,7 +144,7 @@ export const ListadoEmpleados = ({ onVer }: ListadoEmpleadosProps) => {
                     <div className="flex items-center justify-end gap-1">
                       <IconBtn title="Ver ficha" onClick={() => onVer(e)}><Eye size={14} /></IconBtn>
                       <IconBtn title="Editar" onClick={() => setModal({ open: true, empleado: e })}><Pencil size={14} /></IconBtn>
-                      <IconBtn title={e.activo ? 'Desactivar' : 'Activar'} onClick={() => toggleActivo(e.id)}><Power size={14} /></IconBtn>
+                      <IconBtn title={e.activo ? 'Desactivar' : 'Activar'} onClick={() => alternarActivo(e)}><Power size={14} /></IconBtn>
                     </div>
                   </td>
                 </tr>
@@ -127,6 +153,25 @@ export const ListadoEmpleados = ({ onVer }: ListadoEmpleadosProps) => {
           </table>
         )}
       </div>
+
+      <Modal open={aReactivar != null} onClose={() => setAReactivar(null)} title="Reactivar empleado" maxWidth="max-w-sm"
+        footer={<>
+          <Button variant="ghost" onClick={() => setAReactivar(null)} disabled={guardando}>Cancelar</Button>
+          <Button onClick={() => aReactivar && cambiarEstado(aReactivar, claveNueva)} disabled={guardando || claveNueva.trim() === ''}>
+            {guardando ? 'Guardando…' : 'Reactivar'}
+          </Button>
+        </>}>
+        <div className="pb-1">
+          <Input
+            label="Contraseña nueva *"
+            type="password"
+            value={claveNueva}
+            onChange={ev => setClaveNueva(ev.target.value)}
+            hint={`${aReactivar?.nombre ?? ''} la va a usar para volver a entrar.`}
+            autoFocus
+          />
+        </div>
+      </Modal>
 
       <ModalEmpleado open={modal.open} empleado={modal.empleado} onClose={() => setModal({ open: false, empleado: null })} />
     </div>

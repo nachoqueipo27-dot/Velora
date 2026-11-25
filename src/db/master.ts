@@ -96,8 +96,43 @@ export async function loginLocal(
   return { id: usuario.id, nombre: usuario.nombre, dni: usuario.dni, rol: usuario.rol }
 }
 
+// El dueño es quien se creó en el onboarding (rol admin_master): Admin fijo. Antes, editarse
+// a sí mismo en Usuarios pisaba ese rol; si no queda ningún admin_master, es el primer
+// usuario de la instalación.
+export async function esDueno(dni: string): Promise<boolean> {
+  const db = await getMasterDb()
+  const rows = await db.select<{ id: number }[]>(
+    `SELECT id FROM usuarios_master
+     WHERE dni = ? AND (
+       rol = 'admin_master'
+       OR (
+         NOT EXISTS (SELECT 1 FROM usuarios_master WHERE rol = 'admin_master' AND dni IS NOT NULL)
+         AND id = (SELECT MIN(id) FROM usuarios_master WHERE dni IS NOT NULL)
+       )
+     )`,
+    [dni]
+  )
+  return rows.length > 0
+}
+
+export async function obtenerUsuarioMaster(dni: string): Promise<{ nombre: string; dni: string } | null> {
+  const db = await getMasterDb()
+  const rows = await db.select<{ nombre: string; dni: string }[]>(
+    `SELECT nombre, dni FROM usuarios_master WHERE dni = ?`,
+    [dni]
+  )
+  return rows[0] ?? null
+}
+
+// Quita el acceso por DNI (baja o eliminación del empleado). Al dueño nunca.
+export async function revocarAcceso(dni: string): Promise<void> {
+  if (await esDueno(dni)) return
+  const db = await getMasterDb()
+  await db.execute(`DELETE FROM usuarios_master WHERE dni = ?`, [dni])
+}
+
 // Guarda/actualiza un usuario en el cache local (upsert por DNI). La contraseña
-// siempre se cifra con bcrypt.
+// siempre se cifra con bcrypt. El rol del dueño (admin_master) no se pisa.
 export async function guardarUsuarioLocal(
   usuario: { nombre: string; dni: string; rol: string },
   password: string
@@ -111,7 +146,7 @@ export async function guardarUsuarioLocal(
      ON CONFLICT(dni) DO UPDATE SET
        nombre = excluded.nombre,
        password = excluded.password,
-       rol = excluded.rol`,
+       rol = CASE WHEN usuarios_master.rol = 'admin_master' THEN usuarios_master.rol ELSE excluded.rol END`,
     [usuario.nombre, usuario.dni, passwordHash, usuario.rol, now]
   )
 }

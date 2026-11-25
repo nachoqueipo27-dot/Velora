@@ -118,6 +118,7 @@ export const ResumenFinal = ({ onBack }: ResumenFinalProps) => {
         dni: data.adminDni ?? '',
         rol: 'admin_master',
         esAdminGeneral: true,
+        empleadoId: null,
       },
     })
     completarOnboarding()

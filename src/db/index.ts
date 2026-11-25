@@ -85,6 +85,7 @@ async function initSchema(database: Db) {
       dni            TEXT,
       rol_id         INTEGER NOT NULL,
       password       TEXT NOT NULL,
+      debe_cambiar_clave INTEGER DEFAULT 0,
       avatar         TEXT,
       activo         INTEGER DEFAULT 1,
       tipo_horario   TEXT DEFAULT 'fijo',
@@ -630,6 +631,11 @@ async function initSchema(database: Db) {
   // Migración: columna dni en empleados (DBs creadas antes de este cambio).
   try {
     await database.execute(`ALTER TABLE empleados ADD COLUMN dni TEXT`)
+  } catch { /* la columna ya existe */ }
+
+  // Migración: marca de contraseña por defecto (la completa 2026_12_hash_claves).
+  try {
+    await database.execute(`ALTER TABLE empleados ADD COLUMN debe_cambiar_clave INTEGER DEFAULT 0`)
   } catch { /* la columna ya existe */ }
 
   // Migración: unidad de medida en productos (DBs creadas antes de este cambio).

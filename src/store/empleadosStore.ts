@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { getDb } from '../db'
-import { getMasterDb, guardarUsuarioLocal } from '../db/master'
+import { getMasterDb, guardarUsuarioLocal, esDueno, revocarAcceso } from '../db/master'
 import { hashPassword } from '../lib/crypto'
 import { registrarActividad } from '../lib/registrarActividad'
 import type {
@@ -48,7 +48,8 @@ interface EmpleadosStore {
   crearEmpleado: (data: NuevoEmpleado) => Promise<void>
   actualizarEmpleado: (id: number, data: NuevoEmpleado) => Promise<void>
   eliminarEmpleado: (id: number) => Promise<void>
-  toggleActivo: (id: number) => Promise<void>
+  /** Para reactivar hace falta una contraseña nueva. */
+  toggleActivo: (id: number, claveNueva?: string) => Promise<void>
   seleccionarEmpleado: (e: Empleado | null) => void
 
   cargarHorarioFijo: (empleadoId: number) => Promise<HorarioFijo[]>
@@ -120,19 +121,29 @@ async function exigirClaveSiNoTieneAcceso(data: NuevoEmpleado) {
   }
 }
 
+// Quita el acceso por DNI, salvo que otro empleado activo use el mismo (o sea el dueño).
+async function quitarAcceso(db: Awaited<ReturnType<typeof getDb>>, id: number, dni: string | null) {
+  if (!dni) return
+  const otros = await db.select<{ n: number }[]>(
+    'SELECT COUNT(*) AS n FROM empleados WHERE dni = ? AND id <> ? AND activo = 1', [dni, id]
+  )
+  if ((otros[0]?.n ?? 0) === 0) await revocarAcceso(dni)
+}
+
 // Registra/actualiza el usuario en master.db (login global por DNI). Si hay
 // password la cifra (bcrypt vía guardarUsuarioLocal); si no, solo actualiza
-// nombre/rol sin tocar la contraseña. No hace nada si no hay DNI.
+// nombre/rol sin tocar la contraseña. No hace nada si no hay DNI o si el empleado está
+// inactivo (salvo el dueño, que siempre conserva su acceso).
 async function syncUsuarioMaster(data: NuevoEmpleado, roles: Rol[]) {
   const dni = data.dni?.trim()
-  if (!dni) return
+  if (!dni || (!data.activo && !(await esDueno(dni)))) return
   const rol = (roles.find(r => r.id === data.rolId)?.nombre ?? 'usuario').toLowerCase()
   const masterDb = await getMasterDb()
 
   if (tieneClave(data)) {
     await guardarUsuarioLocal({ nombre: data.nombre, dni, rol }, data.password)
   } else {
-    await masterDb.execute(`UPDATE usuarios_master SET nombre = ?, rol = ? WHERE dni = ?`, [data.nombre, rol, dni])
+    await masterDb.execute(`UPDATE usuarios_master SET nombre = ?, rol = CASE WHEN rol = 'admin_master' THEN rol ELSE ? END WHERE dni = ?`, [data.nombre, rol, dni])
   }
 }
 
@@ -204,11 +215,24 @@ export const useEmpleadosStore = create<EmpleadosStore>((set, get) => ({
   actualizarEmpleado: async (id, data) => {
     const db = await getDb()
     const now = new Date().toISOString()
-    await exigirClaveSiNoTieneAcceso(data)
+    const [previo] = await db.select<{ dni: string | null; activo: number | null }[]>(
+      'SELECT dni, activo FROM empleados WHERE id = ?', [id]
+    )
+    if (data.activo) {
+      if (previo?.activo !== 1 && !tieneClave(data)) {
+        throw new ErrorFaltaClave('Para reactivar al empleado ingresá una contraseña nueva.')
+      }
+      await exigirClaveSiNoTieneAcceso(data)
+    }
+    // Baja o cambio de DNI: el DNI anterior deja de tener acceso (antes de guardar, así un
+    // corte en el medio nunca deja entrando a alguien dado de baja).
+    if (previo && (!data.activo || previo.dni !== (data.dni?.trim() || null))) {
+      await quitarAcceso(db, id, previo.dni)
+    }
     if (tieneClave(data)) {
       const passwordHash = await hashPassword(data.password)
       await db.execute(
-        `UPDATE empleados SET nombre = ?, dni = ?, rol_id = ?, password = ?, activo = ?, tipo_horario = ?, actualizado_en = ? WHERE id = ?`,
+        `UPDATE empleados SET nombre = ?, dni = ?, rol_id = ?, password = ?, debe_cambiar_clave = 0, activo = ?, tipo_horario = ?, actualizado_en = ? WHERE id = ?`,
         [data.nombre, data.dni?.trim() || null, data.rolId, passwordHash, data.activo ? 1 : 0, data.tipoHorario, now, id]
       )
     } else {
@@ -232,6 +256,8 @@ export const useEmpleadosStore = create<EmpleadosStore>((set, get) => ({
   eliminarEmpleado: async (id) => {
     const db = await getDb()
     const emp = get().empleados.find(e => e.id === id)
+    const [fila] = await db.select<{ dni: string | null }[]>('SELECT dni FROM empleados WHERE id = ?', [id])
+    await quitarAcceso(db, id, fila?.dni ?? null)
     // Limpiar dependencias y el empleado en la DB del negocio.
     try { await db.execute('DELETE FROM horarios_fijos WHERE empleado_id = ?', [id]) } catch { /* tabla opcional */ }
     try { await db.execute('DELETE FROM asignacion_turnos WHERE empleado_id = ?', [id]) } catch { /* tabla opcional */ }
@@ -240,14 +266,23 @@ export const useEmpleadosStore = create<EmpleadosStore>((set, get) => ({
     await get().cargarEmpleados()
   },
 
-  toggleActivo: async (id) => {
+  toggleActivo: async (id, claveNueva = '') => {
     const db = await getDb()
     const emp = get().empleados.find(e => e.id === id)
     if (!emp) return
-    await db.execute(
-      'UPDATE empleados SET activo = ?, actualizado_en = ? WHERE id = ?',
-      [emp.activo ? 0 : 1, new Date().toISOString(), id]
-    )
+    const now = new Date().toISOString()
+    if (emp.activo) {
+      await quitarAcceso(db, id, emp.dni)
+      await db.execute('UPDATE empleados SET activo = 0, actualizado_en = ? WHERE id = ?', [now, id])
+    } else {
+      if (claveNueva.trim() === '') throw new ErrorFaltaClave('Para reactivar al empleado ingresá una contraseña nueva.')
+      const passwordHash = await hashPassword(claveNueva)
+      await db.execute(
+        'UPDATE empleados SET activo = 1, password = ?, debe_cambiar_clave = 0, actualizado_en = ? WHERE id = ?',
+        [passwordHash, now, id]
+      )
+      if (emp.dni) await guardarUsuarioLocal({ nombre: emp.nombre, dni: emp.dni, rol: emp.rolNombre.toLowerCase() }, claveNueva)
+    }
     await get().cargarEmpleados()
   },
 

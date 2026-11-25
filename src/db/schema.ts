@@ -49,8 +49,10 @@ export const permisos = sqliteTable('permisos', {
 export const empleados = sqliteTable('empleados', {
   id:            integer('id').primaryKey({ autoIncrement: true }),
   nombre:        text('nombre').notNull(),
+  dni:           text('dni'),
   rolId:         integer('rol_id').notNull(),
-  password:      text('password').notNull(),
+  password:      text('password').notNull(), // hash bcrypt
+  debeCambiarClave: integer('debe_cambiar_clave').default(0), // 1 = al ingresar tiene que elegir otra
   avatar:        text('avatar'),
   activo:        integer('activo').default(1),
   tipoHorario:   text('tipo_horario').default('fijo'), // 'fijo' | 'turno'
