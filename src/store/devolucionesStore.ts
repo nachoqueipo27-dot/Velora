@@ -130,16 +130,18 @@ export const useDevolucionesStore = create<DevolucionesStore>((set, get) => ({
            VALUES (?, ?, ?, ?, ?, ?, ?)`,
           [devolucionId, it.productoId, it.nombre, it.cantidadOriginal, it.cantidadDevuelta, it.precioUnitario, it.subtotalDevuelto]
         )
-        // Reingreso de stock
-        await db.execute(
-          'UPDATE productos SET stock = stock + ?, actualizado_en = ? WHERE id = ?',
-          [it.cantidadDevuelta, now, it.productoId]
-        )
-        await db.execute(
-          `INSERT INTO movimientos_stock (producto_id, tipo, cantidad, motivo, referencia_id, fecha, creado_en)
-           VALUES (?, 'entrada', ?, ?, ?, ?, ?)`,
-          [it.productoId, it.cantidadDevuelta, motivoMov, devolucionId, now, now]
-        )
+        // Reingreso de stock (salvo "Producto X", producto_id 0: no está en el inventario)
+        if (it.productoId !== 0) {
+          await db.execute(
+            'UPDATE productos SET stock = stock + ?, actualizado_en = ? WHERE id = ?',
+            [it.cantidadDevuelta, now, it.productoId]
+          )
+          await db.execute(
+            `INSERT INTO movimientos_stock (producto_id, tipo, cantidad, motivo, referencia_id, fecha, creado_en)
+             VALUES (?, 'entrada', ?, ?, ?, ?, ?)`,
+            [it.productoId, it.cantidadDevuelta, motivoMov, devolucionId, now, now]
+          )
+        }
         itemsCreados.push({
           id: Number(itemRes.lastInsertId), devolucionId, productoId: it.productoId, nombre: it.nombre,
           cantidadOriginal: it.cantidadOriginal, cantidadDevuelta: it.cantidadDevuelta,

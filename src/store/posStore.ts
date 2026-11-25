@@ -5,6 +5,7 @@ import { useSessionStore } from './sessionStore'
 import { useInventarioStore } from './inventarioStore'
 import { permiteDecimales } from '../types/inventario'
 import type { FormaPago, ItemCarrito, VentaPOS } from '../types/pos'
+import type { Producto } from '../types/inventario'
 import { aCentavos, aplicarPorcentaje, porCantidad } from '../lib/dinero'
 import { exigirEditar } from '../lib/permisos'
 
@@ -22,6 +23,10 @@ interface PosStore {
   itemEnEdicion: number | null
 
   agregarProducto: (productoId: number, tipoItem: 'simple' | 'conjunto') => Promise<void>
+  /** Escaneo: suma `cantidad` (un pack suma sus unidades; kg/metros con decimales). */
+  sumarProducto: (producto: Producto, cantidad: number) => void
+  /** "Producto X": código desconocido vendido sin dar de alta. No descuenta stock. */
+  agregarLibre: (datos: { descripcion: string; precio: number; codigo: string }) => void
   quitarProducto: (productoId: number) => void
   actualizarCantidad: (productoId: number, cantidad: number) => void
   limpiarItemEnEdicion: () => void
@@ -115,6 +120,31 @@ export const usePosStore = create<PosStore>((set, get) => ({
     }
   },
 
+  sumarProducto: (prod, cantidad) => {
+    const fraccionable = permiteDecimales(prod.unidadMedida)
+    const n = fraccionable ? Math.max(0.01, cantidad) : Math.max(1, Math.round(cantidad))
+    const existe = get().carrito.find(i => i.productoId === prod.id)
+    if (existe) {
+      set({ carrito: recomputar(get().carrito.map(i => i.productoId === prod.id ? { ...i, cantidad: i.cantidad + n } : i), get().tipoDescuentoGlobal) })
+    } else {
+      const nuevo: ItemCarrito = {
+        productoId: prod.id, tipoItem: prod.tipo, nombre: prod.nombre, precioUnitario: prod.precio,
+        cantidad: n, descuentoItem: 0, subtotal: 0, imagen: prod.imagen, unidadMedida: prod.unidadMedida,
+      }
+      set({ carrito: recomputar([...get().carrito, nuevo], get().tipoDescuentoGlobal) })
+    }
+  },
+
+  agregarLibre: ({ descripcion, precio, codigo }) => {
+    // Id negativo y único en el carrito (quitar/cambiar cantidad usan productoId).
+    const id = Math.min(0, ...get().carrito.map(i => i.productoId)) - 1
+    const nuevo: ItemCarrito = {
+      productoId: id, tipoItem: 'libre', codigo, nombre: descripcion.trim() || 'Producto X',
+      precioUnitario: precio, cantidad: 1, descuentoItem: 0, subtotal: precio, imagen: null, unidadMedida: 'unidad',
+    }
+    set({ carrito: recomputar([...get().carrito, nuevo], get().tipoDescuentoGlobal) })
+  },
+
   quitarProducto: (productoId) => set({ carrito: get().carrito.filter(i => i.productoId !== productoId) }),
 
   limpiarItemEnEdicion: () => set({ itemEnEdicion: null }),
@@ -179,12 +209,15 @@ export const usePosStore = create<PosStore>((set, get) => ({
       const ventaId = Number(res.lastInsertId)
 
       for (const it of carrito) {
+        const libre = it.tipoItem === 'libre'
         await db.execute(
-          `INSERT INTO items_venta_pos (venta_id, producto_id, tipo_item, nombre, cantidad, precio_unitario, descuento_item, subtotal, tipo_descuento_item)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [ventaId, it.productoId, it.tipoItem, it.nombre, it.cantidad, it.precioUnitario, descuentoItemGuardado(it.descuentoItem), it.subtotal, tipoDescuentoGlobal]
+          `INSERT INTO items_venta_pos (venta_id, producto_id, tipo_item, nombre, cantidad, precio_unitario, descuento_item, subtotal, tipo_descuento_item, codigo)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [ventaId, libre ? 0 : it.productoId, it.tipoItem, it.nombre, it.cantidad, it.precioUnitario,
+           descuentoItemGuardado(it.descuentoItem), it.subtotal, tipoDescuentoGlobal, it.codigo ?? null]
         )
-        await descontarStock(db, it.productoId, it.tipoItem, it.cantidad, numero, now)
+        // "Producto X" no está en el inventario: no descuenta stock.
+        if (!libre) await descontarStock(db, it.productoId, it.tipoItem, it.cantidad, numero, now)
       }
 
       // Registrar cobro en caja
@@ -198,7 +231,8 @@ export const usePosStore = create<PosStore>((set, get) => ({
         id: ventaId, numero, empleadoId: empleado?.id ?? null, empleadoNombre: empleado?.nombre ?? null,
         subtotal, descuento, totalFinal, formaPago, fecha: now,
         items: carrito.map((it, idx) => ({
-          id: idx, ventaId, productoId: it.productoId, tipoItem: it.tipoItem, nombre: it.nombre,
+          id: idx, ventaId, productoId: it.tipoItem === 'libre' ? 0 : it.productoId, tipoItem: it.tipoItem, nombre: it.nombre,
+          codigo: it.codigo ?? null,
           cantidad: it.cantidad, precioUnitario: it.precioUnitario, descuentoItem: descuentoItemGuardado(it.descuentoItem),
           tipoDescuentoItem: tipoDescuentoGlobal, subtotal: it.subtotal,
         })),

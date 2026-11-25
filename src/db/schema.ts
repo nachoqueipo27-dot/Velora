@@ -151,6 +151,7 @@ export const productos = sqliteTable('productos', {
   // 'unidad'|'metro'|'kilogramo'|'litro'|'caja' — ver UNIDADES_MEDIDA en types/inventario.ts.
   // Determina si `stock`/cantidades vendidas de este producto aceptan decimales.
   unidadMedida:  text('unidad_medida').notNull().default('unidad'),
+  borrador:      integer('borrador').default(0), // 1 = alta rápida sin completar (nombre/precio)
   activo:        integer('activo').default(1),
   creadoEn:      text('creado_en').notNull(),
   actualizadoEn: text('actualizado_en').notNull(),
@@ -388,7 +389,7 @@ export const itemsVentaPOS = sqliteTable('items_venta_pos', {
   id:             integer('id').primaryKey({ autoIncrement: true }),
   ventaId:        integer('venta_id').notNull(),
   productoId:     integer('producto_id').notNull(),
-  tipoItem:       text('tipo_item').notNull(), // 'simple'|'conjunto'
+  tipoItem:       text('tipo_item').notNull(), // 'simple' | 'conjunto' | 'libre' (Producto X)
   nombre:         text('nombre').notNull(),
   cantidad:       real('cantidad').notNull(), // real: producto puede ser fraccionable
   precioUnitario: integer('precio_unitario').notNull(),
@@ -396,6 +397,7 @@ export const itemsVentaPOS = sqliteTable('items_venta_pos', {
   descuentoItem:  integer('descuento_item').default(0),
   subtotal:       integer('subtotal').notNull(),
   tipoDescuentoItem: text('tipo_descuento_item').default('porcentaje'), // 'porcentaje' | 'monto'
+  codigo:         text('codigo'), // código escaneado; en 'libre' (Producto X) producto_id = 0
 })
 
 export const cobrosCaja = sqliteTable('cobros_caja', {

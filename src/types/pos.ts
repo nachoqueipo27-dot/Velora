@@ -9,8 +9,11 @@ export const FORMAS_PAGO: { value: FormaPago; label: string }[] = [
 ]
 
 export interface ItemCarrito {
+  /** En 'libre' (Producto X) es negativo y único dentro del carrito; se guarda como 0. */
   productoId: number
-  tipoItem: 'simple' | 'conjunto'
+  tipoItem: 'simple' | 'conjunto' | 'libre'
+  /** Código escaneado (solo 'libre': un producto que no está en el inventario). */
+  codigo?: string
   nombre: string
   /** Centavos. */
   precioUnitario: number
@@ -26,8 +29,10 @@ export interface ItemCarrito {
 export interface ItemVentaPOS {
   id: number
   ventaId: number
+  /** 0 en 'libre' (Producto X). */
   productoId: number
-  tipoItem: 'simple' | 'conjunto'
+  tipoItem: 'simple' | 'conjunto' | 'libre'
+  codigo?: string | null
   nombre: string
   cantidad: number
   /** Centavos. */

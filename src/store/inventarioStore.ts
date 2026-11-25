@@ -31,7 +31,16 @@ export interface NuevoProducto {
   activo: boolean
   /** Códigos de barras. undefined = no tocar los que ya tiene. */
   codigos?: CodigoProducto[]
+  /** Solo al crear: alta como borrador desde el punto de venta. */
+  borrador?: boolean
 }
+
+/** Nombre de los borradores creados desde el punto de venta. */
+export const PREFIJO_BORRADOR = 'Producto sin nombre'
+
+/** Un borrador deja de serlo cuando tiene nombre propio y precio. */
+const estaCompleto = (d: { nombre: string; precio: number }) =>
+  d.nombre.trim() !== '' && !d.nombre.startsWith(PREFIJO_BORRADOR) && d.precio > 0
 
 interface InventarioStore {
   productos: Producto[]
@@ -74,6 +83,7 @@ export const mapProducto = (r: any): Producto => ({
   trazabilidad: (r.trazabilidad ?? 'ninguna') as Trazabilidad,
   unidadMedida: (r.unidad_medida ?? 'unidad') as UnidadMedida,
   activo: r.activo === 1 || r.activo === true,
+  borrador: r.borrador === 1,
   creadoEn: r.creado_en,
   actualizadoEn: r.actualizado_en,
 })
@@ -147,6 +157,7 @@ export const useInventarioStore = create<InventarioStore>((set, get) => ({
       const rows = await db.select<any[]>(
         `SELECT p.*, c.nombre as categoria_nombre
          FROM productos p LEFT JOIN categorias c ON p.categoria_id = c.id
+         WHERE p.tipo <> 'libre' -- centinela de "Producto X" (ver seedConfiguracionBase)
          ORDER BY p.nombre ASC`
       )
       set({ productos: rows.map(mapProducto), loading: false })
@@ -185,10 +196,11 @@ export const useInventarioStore = create<InventarioStore>((set, get) => ({
     const codigos = data.codigos ? await validarCodigos(db, null, data.codigos) : []
     const res = await db.execute(
       `INSERT INTO productos
-       (nombre, tipo, descripcion, categoria_id, precio, precio_costo, moneda_costo, codigo_sku, stock, stock_minimo, imagen, trazabilidad, unidad_medida, activo, creado_en, actualizado_en)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       (nombre, tipo, descripcion, categoria_id, precio, precio_costo, moneda_costo, codigo_sku, stock, stock_minimo, imagen, trazabilidad, unidad_medida, activo, borrador, creado_en, actualizado_en)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [data.nombre, data.tipo, data.descripcion, data.categoriaId, data.precio, data.precioCosto, data.monedaCosto,
-       data.codigoSku, data.stock, data.stockMinimo, data.imagen, data.trazabilidad, data.unidadMedida, data.activo ? 1 : 0, now, now]
+       data.codigoSku, data.stock, data.stockMinimo, data.imagen, data.trazabilidad, data.unidadMedida, data.activo ? 1 : 0,
+       data.borrador ? 1 : 0, now, now]
     )
     const id = Number(res.lastInsertId)
     if (data.tipo === 'conjunto') await guardarComponentes(db, id, componentes)
@@ -203,11 +215,15 @@ export const useInventarioStore = create<InventarioStore>((set, get) => ({
     const db = await getDb()
     const now = new Date().toISOString()
     const codigos = data.codigos ? await validarCodigos(db, id, data.codigos) : null
+    // Un borrador sigue siéndolo hasta que tenga nombre propio y precio.
+    const eraBorrador = get().productos.find(p => p.id === id)?.borrador ?? false
+    const sigueBorrador = eraBorrador && !estaCompleto(data)
     await db.execute(
       `UPDATE productos SET nombre=?, tipo=?, descripcion=?, categoria_id=?, precio=?, precio_costo=?, moneda_costo=?,
-        codigo_sku=?, stock=?, stock_minimo=?, imagen=?, trazabilidad=?, unidad_medida=?, activo=?, actualizado_en=? WHERE id=?`,
+        codigo_sku=?, stock=?, stock_minimo=?, imagen=?, trazabilidad=?, unidad_medida=?, activo=?, borrador=?, actualizado_en=? WHERE id=?`,
       [data.nombre, data.tipo, data.descripcion, data.categoriaId, data.precio, data.precioCosto, data.monedaCosto,
-       data.codigoSku, data.stock, data.stockMinimo, data.imagen, data.trazabilidad, data.unidadMedida, data.activo ? 1 : 0, now, id]
+       data.codigoSku, data.stock, data.stockMinimo, data.imagen, data.trazabilidad, data.unidadMedida, data.activo ? 1 : 0,
+       sigueBorrador ? 1 : 0, now, id]
     )
     if (data.tipo === 'conjunto') await guardarComponentes(db, id, componentes)
     else await db.execute('DELETE FROM conjunto_componentes WHERE conjunto_id = ?', [id])

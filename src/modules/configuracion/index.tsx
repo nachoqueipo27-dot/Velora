@@ -15,14 +15,15 @@ import { EditorPDF } from './EditorPDF'
 import { HistorialActividad } from './HistorialActividad'
 import { Backup } from './Backup'
 import { ConfigGeneral } from './ConfigGeneral'
+import { ConfigPuntoVenta } from './ConfigPuntoVenta'
 import {
   Building2, Users, ToggleLeft, Tags, Wallet, Tag, LayoutTemplate,
-  Ban, DollarSign, Bell, FileText, History, DatabaseBackup, SlidersHorizontal,
+  Ban, DollarSign, Bell, FileText, History, DatabaseBackup, SlidersHorizontal, ScanBarcode,
 } from 'lucide-react'
 
 type Seccion =
   | 'negocio' | 'usuarios' | 'funciones' | 'categorias' | 'cat-gastos' | 'etiquetas'
-  | 'plantillas' | 'motivos' | 'general' | 'multimoneda' | 'alertas'
+  | 'plantillas' | 'motivos' | 'general' | 'punto-venta' | 'multimoneda' | 'alertas'
   | 'pdf' | 'historial' | 'backup'
 
 const GRUPOS: { titulo: string; items: { id: Seccion; label: string; icon: React.ReactNode }[] }[] = [
@@ -40,6 +41,7 @@ const GRUPOS: { titulo: string; items: { id: Seccion; label: string; icon: React
   ]},
   { titulo: 'Operación', items: [
     { id: 'general',     label: 'General',         icon: <SlidersHorizontal size={15} /> },
+    { id: 'punto-venta', label: 'Punto de venta',  icon: <ScanBarcode size={15} /> },
     { id: 'multimoneda', label: 'Multimoneda',     icon: <DollarSign size={15} /> },
     { id: 'alertas',     label: 'Alertas globales', icon: <Bell size={15} /> },
     { id: 'pdf',         label: 'Editor de PDFs',   icon: <FileText size={15} /> },
@@ -67,6 +69,7 @@ const Configuracion = () => {
       case 'plantillas': return <PlantillasOT />
       case 'motivos':    return <MotivosCancelacion />
       case 'general':    return <ConfigGeneral />
+      case 'punto-venta':return <ConfigPuntoVenta />
       case 'multimoneda':return <Multimoneda />
       case 'alertas':    return <AlertasGlobales />
       case 'pdf':        return <EditorPDF />

@@ -193,6 +193,7 @@ async function initSchema(database: Db) {
       imagen          TEXT,
       trazabilidad    TEXT DEFAULT 'ninguna',
       unidad_medida   TEXT NOT NULL DEFAULT 'unidad',
+      borrador        INTEGER DEFAULT 0,
       activo          INTEGER DEFAULT 1,
       creado_en       TEXT NOT NULL,
       actualizado_en  TEXT NOT NULL
@@ -480,6 +481,7 @@ async function initSchema(database: Db) {
       descuento_item   INTEGER DEFAULT 0,
       subtotal         INTEGER NOT NULL,
       tipo_descuento_item TEXT DEFAULT 'porcentaje',
+      codigo           TEXT,
       FOREIGN KEY (venta_id)    REFERENCES ventas_pos(id),
       FOREIGN KEY (producto_id) REFERENCES productos(id)
     )
@@ -667,6 +669,16 @@ async function initSchema(database: Db) {
     await database.execute(`ALTER TABLE items_venta_pos ADD COLUMN tipo_descuento_item TEXT DEFAULT 'porcentaje'`)
   } catch { /* la columna ya existe */ }
 
+  // Migración: borrador en productos (alta desde el punto de venta sin nombre ni precio).
+  try {
+    await database.execute(`ALTER TABLE productos ADD COLUMN borrador INTEGER DEFAULT 0`)
+  } catch { /* la columna ya existe */ }
+
+  // Migración: código escaneado en los ítems vendidos ("Producto X" no tiene producto).
+  try {
+    await database.execute(`ALTER TABLE items_venta_pos ADD COLUMN codigo TEXT`)
+  } catch { /* la columna ya existe */ }
+
   // NOTA sobre productos.stock / movimientos_stock.cantidad / items_venta_pos.cantidad /
   // items_presupuesto.cantidad / items_orden_compra.cantidad / conjunto_componentes.cantidad
   // (INTEGER -> REAL): en DBs ya existentes estas columnas NO se migran con ALTER/recreación
@@ -781,6 +793,16 @@ async function seedConfiguracionBase(database: Db) {
   await database.execute(
     `INSERT OR IGNORE INTO configuracion (clave, valor) VALUES ('categorias_gastos', ?)`,
     [JSON.stringify(catGastos)]
+  )
+
+  // Producto centinela id 0 para las ventas de "Producto X" (código desconocido vendido
+  // sin dar de alta): items_venta_pos.producto_id tiene FOREIGN KEY a productos y la
+  // conexión las aplica, así que producto_id = 0 necesita esta fila. tipo 'libre' e
+  // inactivo: no aparece en listados (cargarProductos excluye 'libre'), no tiene stock ni precio.
+  await database.execute(
+    `INSERT OR IGNORE INTO productos (id, nombre, tipo, precio, precio_costo, stock, stock_minimo, unidad_medida, activo, creado_en, actualizado_en)
+     VALUES (0, 'Producto X (venta sin alta)', 'libre', 0, 0, 0, 0, 'unidad', 0, ?, ?)`,
+    [now, now]
   )
 
   // Tipo de cambio inicial

@@ -25,6 +25,10 @@ export const ListadoProductos = ({ tipo, onVer }: ListadoProductosProps) => {
   const [modal, setModal] = useState<{ open: boolean; producto: Producto | null }>({ open: false, producto: null })
   const [confirmId, setConfirmId] = useState<number | null>(null)
   const [warnings, setWarnings] = useState<Record<number, boolean>>({})
+  // Bandeja "Productos por completar": borradores creados desde el punto de venta.
+  const [soloBorradores, setSoloBorradores] = useState(false)
+  const cantBorradores = useMemo(() => productos.filter(p => p.tipo === tipo && p.borrador).length, [productos, tipo])
+  useEffect(() => { if (cantBorradores === 0) setSoloBorradores(false) }, [cantBorradores])
 
   const prodMap = useMemo(() => {
     const m = new Map<number, Producto>()
@@ -36,10 +40,11 @@ export const ListadoProductos = ({ tipo, onVer }: ListadoProductosProps) => {
     const q = busqueda.trim().toLowerCase()
     return productos.filter(p =>
       p.tipo === tipo &&
+      (!soloBorradores || p.borrador) &&
       (filtroCat === 'Todas' || p.categoriaNombre === filtroCat) &&
       (q === '' || p.nombre.toLowerCase().includes(q) || p.codigoSku.toLowerCase().includes(q))
     )
-  }, [productos, tipo, busqueda, filtroCat])
+  }, [productos, tipo, busqueda, filtroCat, soloBorradores])
 
   // Advertencia de componentes bajo mínimo para conjuntos
   useEffect(() => {
@@ -84,6 +89,19 @@ export const ListadoProductos = ({ tipo, onVer }: ListadoProductosProps) => {
         </Button>
       </div>
 
+      {cantBorradores > 0 && (
+        <div className="mb-4 flex flex-wrap items-center gap-3 rounded-tarjeta border border-acento/30 bg-superficie px-4 py-3 text-cuerpo text-texto">
+          <span className="flex-[1_1_260px] text-seccion">
+            <strong className="font-semibold">Productos por completar ({cantBorradores}).</strong>{' '}
+            Se dieron de alta como borrador desde el punto de venta. Al ponerles nombre y precio dejan de ser borrador.
+          </span>
+          <button type="button" onClick={() => setSoloBorradores(v => !v)}
+            className="h-[34px] rounded-pastilla border border-borde-fuerte bg-superficie px-3.5 text-cuerpo text-texto hover:bg-superficie-suave">
+            {soloBorradores ? 'Ver todos' : 'Completar ahora'}
+          </button>
+        </div>
+      )}
+
       <div className="flex-1 overflow-y-auto">
         {loading && productos.length === 0 ? (
           <div className="flex flex-col gap-2">{Array.from({ length: 5 }).map((_, i) => <div key={i} className="h-12 rounded-input animate-shimmer" />)}</div>
@@ -114,6 +132,9 @@ export const ListadoProductos = ({ tipo, onVer }: ListadoProductosProps) => {
                       </div>
                       <div className="flex items-center gap-1.5">
                         <span className="font-medium text-white light:text-black">{p.nombre}</span>
+                        {p.borrador && (
+                          <span className="rounded-pastilla bg-superficie-suave px-2 py-0.5 text-[11px] font-medium text-texto-2">Borrador</span>
+                        )}
                         {tipo === 'conjunto' && warnings[p.id] && (
                           <span title="Algún componente está bajo mínimo" className="text-[#D4921A]"><AlertTriangle size={13} /></span>
                         )}

@@ -78,8 +78,10 @@ export async function hayDatosDelComercio(): Promise<boolean> {
     'empleados', 'clientes', 'productos', 'proveedores', 'ventas_pos', 'ordenes_trabajo',
     'presupuestos', 'cobros_caja', 'gastos_operativos', 'cierres_caja', 'citas',
   ]
+  // El producto centinela de "Producto X" (tipo 'libre', id 0) lo siembra la app: no cuenta.
+  const condicion = (t: string) => (t === 'productos' ? ` WHERE tipo <> 'libre'` : '')
   const filas = await db.select<{ hay: number }[]>(
-    `SELECT (${tablas.map(t => `EXISTS (SELECT 1 FROM ${t})`).join(' OR ')}) AS hay`
+    `SELECT (${tablas.map(t => `EXISTS (SELECT 1 FROM ${t}${condicion(t)})`).join(' OR ')}) AS hay`
   )
   return filas[0]?.hay === 1
 }

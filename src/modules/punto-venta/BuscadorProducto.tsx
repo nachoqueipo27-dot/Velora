@@ -15,7 +15,8 @@ export const BuscadorProducto = () => {
 
   const filtrados = useMemo(() => {
     const q = busqueda.trim().toLowerCase()
-    return productos.filter(p => p.tipo === tipo && p.activo &&
+    // Los borradores (sin nombre ni precio) no se venden hasta completarlos en Inventario.
+    return productos.filter(p => p.tipo === tipo && p.activo && !p.borrador &&
       (q === '' || p.nombre.toLowerCase().includes(q) || p.codigoSku.toLowerCase().includes(q)))
   }, [productos, tipo, busqueda])
 

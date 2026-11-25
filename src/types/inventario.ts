@@ -20,6 +20,8 @@ export interface Producto {
   trazabilidad: 'ninguna' | 'serie' | 'lote'
   unidadMedida: UnidadMedida
   activo: boolean
+  /** Alta rápida sin completar (sin nombre real o sin precio). Se ve en "Productos por completar". */
+  borrador: boolean
   creadoEn: string
   actualizadoEn: string
 }

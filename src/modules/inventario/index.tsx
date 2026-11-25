@@ -10,6 +10,8 @@ import { AccesoRestringido } from '../../components/ui/AccesoRestringido'
 import { usePermiso } from '../../lib/permisos'
 import { useEscaneoEnModulo } from '../../lib/escaneo'
 import { toast } from '../../store/toastStore'
+import { useEscaneoStore } from '../../store/escaneoStore'
+import { AltaRapida } from '../../components/escaneo/AltaRapida'
 import { Package, Boxes, TrendingUp, BarChart3 } from 'lucide-react'
 
 type Seccion = 'productos' | 'conjuntos' | 'rotacion' | 'rentabilidad'
@@ -34,15 +36,24 @@ const Inventario = () => {
 
   const verFicha = (p: Producto) => seleccionarProducto(p)
 
-  // Lector: código conocido → abre la ficha del producto.
+  // Lector: código conocido → abre la ficha; desconocido → Alta rápida (si puede editar).
+  const puedeDarAlta = usePermiso('inventario') === 'editar'
+  const [altaCodigo, setAltaCodigo] = useState<string | null>(null)
   useEscaneoEnModulo('inventario', ({ codigo, resultado }) => {
     if (resultado) {
       setSeccion(resultado.producto.tipo === 'conjunto' ? 'conjuntos' : 'productos')
       seleccionarProducto(resultado.producto)
+    } else if (puedeDarAlta) {
+      setAltaCodigo(codigo)
     } else {
-      toast.info(`El código ${codigo} no está registrado`)
+      toast.info(`El código ${codigo} no está registrado. Pedile al encargado que lo dé de alta.`)
     }
   })
+  // "Darlo de alta" desde el aviso flotante de otra pantalla.
+  useEffect(() => {
+    const pendiente = useEscaneoStore.getState().tomarAltaPendiente()
+    if (pendiente && puedeDarAlta) setAltaCodigo(pendiente)
+  }, [puedeDarAlta])
 
   const irA = (id: Seccion) => {
     seleccionarProducto(null)
@@ -83,6 +94,15 @@ const Inventario = () => {
         </nav>
       </aside>
       <section className="flex-1 overflow-hidden p-6">{renderContenido()}</section>
+
+      {altaCodigo && (
+        <AltaRapida codigo={altaCodigo} contexto="inventario" onCerrar={() => setAltaCodigo(null)}
+          onCreado={(p, borrador) => {
+            setAltaCodigo(null)
+            toast.success(borrador ? 'Guardado como borrador: queda en Productos por completar.' : `«${p.nombre}» dado de alta`)
+            if (!borrador) { setSeccion('productos'); seleccionarProducto(p) }
+          }} />
+      )}
     </div>
   )
 }
