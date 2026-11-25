@@ -156,6 +156,16 @@ export const productos = sqliteTable('productos', {
   actualizadoEn: text('actualizado_en').notNull(),
 })
 
+// Códigos de barras por producto (desde 1.4.0). productos.codigo_barras ya no se usa.
+export const productosCodigos = sqliteTable('productos_codigos', {
+  id:              integer('id').primaryKey({ autoIncrement: true }),
+  productoId:      integer('producto_id').notNull(),
+  codigo:          text('codigo').notNull().unique(),
+  tipo:            text('tipo').notNull().default('unidad'), // 'unidad' | 'pack'
+  unidadesPorPack: real('unidades_por_pack').default(1),
+  creadoEn:        text('creado_en').notNull(),
+})
+
 export const conjuntoComponentes = sqliteTable('conjunto_componentes', {
   id:           integer('id').primaryKey({ autoIncrement: true }),
   conjuntoId:   integer('conjunto_id').notNull(),

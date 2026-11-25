@@ -44,6 +44,7 @@ interface Migracion {
 const MIGRACIONES: Migracion[] = [
   { id: '2026_12_centavos', sql: sqlCentavos },
   { id: '2026_12_hash_claves', sql: sqlHashClaves, antes: limpiarClavesLocalStorage },
+  { id: '2026_12_codigos', sql: sqlCodigos },
 ]
 
 /** true si la base todavía no tiene tablas de negocio (hay que llamarla ANTES de initSchema). */
@@ -276,3 +277,39 @@ function limpiarClavesLocalStorage(): void {
     }
   }
 }
+
+// ─── 2026_12_codigos ─────────────────────────────────────────────────────────
+// Copia cada productos.codigo_barras no vacío a productos_codigos (tipo 'unidad').
+// La tabla la crea initSchema antes de migrar. productos.codigo_barras no se borra,
+// pero deja de usarse. Si dos productos tienen el mismo código, se queda el de menor id y
+// los demás se cuentan (y se listan) en el historial de actividad: no frena.
+
+const CODIGO_VIEJO = `TRIM(COALESCE(codigo_barras, ''))`
+const ES_REPETIDO = `${CODIGO_VIEJO} <> '' AND EXISTS (
+    SELECT 1 FROM productos q WHERE TRIM(COALESCE(q.codigo_barras, '')) = TRIM(COALESCE(p.codigo_barras, '')) AND q.id < p.id)`
+
+function sqlCodigos(ahora: string): string {
+  return [
+    'BEGIN;',
+    // 1. Registro con los conteos, antes de copiar.
+    `INSERT INTO historial_actividad (usuario, modulo, accion, detalle, fecha, creado_en)
+      SELECT 'Sistema', 'Sistema', 'Pasó los códigos de barras a la tabla de códigos',
+        'Migración 2026_12_codigos. Códigos copiados: '
+        || (SELECT COUNT(*) FROM productos p WHERE ${CODIGO_VIEJO} <> '' AND NOT (${ES_REPETIDO}))
+        || '. Repetidos sin copiar (el código quedó en el primer producto): '
+        || (SELECT COUNT(*) FROM productos p WHERE ${ES_REPETIDO})
+        || COALESCE(' → ' || (SELECT group_concat(p.nombre || ' (' || TRIM(p.codigo_barras) || ')', '; ')
+             FROM productos p WHERE ${ES_REPETIDO}), '')
+        || '.',
+        '${ahora}', '${ahora}';`,
+    // 2. Copia en orden de id: con el UNIQUE de codigo, el primero gana y los repetidos se ignoran.
+    `INSERT OR IGNORE INTO productos_codigos (producto_id, codigo, tipo, unidades_por_pack, creado_en)
+      SELECT id, ${CODIGO_VIEJO}, 'unidad', 1, '${ahora}'
+      FROM productos WHERE ${CODIGO_VIEJO} <> '' ORDER BY id;`,
+    `INSERT INTO _migraciones (id, aplicada_en) VALUES ('2026_12_codigos', '${ahora}');`,
+    'COMMIT;',
+  ].join('\n')
+}
+
+/** Solo para verificar el script fuera de la app (no se usa en runtime). */
+export const _sqlCodigosParaPruebas = sqlCodigos

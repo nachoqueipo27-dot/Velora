@@ -12,6 +12,9 @@ import {
 } from '../../types/inventario'
 import { ImagenCropper } from './components/ImagenCropper'
 import { ComponentesList } from './components/ComponentesList'
+import { SeccionCodigos } from './components/SeccionCodigos'
+import { cargarCodigos, type CodigoProducto } from '../../lib/codigos'
+import { toast } from '../../store/toastStore'
 import { Plus } from 'lucide-react'
 import { aCentavos, aPesos } from '../../lib/dinero'
 import { useEdicion } from '../../lib/permisos'
@@ -44,6 +47,7 @@ export const ModalProducto = ({ open, onClose, producto, tipoInicial = 'simple' 
   const [unidadMedida, setUnidadMedida] = useState<UnidadMedida>('unidad')
   const [imagen, setImagen] = useState<string | null>(null)
   const [componentes, setComponentes] = useState<ComponenteInput[]>([])
+  const [codigos, setCodigos] = useState<CodigoProducto[]>([])
   const [nuevaCat, setNuevaCat] = useState('')
   const [mostrarNuevaCat, setMostrarNuevaCat] = useState(false)
   const [guardando, setGuardando] = useState(false)
@@ -71,10 +75,11 @@ export const ModalProducto = ({ open, onClose, producto, tipoInicial = 'simple' 
         cargarComponentes(producto.id).then(comps =>
           setComponentes(comps.map(c => ({ componenteId: c.componenteId, cantidad: c.cantidad }))))
       } else setComponentes([])
+      cargarCodigos(producto.id).then(setCodigos).catch(e => { console.error('cargarCodigos', e); setCodigos([]) })
     } else {
       setTipo(tipoInicial); setNombre(''); setDescripcion(''); setPrecio(''); setPrecioCosto('')
       setMonedaCosto('ARS'); setCodigoSku(''); setCategoriaId(''); setStock(''); setStockMinimo('')
-      setTrazabilidad('ninguna'); setUnidadMedida('unidad'); setImagen(null); setComponentes([])
+      setTrazabilidad('ninguna'); setUnidadMedida('unidad'); setImagen(null); setComponentes([]); setCodigos([])
     }
     setNuevaCat(''); setMostrarNuevaCat(false); setTouched(false)
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -126,10 +131,15 @@ export const ModalProducto = ({ open, onClose, producto, tipoInicial = 'simple' 
         trazabilidad,
         unidadMedida,
         activo: producto?.activo ?? true,
+        codigos,
       }
       if (esEdicion && producto) await actualizarProducto(producto.id, payload, componentes)
       else await crearProducto(payload, componentes)
       onClose()
+    } catch (e) {
+      // Ej.: un código que ya usa otro producto (el store dice cuál).
+      console.error('guardar producto', e)
+      toast.error(e instanceof Error ? e.message : 'No se pudo guardar el producto')
     } finally {
       setGuardando(false)
     }
@@ -190,6 +200,8 @@ export const ModalProducto = ({ open, onClose, producto, tipoInicial = 'simple' 
           </div>
 
           <Input label="Código SKU" value={codigoSku} onChange={e => setCodigoSku(e.target.value)} />
+
+          <SeccionCodigos productoId={producto?.id ?? null} value={codigos} onChange={setCodigos} disabled={'disabled' in ed} />
 
           {/* Categoría */}
           <div className="flex flex-col gap-1">

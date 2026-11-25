@@ -199,6 +199,21 @@ async function initSchema(database: Db) {
     )
   `)
 
+  // Códigos de barras de cada producto (varios por producto; un código = un producto).
+  // tipo 'pack': un escaneo suma unidades_por_pack unidades. Reemplaza a productos.codigo_barras.
+  await database.execute(`
+    CREATE TABLE IF NOT EXISTS productos_codigos (
+      id                INTEGER PRIMARY KEY AUTOINCREMENT,
+      producto_id       INTEGER NOT NULL,
+      codigo            TEXT NOT NULL UNIQUE,
+      tipo              TEXT NOT NULL DEFAULT 'unidad',
+      unidades_por_pack REAL DEFAULT 1,
+      creado_en         TEXT NOT NULL,
+      FOREIGN KEY (producto_id) REFERENCES productos(id)
+    )
+  `)
+  await database.execute(`CREATE INDEX IF NOT EXISTS ix_productos_codigos_producto ON productos_codigos(producto_id)`)
+
   await database.execute(`
     CREATE TABLE IF NOT EXISTS conjunto_componentes (
       id             INTEGER PRIMARY KEY AUTOINCREMENT,

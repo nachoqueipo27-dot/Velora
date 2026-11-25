@@ -3,6 +3,8 @@ import { porCantidad } from '../lib/dinero'
 import { getDb } from '../db'
 import { registrarActividad } from '../lib/registrarActividad'
 import { exigirEditar } from '../lib/permisos'
+import { ErrorValidacion } from '../db/acceso'
+import type { CodigoProducto } from '../lib/codigos'
 import type {
   Producto, Categoria, ComponenteConjunto, MovimientoStock, InformeRentabilidad, Trazabilidad, UnidadMedida,
 } from '../types/inventario'
@@ -27,6 +29,8 @@ export interface NuevoProducto {
   trazabilidad: Trazabilidad
   unidadMedida: UnidadMedida
   activo: boolean
+  /** Códigos de barras. undefined = no tocar los que ya tiene. */
+  codigos?: CodigoProducto[]
 }
 
 interface InventarioStore {
@@ -41,7 +45,8 @@ interface InventarioStore {
   cargarProductos: () => Promise<void>
   cargarCategorias: () => Promise<void>
   crearCategoria: (nombre: string) => Promise<number | null>
-  crearProducto: (data: NuevoProducto, componentes: ComponenteInput[]) => Promise<void>
+  /** Devuelve el id del producto creado. */
+  crearProducto: (data: NuevoProducto, componentes: ComponenteInput[]) => Promise<number>
   actualizarProducto: (id: number, data: NuevoProducto, componentes: ComponenteInput[]) => Promise<void>
   eliminarProducto: (id: number) => Promise<void>
   seleccionarProducto: (p: Producto | null) => void
@@ -52,7 +57,7 @@ interface InventarioStore {
   cargarInformeRentabilidad: () => Promise<void>
 }
 
-const mapProducto = (r: any): Producto => ({
+export const mapProducto = (r: any): Producto => ({
   id: r.id,
   nombre: r.nombre,
   tipo: r.tipo,
@@ -83,6 +88,45 @@ async function guardarComponentes(
     await db.execute(
       'INSERT INTO conjunto_componentes (conjunto_id, componente_id, cantidad) VALUES (?, ?, ?)',
       [conjuntoId, c.componenteId, c.cantidad]
+    )
+  }
+}
+
+type Db = Awaited<ReturnType<typeof getDb>>
+
+/**
+ * Valida los códigos de un producto: sin vacíos, sin repetidos y que ningún OTRO producto
+ * los use (dice cuál). Lanza ErrorValidacion. Va antes de escribir nada.
+ */
+async function validarCodigos(db: Db, productoId: number | null, codigos: CodigoProducto[]): Promise<CodigoProducto[]> {
+  const limpios = codigos
+    .map(c => ({ ...c, codigo: c.codigo.trim() }))
+    .filter(c => c.codigo !== '')
+  const vistos = new Set<string>()
+  for (const c of limpios) {
+    if (vistos.has(c.codigo)) throw new ErrorValidacion(`El código ${c.codigo} está cargado dos veces.`)
+    vistos.add(c.codigo)
+    const otros = await db.select<{ nombre: string }[]>(
+      `SELECT p.nombre FROM productos_codigos pc JOIN productos p ON p.id = pc.producto_id
+       WHERE pc.codigo = ? AND pc.producto_id <> ? LIMIT 1`,
+      [c.codigo, productoId ?? -1]
+    )
+    if (otros.length) throw new ErrorValidacion(`El código ${c.codigo} ya lo usa «${otros[0].nombre}».`)
+    if (c.tipo === 'pack' && !(c.unidadesPorPack > 0)) {
+      throw new ErrorValidacion(`Indicá cuántas unidades trae el pack ${c.codigo}.`)
+    }
+  }
+  return limpios
+}
+
+/** Reemplaza los códigos del producto por los validados. */
+async function guardarCodigos(db: Db, productoId: number, codigos: CodigoProducto[]) {
+  const now = new Date().toISOString()
+  await db.execute('DELETE FROM productos_codigos WHERE producto_id = ?', [productoId])
+  for (const c of codigos) {
+    await db.execute(
+      'INSERT INTO productos_codigos (producto_id, codigo, tipo, unidades_por_pack, creado_en) VALUES (?, ?, ?, ?, ?)',
+      [productoId, c.codigo, c.tipo, c.tipo === 'pack' ? c.unidadesPorPack : 1, now]
     )
   }
 }
@@ -138,6 +182,7 @@ export const useInventarioStore = create<InventarioStore>((set, get) => ({
     exigirEditar('inventario')
     const db = await getDb()
     const now = new Date().toISOString()
+    const codigos = data.codigos ? await validarCodigos(db, null, data.codigos) : []
     const res = await db.execute(
       `INSERT INTO productos
        (nombre, tipo, descripcion, categoria_id, precio, precio_costo, moneda_costo, codigo_sku, stock, stock_minimo, imagen, trazabilidad, unidad_medida, activo, creado_en, actualizado_en)
@@ -147,14 +192,17 @@ export const useInventarioStore = create<InventarioStore>((set, get) => ({
     )
     const id = Number(res.lastInsertId)
     if (data.tipo === 'conjunto') await guardarComponentes(db, id, componentes)
+    if (codigos.length) await guardarCodigos(db, id, codigos)
     await registrarActividad({ modulo: 'Inventario', accion: 'Creó un producto', detalle: data.nombre, entidadTipo: 'producto', entidadId: id })
     await get().cargarProductos()
+    return id
   },
 
   actualizarProducto: async (id, data, componentes) => {
     exigirEditar('inventario')
     const db = await getDb()
     const now = new Date().toISOString()
+    const codigos = data.codigos ? await validarCodigos(db, id, data.codigos) : null
     await db.execute(
       `UPDATE productos SET nombre=?, tipo=?, descripcion=?, categoria_id=?, precio=?, precio_costo=?, moneda_costo=?,
         codigo_sku=?, stock=?, stock_minimo=?, imagen=?, trazabilidad=?, unidad_medida=?, activo=?, actualizado_en=? WHERE id=?`,
@@ -163,6 +211,7 @@ export const useInventarioStore = create<InventarioStore>((set, get) => ({
     )
     if (data.tipo === 'conjunto') await guardarComponentes(db, id, componentes)
     else await db.execute('DELETE FROM conjunto_componentes WHERE conjunto_id = ?', [id])
+    if (codigos) await guardarCodigos(db, id, codigos)
     await registrarActividad({ modulo: 'Inventario', accion: 'Editó un producto', detalle: data.nombre, entidadTipo: 'producto', entidadId: id })
     await get().cargarProductos()
     const sel = get().productoSeleccionado
@@ -173,6 +222,8 @@ export const useInventarioStore = create<InventarioStore>((set, get) => ({
     exigirEditar('inventario')
     const db = await getDb()
     const previo = get().productos.find(p => p.id === id)
+    // Los códigos primero: referencian al producto.
+    await db.execute('DELETE FROM productos_codigos WHERE producto_id = ?', [id])
     await db.execute('DELETE FROM productos WHERE id = ?', [id])
     await db.execute('DELETE FROM conjunto_componentes WHERE conjunto_id = ? OR componente_id = ?', [id, id])
     await db.execute('DELETE FROM movimientos_stock WHERE producto_id = ?', [id])
