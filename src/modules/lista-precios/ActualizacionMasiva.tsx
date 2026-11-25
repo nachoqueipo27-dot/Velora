@@ -9,8 +9,10 @@ import { Modal } from '../../components/ui/Modal'
 import { useListaPreciosStore } from '../../store/listaPreciosStore'
 import { useInventarioStore } from '../../store/inventarioStore'
 import { toast } from '../../store/toastStore'
+import { formatearPesos } from '../../lib/dinero'
 
-const money = (n: number) => `$${Math.round(n).toLocaleString('es-AR')}`
+// Montos en centavos → "$ 1.234,56"
+const money = formatearPesos
 
 export const ActualizacionMasiva = () => {
   const { previsualizacion, cargarItems, previsualizarAumento, cancelarPrevisualizacion, aplicarAumento } = useListaPreciosStore()

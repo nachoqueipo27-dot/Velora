@@ -4,8 +4,10 @@ import { Encabezado, type DatosNegocio } from '../componentes/Encabezado'
 import { PiePagina } from '../componentes/PiePagina'
 import type { CobroCaja } from '../../../types/caja'
 import { format } from 'date-fns'
+import { formatearPesos } from '../../dinero'
 
-const money = (n: number) => `$${Math.round(n).toLocaleString('es-AR')}`
+// Montos en centavos → "$ 1.234,56"
+const money = formatearPesos
 const FORMA_LABEL: Record<string, string> = { efectivo: 'Efectivo', transferencia: 'Transferencia', tarjeta: 'Tarjeta' }
 
 interface Props {

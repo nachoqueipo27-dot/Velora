@@ -4,8 +4,10 @@ import { Modal } from '../../components/ui/Modal'
 import { usePosStore } from '../../store/posStore'
 import { useSessionStore } from '../../store/sessionStore'
 import { FORMAS_PAGO, type VentaPOS } from '../../types/pos'
+import { aCentavos, formatearPesos } from '../../lib/dinero'
 
-const money = (n: number) => `$${Math.round(n).toLocaleString('es-AR')}`
+// Montos en centavos → "$ 1.234,56"
+const money = formatearPesos
 
 interface ModalConfirmacionProps {
   open: boolean
@@ -20,8 +22,8 @@ export const ModalConfirmacion = ({ open, onClose, onVenta }: ModalConfirmacionP
 
   useEffect(() => { if (open) setRecibido('') }, [open])
 
-  const total = calcularTotal()
-  const recibidoNum = Number(recibido) || 0
+  const total = calcularTotal() // centavos
+  const recibidoNum = aCentavos(Number(recibido) || 0) // el cajero tipea pesos
   const vuelto = recibidoNum - total
   const insuficiente = formaPago === 'efectivo' && recibido !== '' && recibidoNum < total
   const empleadoNombre = empleadoPOS?.nombre ?? usuario?.nombre ?? 'Sistema'

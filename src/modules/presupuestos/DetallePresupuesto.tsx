@@ -14,13 +14,15 @@ import { useNegocio } from '../../hooks/useNegocio'
 import { PDFPresupuesto } from '../../lib/pdf/documentos/PDFPresupuesto'
 import { ArrowLeft, Download, Send, Check, X, RefreshCw, ArrowRightCircle } from 'lucide-react'
 import { format } from 'date-fns'
+import { formatearPesos } from '../../lib/dinero'
 
 interface DetallePresupuestoProps {
   onVolver: () => void
   onEditar: (p: Presupuesto) => void
 }
 
-const money = (n: number) => `$${Math.round(n).toLocaleString('es-AR')}`
+// Montos en centavos → "$ 1.234,56"
+const money = formatearPesos
 const numFmt = (n: number) => `#${String(n).padStart(3, '0')}`
 const LABEL_UNIDAD: Record<string, string> = Object.fromEntries(UNIDADES_MEDIDA.map(u => [u.value, u.label]))
 

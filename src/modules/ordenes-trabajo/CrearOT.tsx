@@ -14,10 +14,12 @@ import { SelectorEmpleado } from './components/SelectorEmpleado'
 import { Search, AlertTriangle } from 'lucide-react'
 import { getDb } from '../../db'
 import { format } from 'date-fns'
+import { aCentavos, aplicarPorcentaje, formatearPesos } from '../../lib/dinero'
 
 interface CrearOTProps { onCreada: () => void }
 
-const money = (n: number) => `$${Math.round(n).toLocaleString('es-AR')}`
+// Montos en centavos → "$ 1.234,56"
+const money = formatearPesos
 
 export const CrearOT = ({ onCreada }: CrearOTProps) => {
   const { plantillas, etiquetas, cargarPlantillas, cargarEtiquetas, crearOT, crearOTDesdePresupuesto } = useOTStore()
@@ -68,12 +70,15 @@ export const CrearOT = ({ onCreada }: CrearOTProps) => {
     return productos.filter(p => p.tipo === tipoItem && q !== '' && p.nombre.toLowerCase().includes(q)).slice(0, 6)
   }, [productos, tipoItem, busqueda])
 
-  const precioBase = producto?.precio ?? 0
+  const precioBase = producto?.precio ?? 0 // centavos (precio del producto)
+  // El input de descuento es % o pesos; a la base va % tal cual o centavos.
+  const descuentoGuardado = tipoDescuento === 'monto' ? aCentavos(Number(descuento) || 0) : (Number(descuento) || 0)
   const total = useMemo(() => {
-    const d = Number(descuento) || 0
-    const t = tipoDescuento === 'porcentaje' ? precioBase * (1 - d / 100) : precioBase - d
+    const t = tipoDescuento === 'porcentaje'
+      ? precioBase - aplicarPorcentaje(precioBase, descuentoGuardado)
+      : precioBase - descuentoGuardado
     return Math.max(0, t)
-  }, [precioBase, descuento, tipoDescuento])
+  }, [precioBase, descuentoGuardado, tipoDescuento])
 
   const aplicarPlantilla = (id: number | '') => {
     setPlantillaId(id)
@@ -94,7 +99,7 @@ export const CrearOT = ({ onCreada }: CrearOTProps) => {
       await crearOT({
         clienteId: Number(clienteId), empleadoId, productoId: producto.id, tipoItem,
         productoNombre: producto.nombre, descripcion, precio: precioBase,
-        descuento: Number(descuento) || 0, tipoDescuento, garantiaDias: Number(garantiaDias) || 0,
+        descuento: descuentoGuardado, tipoDescuento, garantiaDias: Number(garantiaDias) || 0,
         esRecurrente, frecuencia: esRecurrente ? frecuencia : null,
         proximaFecha: esRecurrente ? new Date(proximaFecha).toISOString() : null, etiquetaIds,
       })

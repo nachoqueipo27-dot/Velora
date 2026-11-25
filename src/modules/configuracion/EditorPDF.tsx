@@ -20,22 +20,23 @@ type TabId = typeof TABS[number]['id']
 
 const hoy = () => new Date().toISOString()
 
+// Datos de muestra para la vista previa. Montos en centavos.
 const DEMO_PRES: Presupuesto = {
   id: 0, numero: 1, clienteId: 0, clienteNombre: 'Juan Pérez', estado: 'enviado', descripcion: 'Presupuesto de muestra',
-  descuento: 10, tipoDescuento: 'porcentaje', subtotal: 5000, totalFinal: 4500, motivoRechazo: null, vigenciaDias: 7,
+  descuento: 10, tipoDescuento: 'porcentaje', subtotal: 500000, totalFinal: 450000, motivoRechazo: null, vigenciaDias: 7,
   fechaVigencia: hoy(), otId: null, creadoPor: 'Admin', creadoEn: hoy(), actualizadoEn: hoy(), vencido: false,
 }
 const DEMO_ITEMS: ItemPresupuesto[] = [
-  { id: 1, presupuestoId: 0, productoId: 1, tipoItem: 'conjunto', nombre: 'Combo Hamburguesa', cantidad: 2, unidadMedida: 'unidad', precioUnitario: 2500, descuentoItem: 0, subtotal: 5000 },
+  { id: 1, presupuestoId: 0, productoId: 1, tipoItem: 'conjunto', nombre: 'Combo Hamburguesa', cantidad: 2, unidadMedida: 'unidad', precioUnitario: 250000, descuentoItem: 0, subtotal: 500000 },
 ]
 const DEMO_OT: OrdenTrabajo = {
   id: 0, numero: 1, clienteId: 0, clienteNombre: 'Juan Pérez', empleadoId: null, empleadoNombre: 'María López',
   productoId: 1, tipoItem: 'simple', productoNombre: 'Cable USB-C', descripcion: 'Reparación', estado: 'entregado',
-  descuento: 0, tipoDescuento: 'porcentaje', precio: 2500, totalFinal: 2500, motivoCancelacion: null, notas: null,
+  descuento: 0, tipoDescuento: 'porcentaje', precio: 250000, totalFinal: 250000, motivoCancelacion: null, notas: null,
   presupuestoId: null, esRecurrente: false, frecuencia: null, proximaFecha: null, garantiaDias: 30, garantiaVence: hoy(),
   creadoPor: 'Admin', creadoEn: hoy(), actualizadoEn: hoy(), etiquetas: [], diasSinMovimiento: 0,
 }
-const DEMO_COBRO: CobroCaja = { id: 1, fecha: hoy(), monto: 2500, formaPago: 'efectivo', concepto: 'OT #001', otId: 1, ventaPosId: null, empleadoId: null }
+const DEMO_COBRO: CobroCaja = { id: 1, fecha: hoy(), monto: 250000, formaPago: 'efectivo', concepto: 'OT #001', otId: 1, ventaPosId: null, empleadoId: null }
 
 export const EditorPDF = () => {
   const { pdfs, guardarPDF } = useConfigStore()
@@ -90,7 +91,7 @@ export const EditorPDF = () => {
                 {b.tipo === 'cliente' && <div><span className="text-[#888]">Cliente:</span> Juan Pérez</div>}
                 {b.tipo === 'fecha' && <div className="text-[#888]">Fecha: {new Date().toLocaleDateString('es-AR')}</div>}
                 {b.tipo === 'items' && <div className="border-y border-[#E4E4E4] py-1.5 flex justify-between"><span>2× Combo Hamburguesa</span><span>$5.000</span></div>}
-                {b.tipo === 'totales' && <div className={cn('flex justify-between', b.negrita && 'font-bold')}><span>Total</span><span>$4.500</span></div>}
+                {b.tipo === 'totales' && <div className={cn('flex justify-between', b.negrita && 'font-bold')}><span>Total</span><span>$ 4.500,00</span></div>}
                 {b.tipo === 'separador' && <div className="border-b border-dashed border-[#CCC]" />}
                 {b.tipo === 'texto_libre' && <div>{b.texto || '(texto libre)'}</div>}
                 {b.tipo === 'pie_pagina' && <div className={cn('text-center text-[#888] mt-2', b.negrita && 'font-bold')}>{b.texto || 'Gracias por confiar en nosotros.'}</div>}

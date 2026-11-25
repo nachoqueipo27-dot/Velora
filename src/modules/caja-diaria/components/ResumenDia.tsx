@@ -2,8 +2,10 @@ import { useEffect, useRef, useState } from 'react'
 import { cn } from '../../../lib/utils'
 import type { ResumenCaja } from '../../../types/caja'
 import { ArrowDownRight, ArrowUpRight, Wallet, Receipt } from 'lucide-react'
+import { formatearPesos } from '../../../lib/dinero'
 
-const money = (n: number) => `$${Math.round(n).toLocaleString('es-AR')}`
+// Montos en centavos → "$ 1.234,56"
+const money = formatearPesos
 
 function useCountUp(target: number, duration = 600) {
   const [value, setValue] = useState(0)

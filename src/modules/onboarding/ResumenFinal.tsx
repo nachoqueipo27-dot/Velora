@@ -22,6 +22,7 @@ async function guardarAdminEnDB(
   try {
     const db = await getDb()
     const now = new Date().toISOString()
+    const passwordHash = await hashPassword(password)
 
     // 1. Empleado en la DB del negocio (rol Admin).
     const roles = await db.select<{ id: number }[]>(`SELECT id FROM roles WHERE nombre = 'Admin' LIMIT 1`)
@@ -41,7 +42,7 @@ async function guardarAdminEnDB(
       await db.execute(
         `INSERT INTO empleados (nombre, rol_id, password, activo, tipo_horario, creado_en, actualizado_en)
          VALUES (?, ?, ?, 1, 'fijo', ?, ?)`,
-        [nombre, rolId, btoa(password), now, now]
+        [nombre, rolId, passwordHash, now, now]
       )
     }
 
@@ -83,23 +84,27 @@ const Section = ({ title, children }: { title: string; children: React.ReactNode
 )
 
 export const ResumenFinal = ({ onBack }: ResumenFinalProps) => {
-  const { data, completarOnboarding } = useOnboardingStore()
+  const { data, setPaso, completarOnboarding } = useOnboardingStore()
   const { setUsuario } = useSessionStore()
 
   const habilitadas = data.funcionesHabilitadas ?? []
   const modulosActivos = FUNCIONES_DISPONIBLES.filter(f => habilitadas.includes(f.id)).length
 
   const handleConfirm = async () => {
-    // Guardar el Admin General del onboarding (local + master) antes de completar.
-    if (data.adminNombre && data.adminDni && data.adminPassword && data.adminPreguntaId && data.adminRespuestaSeguridad) {
-      await guardarAdminEnDB(
-        data.adminNombre,
-        data.adminDni,
-        data.adminPassword,
-        data.adminPreguntaId,
-        data.adminRespuestaSeguridad,
-      )
+    // La contraseña y la respuesta no se guardan en la PC: si se reabrió la app a mitad
+    // del onboarding hay que volver a pedirlas (sin ellas no habría Admin General).
+    if (!data.adminNombre || !data.adminDni || !data.adminPassword || !data.adminPreguntaId || !data.adminRespuestaSeguridad) {
+      setPaso(2)
+      return
     }
+    // Guardar el Admin General del onboarding (local + master) antes de completar.
+    await guardarAdminEnDB(
+      data.adminNombre,
+      data.adminDni,
+      data.adminPassword,
+      data.adminPreguntaId,
+      data.adminRespuestaSeguridad,
+    )
     setUsuario({
       id: 1,
       nombre: data.adminNombre ?? 'Administrador',

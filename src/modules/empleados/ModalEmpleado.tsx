@@ -4,7 +4,8 @@ import { Input } from '../../components/ui/Input'
 import { Button } from '../../components/ui/Button'
 import { Select } from '../../components/ui/Select'
 import { Modal } from '../../components/ui/Modal'
-import { useEmpleadosStore } from '../../store/empleadosStore'
+import { useEmpleadosStore, ErrorFaltaClave } from '../../store/empleadosStore'
+import { toast } from '../../store/toastStore'
 import { useSessionStore } from '../../store/sessionStore'
 import { DIAS_SEMANA, type Empleado, type HorarioFijo } from '../../types/empleados'
 
@@ -97,6 +98,9 @@ export const ModalEmpleado = ({ open, onClose, empleado }: ModalEmpleadoProps) =
       if (esEdicion && empleado) await actualizarEmpleado(empleado.id, payload)
       else await crearEmpleado(payload)
       onClose()
+    } catch (e) {
+      toast.error(e instanceof ErrorFaltaClave ? e.message : 'No se pudo guardar el empleado')
+      console.error(e)
     } finally {
       setGuardando(false)
     }

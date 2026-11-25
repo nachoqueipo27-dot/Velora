@@ -8,7 +8,8 @@ export function useInitDb() {
   useEffect(() => {
     getDb()
       .then(() => setReady(true))
-      .catch(e => setError(String(e)))
+      // ErrorMigracion trae un mensaje pensado para el comercio; el detalle técnico va a la consola.
+      .catch(e => setError(e instanceof Error ? e.message : String(e)))
   }, [])
 
   return { ready, error }

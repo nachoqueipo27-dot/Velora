@@ -3,6 +3,7 @@ import { getDb } from '../db'
 import { useSessionStore } from './sessionStore'
 import { useInventarioStore } from './inventarioStore'
 import { registrarActividad } from '../lib/registrarActividad'
+import { porCantidad } from '../lib/dinero'
 
 export interface BloqueConfig {
   id: string
@@ -148,7 +149,8 @@ export const useConfigStore = create<ConfigStore>((set, get) => ({
     if (recalcular) {
       const prods = await db.select<any[]>(`SELECT id, precio, precio_costo FROM productos WHERE moneda_costo = 'USD'`)
       for (const p of prods) {
-        const nuevo = Math.round(p.precio_costo * valor)
+        // precio_costo en centavos de USD × ARS por USD → centavos de ARS.
+        const nuevo = porCantidad(p.precio_costo, valor)
         await db.execute('UPDATE productos SET precio = ?, actualizado_en = ? WHERE id = ?', [nuevo, now, p.id])
         await db.execute(
           `INSERT INTO historial_precios (producto_id, precio_anterior, precio_nuevo, motivo, aplicado_por, fecha, creado_en)

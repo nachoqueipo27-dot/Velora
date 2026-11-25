@@ -5,8 +5,10 @@ import { PiePagina } from '../componentes/PiePagina'
 import type { MovimientoStockResumen } from '../../../store/reporteInventarioStore'
 import { UNIDADES_MEDIDA } from '../../../types/inventario'
 import { format } from 'date-fns'
+import { formatearPesos } from '../../dinero'
 
-const money = (n: number) => `$${Math.round(n).toLocaleString('es-AR')}`
+// Montos en centavos → "$ 1.234,56"
+const money = formatearPesos
 
 const TIPO_LABEL: Record<string, string> = { entrada: 'Entrada', salida: 'Salida', ajuste: 'Ajuste' }
 const LABEL_UNIDAD: Record<string, string> = Object.fromEntries(UNIDADES_MEDIDA.map(u => [u.value, u.label]))

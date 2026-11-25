@@ -9,8 +9,10 @@ import { useListaPreciosStore } from '../../store/listaPreciosStore'
 import type { SnapshotLista } from '../../types/listaPrecios'
 import { Plus, Eye, RotateCcw, FileSpreadsheet, History, ChevronDown } from 'lucide-react'
 import { format } from 'date-fns'
+import { formatearPesos } from '../../lib/dinero'
 
-const money = (n: number) => `$${Math.round(n).toLocaleString('es-AR')}`
+// Montos en centavos → "$ 1.234,56"
+const money = formatearPesos
 type Tab = 'snapshots' | 'cambios'
 
 export const HistorialListas = () => {

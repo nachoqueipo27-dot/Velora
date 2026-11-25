@@ -9,8 +9,10 @@ import { Button } from '../../../components/ui/Button'
 import { PDFReporteInventario } from '../../../lib/pdf/documentos/PDFReporteInventario'
 import { UNIDADES_MEDIDA } from '../../../types/inventario'
 import { PackageX, DollarSign, Clock, PackagePlus, PackageMinus, Download, Check } from 'lucide-react'
+import { formatearPesos } from '../../../lib/dinero'
 
-const money = (n: number) => `$${Math.round(n).toLocaleString('es-AR')}`
+// Montos en centavos → "$ 1.234,56"
+const money = formatearPesos
 const hoyStr = () => format(new Date(), 'yyyy-MM-dd')
 
 const TIPO_LABEL: Record<string, string> = { entrada: 'Entrada', salida: 'Salida', ajuste: 'Ajuste' }

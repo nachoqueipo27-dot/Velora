@@ -10,8 +10,10 @@ import { PDFReporteVentas } from '../../../lib/pdf/documentos/PDFReporteVentas'
 import type { ProductoTop } from '../../../store/reporteVentasStore'
 import { UNIDAD_ABREVIADA } from '../../../types/inventario'
 import { DollarSign, ShoppingCart, Receipt, Download, Check } from 'lucide-react'
+import { formatearPesos } from '../../../lib/dinero'
 
-const money = (n: number) => `$${Math.round(n).toLocaleString('es-AR')}`
+// Montos en centavos → "$ 1.234,56"
+const money = formatearPesos
 const hoyStr = () => format(new Date(), 'yyyy-MM-dd')
 
 type RangoId = 'hoy' | 'semana' | 'mes' | 'mesAnterior'

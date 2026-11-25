@@ -60,7 +60,8 @@ export const useReporteInventarioStore = create<ReporteInventarioStore>((set) =>
 
       // Valorización a precio de costo (precio_costo) — no al precio de venta, que incluye margen.
       const valorizacionRows = await db.select<{ total: number | null }[]>(
-        `SELECT COALESCE(SUM(stock * precio_costo), 0) as total FROM productos WHERE tipo = 'simple' AND activo = 1`
+        // Centavos: cada producto se redondea (stock puede ser fraccionario).
+        `SELECT COALESCE(SUM(CAST(ROUND(stock * precio_costo) AS INTEGER)), 0) as total FROM productos WHERE tipo = 'simple' AND activo = 1`
       )
       const valorizacionInventario = valorizacionRows[0]?.total ?? 0
 

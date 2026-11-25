@@ -3,13 +3,15 @@ import { cn } from '../../../lib/utils'
 import { StockBadge } from '../../inventario/components/StockBadge'
 import type { Producto } from '../../../types/inventario'
 import { ImageOff } from 'lucide-react'
+import { formatearPesos } from '../../../lib/dinero'
 
 interface ProductoCardProps {
   producto: Producto
   onAgregar: () => void
 }
 
-const money = (n: number) => `$${Math.round(n).toLocaleString('es-AR')}`
+// Montos en centavos → "$ 1.234,56"
+const money = formatearPesos
 
 export const ProductoCard = ({ producto, onAgregar }: ProductoCardProps) => {
   const [flash, setFlash] = useState(false)

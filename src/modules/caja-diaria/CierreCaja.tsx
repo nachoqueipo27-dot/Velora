@@ -6,8 +6,10 @@ import { Modal } from '../../components/ui/Modal'
 import { Badge } from '../../components/ui/Badge'
 import { ResumenDia } from './components/ResumenDia'
 import { Lock } from 'lucide-react'
+import { formatearPesos } from '../../lib/dinero'
 
-const money = (n: number) => `$${Math.round(n).toLocaleString('es-AR')}`
+// Montos en centavos → "$ 1.234,56"
+const money = formatearPesos
 const hoyISO = () => new Date().toISOString().split('T')[0]
 const fechaLarga = (iso: string) => new Date(iso + 'T12:00:00').toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
 

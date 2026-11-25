@@ -5,8 +5,10 @@ import { Modal } from '../../components/ui/Modal'
 import { ModalGasto } from './components/ModalGasto'
 import { CATEGORIAS_GASTO, type GastoOperativo } from '../../types/caja'
 import { Plus, Pencil, Trash2, Paperclip } from 'lucide-react'
+import { formatearPesos } from '../../lib/dinero'
 
-const money = (n: number) => `$${Math.round(n).toLocaleString('es-AR')}`
+// Montos en centavos → "$ 1.234,56"
+const money = formatearPesos
 const hora = (iso: string) => new Date(iso).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })
 
 export const GastosOperativos = () => {

@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { aplicarPorcentaje } from '../lib/dinero'
 import { getDb } from '../db'
 import { useSessionStore } from './sessionStore'
 import { registrarActividad } from '../lib/registrarActividad'
@@ -78,9 +79,10 @@ const proximaPorFrecuencia = (desde: Date, frecuencia: string): string => {
   }
 }
 
+// precio en centavos; descuento: % si tipo = 'porcentaje', centavos si es 'monto'.
 function calcTotal(precio: number, descuento: number, tipo: 'porcentaje' | 'monto') {
-  const t = tipo === 'porcentaje' ? precio * (1 - (descuento || 0) / 100) : precio - (descuento || 0)
-  return Math.max(0, Math.round(t * 100) / 100)
+  const t = tipo === 'porcentaje' ? precio - aplicarPorcentaje(precio, descuento || 0) : precio - (descuento || 0)
+  return Math.max(0, t)
 }
 
 async function descontarStock(db: Awaited<ReturnType<typeof getDb>>, productoId: number, tipoItem: string, otNumero: number, now: string) {

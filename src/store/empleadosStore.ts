@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { getDb } from '../db'
 import { getMasterDb, guardarUsuarioLocal } from '../db/master'
+import { hashPassword } from '../lib/crypto'
 import { registrarActividad } from '../lib/registrarActividad'
 import type {
   Empleado, Rol, Turno, Fichaje, HoraExtra, Ausencia, HorarioFijo,
@@ -102,6 +103,23 @@ async function guardarHorarios(
   }
 }
 
+// Falta la contraseña para poder guardar. El mensaje está pensado para mostrarlo tal cual.
+export class ErrorFaltaClave extends Error {}
+
+const tieneClave = (data: NuevoEmpleado) => data.password.trim() !== ''
+
+// Al editar sin contraseña, el DNI ya tiene que tener acceso en master.db: si no, habría
+// que inventarle una contraseña. Se llama ANTES de guardar nada.
+async function exigirClaveSiNoTieneAcceso(data: NuevoEmpleado) {
+  const dni = data.dni?.trim()
+  if (!dni || tieneClave(data)) return
+  const masterDb = await getMasterDb()
+  const existe = await masterDb.select<{ id: number }[]>(`SELECT id FROM usuarios_master WHERE dni = ?`, [dni])
+  if (existe.length === 0) {
+    throw new ErrorFaltaClave('Ingresá una contraseña: ese DNI todavía no tiene acceso al sistema.')
+  }
+}
+
 // Registra/actualiza el usuario en master.db (login global por DNI). Si hay
 // password la cifra (bcrypt vía guardarUsuarioLocal); si no, solo actualiza
 // nombre/rol sin tocar la contraseña. No hace nada si no hay DNI.
@@ -111,15 +129,10 @@ async function syncUsuarioMaster(data: NuevoEmpleado, roles: Rol[]) {
   const rol = (roles.find(r => r.id === data.rolId)?.nombre ?? 'usuario').toLowerCase()
   const masterDb = await getMasterDb()
 
-  if (data.password && data.password.trim() !== '') {
+  if (tieneClave(data)) {
     await guardarUsuarioLocal({ nombre: data.nombre, dni, rol }, data.password)
   } else {
-    const existe = await masterDb.select<{ id: number }[]>(`SELECT id FROM usuarios_master WHERE dni = ?`, [dni])
-    if (existe.length > 0) {
-      await masterDb.execute(`UPDATE usuarios_master SET nombre = ?, rol = ? WHERE dni = ?`, [data.nombre, rol, dni])
-    } else {
-      await guardarUsuarioLocal({ nombre: data.nombre, dni, rol }, 'cambiar')
-    }
+    await masterDb.execute(`UPDATE usuarios_master SET nombre = ?, rol = ? WHERE dni = ?`, [data.nombre, rol, dni])
   }
 }
 
@@ -171,12 +184,14 @@ export const useEmpleadosStore = create<EmpleadosStore>((set, get) => ({
   },
 
   crearEmpleado: async (data) => {
+    if (!tieneClave(data)) throw new ErrorFaltaClave('Ingresá una contraseña para el empleado.')
+    const passwordHash = await hashPassword(data.password)
     const db = await getDb()
     const now = new Date().toISOString()
     const res = await db.execute(
       `INSERT INTO empleados (nombre, dni, rol_id, password, activo, tipo_horario, creado_en, actualizado_en)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [data.nombre, data.dni?.trim() || null, data.rolId, btoa(data.password || 'cambiar'), data.activo ? 1 : 0, data.tipoHorario, now, now]
+      [data.nombre, data.dni?.trim() || null, data.rolId, passwordHash, data.activo ? 1 : 0, data.tipoHorario, now, now]
     )
     const empleadoId = Number(res.lastInsertId)
     await guardarHorarios(db, empleadoId, data)
@@ -189,10 +204,12 @@ export const useEmpleadosStore = create<EmpleadosStore>((set, get) => ({
   actualizarEmpleado: async (id, data) => {
     const db = await getDb()
     const now = new Date().toISOString()
-    if (data.password && data.password.trim() !== '') {
+    await exigirClaveSiNoTieneAcceso(data)
+    if (tieneClave(data)) {
+      const passwordHash = await hashPassword(data.password)
       await db.execute(
         `UPDATE empleados SET nombre = ?, dni = ?, rol_id = ?, password = ?, activo = ?, tipo_horario = ?, actualizado_en = ? WHERE id = ?`,
-        [data.nombre, data.dni?.trim() || null, data.rolId, btoa(data.password), data.activo ? 1 : 0, data.tipoHorario, now, id]
+        [data.nombre, data.dni?.trim() || null, data.rolId, passwordHash, data.activo ? 1 : 0, data.tipoHorario, now, id]
       )
     } else {
       await db.execute(

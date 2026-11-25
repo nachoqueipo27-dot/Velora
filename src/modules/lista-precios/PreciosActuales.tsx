@@ -4,8 +4,10 @@ import { Button } from '../../components/ui/Button'
 import { Select } from '../../components/ui/Select'
 import { useListaPreciosStore } from '../../store/listaPreciosStore'
 import { Search, FileSpreadsheet, Tag } from 'lucide-react'
+import { aCentavos, aPesos, formatearPesos } from '../../lib/dinero'
 
-const money = (n: number) => `$${Math.round(n).toLocaleString('es-AR')}`
+// Montos en centavos → "$ 1.234,56"
+const money = formatearPesos
 const margenPct = (costo: number, venta: number) => (costo > 0 ? ((venta - costo) / costo) * 100 : 0)
 
 export const PreciosActuales = () => {
@@ -31,13 +33,13 @@ export const PreciosActuales = () => {
 
   const abrirEdicion = (productoId: number, precio: number) => {
     setEditId(productoId)
-    setEditValor(String(precio))
+    setEditValor(String(aPesos(precio))) // el input muestra pesos
   }
 
   const confirmarEdicion = async (productoId: number) => {
-    const nuevo = Number(editValor)
+    const nuevo = aCentavos(Number(editValor))
     setEditId(null)
-    if (!isNaN(nuevo) && nuevo > 0) {
+    if (nuevo > 0) {
       await editarPrecioIndividual(productoId, nuevo)
       setFlashId(productoId)
       setTimeout(() => setFlashId(null), 800)

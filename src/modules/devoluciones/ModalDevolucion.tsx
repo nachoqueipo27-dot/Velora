@@ -9,8 +9,10 @@ import { PDFDevolucion } from '../../lib/pdf/documentos/PDFDevolucion'
 import { MOTIVOS_DEVOLUCION, type Devolucion, type OrigenDevolucion, type TipoDevolucion } from '../../types/devoluciones'
 import { ArrowLeft, ArrowRight, Search, Minus, Plus, CheckCircle2, Download, RotateCcw, User, Package, CalendarDays } from 'lucide-react'
 import { format } from 'date-fns'
+import { formatearPesos, porCantidad } from '../../lib/dinero'
 
-const money = (n: number) => `$${Math.round(n).toLocaleString('es-AR')}`
+// Montos en centavos → "$ 1.234,56"
+const money = formatearPesos
 
 interface ModalDevolucionProps {
   open: boolean
@@ -82,7 +84,7 @@ export const ModalDevolucion = ({ open, onClose, otNumeroInicial, onDevolucion }
 
   const totalDevuelto = useMemo(() => {
     if (!origen) return 0
-    return origen.items.reduce((s, it) => s + (cantidades[it.productoId] ?? 0) * it.precioUnitario, 0)
+    return origen.items.reduce((s, it) => s + porCantidad(it.precioUnitario, cantidades[it.productoId] ?? 0), 0)
   }, [origen, cantidades])
 
   const itemsADevolver = useMemo(() =>
@@ -107,7 +109,7 @@ export const ModalDevolucion = ({ open, onClose, otNumeroInicial, onDevolucion }
         const cd = cantidades[it.productoId] ?? 0
         return {
           productoId: it.productoId, nombre: it.nombre, cantidadOriginal: it.cantidadOriginal,
-          cantidadDevuelta: cd, precioUnitario: it.precioUnitario, subtotalDevuelto: cd * it.precioUnitario,
+          cantidadDevuelta: cd, precioUnitario: it.precioUnitario, subtotalDevuelto: porCantidad(it.precioUnitario, cd),
         }
       }),
     })
@@ -234,7 +236,7 @@ export const ModalDevolucion = ({ open, onClose, otNumeroInicial, onDevolucion }
                       <button onClick={() => setCantidad(it.productoId, cd + 1, it.cantidadOriginal)} disabled={cd >= it.cantidadOriginal}
                         className="w-6 h-6 rounded flex items-center justify-center text-[#A0A0A0] hover:text-white hover:bg-white/10 disabled:opacity-30 light:hover:text-black light:hover:bg-black/5"><Plus size={12} /></button>
                     </div>
-                    <span className="w-20 text-right text-[13px] font-semibold text-white light:text-black tabular-nums">{money(cd * it.precioUnitario)}</span>
+                    <span className="w-20 text-right text-[13px] font-semibold text-white light:text-black tabular-nums">{money(porCantidad(it.precioUnitario, cd))}</span>
                   </div>
                 </div>
               )

@@ -6,8 +6,10 @@ import { Button } from '../../components/ui/Button'
 import { Modal } from '../../components/ui/Modal'
 import { FORMAS_PAGO_CAJA, type CobroCaja, type FormaPago } from '../../types/caja'
 import { Plus, Trash2 } from 'lucide-react'
+import { aCentavos, formatearPesos } from '../../lib/dinero'
 
-const money = (n: number) => `$${Math.round(n).toLocaleString('es-AR')}`
+// Montos en centavos → "$ 1.234,56"
+const money = formatearPesos
 const hora = (iso: string) => new Date(iso).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })
 
 const origenDe = (c: CobroCaja): { label: string; variant: 'default' | 'success' | 'info' } => {
@@ -23,7 +25,7 @@ export const RegistroCobros = () => {
   const [concepto, setConcepto] = useState('')
   const [aEliminar, setAEliminar] = useState<CobroCaja | null>(null)
 
-  const montoNum = Number(monto) || 0
+  const montoNum = aCentavos(Number(monto) || 0) // el input es en pesos; se guarda en centavos
   const valido = montoNum > 0 && !diaYaCerrado
 
   const registrar = async () => {

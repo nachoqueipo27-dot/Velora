@@ -9,12 +9,14 @@ import type { OrdenCompra, EstadoOrdenCompra } from '../../types/proveedores'
 import { ModalOrdenCompra } from './ModalOrdenCompra'
 import { Plus, Eye, Send, PackageCheck, Trash2, FileText } from 'lucide-react'
 import { format } from 'date-fns'
+import { formatearPesos } from '../../lib/dinero'
 
 interface OrdenesCompraProps {
   onVerDetalle: (o: OrdenCompra) => void
 }
 
-const money = (n: number) => `$${Math.round(n).toLocaleString('es-AR')}`
+// Montos en centavos → "$ 1.234,56"
+const money = formatearPesos
 const numFmt = (n: number) => `#${String(n).padStart(3, '0')}`
 
 const estadoBadge = (e: EstadoOrdenCompra) => {

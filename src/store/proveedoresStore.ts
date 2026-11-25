@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { porCantidad } from '../lib/dinero'
 import { getDb } from '../db'
 import type { Proveedor, OrdenCompra, ItemOrdenCompra, EstadoOrdenCompra } from '../types/proveedores'
 
@@ -152,7 +153,7 @@ export const useProveedoresStore = create<ProveedoresStore>((set, get) => ({
     const now = new Date().toISOString()
     const maxRows = await db.select<{ max: number | null }[]>('SELECT MAX(numero) as max FROM ordenes_compra')
     const numero = (maxRows[0].max ?? 0) + 1
-    const total = items.reduce((s, i) => s + i.cantidad * i.precioCosto, 0)
+    const total = items.reduce((s, i) => s + porCantidad(i.precioCosto, i.cantidad), 0) // centavos
     const res = await db.execute(
       `INSERT INTO ordenes_compra (proveedor_id, estado, numero, notas, total, creado_en, actualizado_en)
        VALUES (?, 'borrador', ?, ?, ?, ?, ?)`,
@@ -271,7 +272,8 @@ export const useProveedoresStore = create<ProveedoresStore>((set, get) => ({
 
 async function recalcularTotal(db: Awaited<ReturnType<typeof getDb>>, ordenId: number) {
   const rows = await db.select<{ total: number | null }[]>(
-    'SELECT SUM(cantidad * precio_costo) as total FROM items_orden_compra WHERE orden_id = ?', [ordenId]
+    // Centavos: se redondea cada ítem (igual que porCantidad) porque la cantidad puede ser fraccionaria.
+    'SELECT SUM(CAST(ROUND(cantidad * precio_costo) AS INTEGER)) as total FROM items_orden_compra WHERE orden_id = ?', [ordenId]
   )
   await db.execute('UPDATE ordenes_compra SET total = ?, actualizado_en = ? WHERE id = ?',
     [rows[0].total ?? 0, new Date().toISOString(), ordenId])

@@ -9,8 +9,10 @@ import { useNegocio } from '../../hooks/useNegocio'
 import { PDFCierreMes } from '../../lib/pdf/documentos/PDFCierreMes'
 import { MESES, type CierreMes as TCierreMes, type ResumenMes } from '../../types/caja'
 import { Calculator, Lock, FileDown, TrendingUp, TrendingDown, CheckCircle2, XCircle, Package, Award } from 'lucide-react'
+import { formatearPesos } from '../../lib/dinero'
 
-const money = (n: number) => `$${Math.round(n).toLocaleString('es-AR')}`
+// Montos en centavos → "$ 1.234,56"
+const money = formatearPesos
 
 const ahora = new Date()
 const ANIOS = Array.from({ length: 5 }, (_, i) => ahora.getFullYear() - i)

@@ -1,5 +1,6 @@
 import Database from '@tauri-apps/plugin-sql'
 import { respaldarSiCambioVersion, confirmarVersionInstalada } from './respaldoActualizacion'
+import { aplicarMigraciones, esInstalacionNueva } from './migraciones'
 
 // Una única conexión SQLite fija — instalación single-tenant (un negocio, un local).
 // Guardamos la PROMESA (no la conexión resuelta) para que llamadas concurrentes
@@ -12,7 +13,10 @@ export function getDb(): Promise<Db> {
       // Si cambió la versión instalada, copiar las bases antes de abrirlas y migrarlas.
       const respaldos = await respaldarSiCambioVersion()
       const database = await Database.load('sqlite:velora.db')
+      const instalacionNueva = await esInstalacionNueva(database)
       await initSchema(database)
+      // Si una migración falla lanza ErrorMigracion y la app no arranca (sin datos a medias).
+      await aplicarMigraciones(database, instalacionNueva)
       await seedDemoData(database)
       await confirmarVersionInstalada(database, respaldos)
       return database
@@ -177,8 +181,8 @@ async function initSchema(database: Db) {
       tipo            TEXT NOT NULL,
       descripcion     TEXT,
       categoria_id    INTEGER,
-      precio          REAL NOT NULL DEFAULT 0,
-      precio_costo    REAL DEFAULT 0,
+      precio          INTEGER NOT NULL DEFAULT 0,
+      precio_costo    INTEGER DEFAULT 0,
       moneda_costo    TEXT DEFAULT 'ARS',
       codigo_sku      TEXT,
       codigo_barras   TEXT,
@@ -243,7 +247,7 @@ async function initSchema(database: Db) {
       estado           TEXT NOT NULL DEFAULT 'borrador',
       numero           INTEGER NOT NULL,
       notas            TEXT,
-      total            REAL DEFAULT 0,
+      total            INTEGER DEFAULT 0,
       fecha_envio      TEXT,
       fecha_recepcion  TEXT,
       creado_en        TEXT NOT NULL,
@@ -258,7 +262,7 @@ async function initSchema(database: Db) {
       orden_id     INTEGER NOT NULL,
       producto_id  INTEGER NOT NULL,
       cantidad     REAL NOT NULL,
-      precio_costo REAL DEFAULT 0,
+      precio_costo INTEGER DEFAULT 0,
       recibido     INTEGER DEFAULT 0,
       FOREIGN KEY (orden_id)    REFERENCES ordenes_compra(id),
       FOREIGN KEY (producto_id) REFERENCES productos(id)
@@ -269,8 +273,8 @@ async function initSchema(database: Db) {
     CREATE TABLE IF NOT EXISTS historial_precios (
       id              INTEGER PRIMARY KEY AUTOINCREMENT,
       producto_id     INTEGER NOT NULL,
-      precio_anterior REAL NOT NULL,
-      precio_nuevo    REAL NOT NULL,
+      precio_anterior INTEGER NOT NULL,
+      precio_nuevo    INTEGER NOT NULL,
       porcentaje      REAL,
       motivo          TEXT,
       aplicado_por    TEXT NOT NULL,
@@ -299,10 +303,10 @@ async function initSchema(database: Db) {
       cliente_id       INTEGER NOT NULL,
       estado           TEXT NOT NULL DEFAULT 'borrador',
       descripcion      TEXT,
-      descuento        REAL DEFAULT 0,
+      descuento        INTEGER DEFAULT 0,
       tipo_descuento   TEXT DEFAULT 'porcentaje',
-      subtotal         REAL DEFAULT 0,
-      total_final      REAL DEFAULT 0,
+      subtotal         INTEGER DEFAULT 0,
+      total_final      INTEGER DEFAULT 0,
       motivo_rechazo   TEXT,
       vigencia_dias    INTEGER DEFAULT 7,
       fecha_vigencia   TEXT,
@@ -322,9 +326,9 @@ async function initSchema(database: Db) {
       tipo_item        TEXT NOT NULL,
       nombre           TEXT NOT NULL,
       cantidad         REAL NOT NULL DEFAULT 1,
-      precio_unitario  REAL NOT NULL,
-      descuento_item   REAL DEFAULT 0,
-      subtotal         REAL NOT NULL,
+      precio_unitario  INTEGER NOT NULL,
+      descuento_item   INTEGER DEFAULT 0,
+      subtotal         INTEGER NOT NULL,
       FOREIGN KEY (presupuesto_id) REFERENCES presupuestos(id),
       FOREIGN KEY (producto_id)    REFERENCES productos(id)
     )
@@ -361,10 +365,10 @@ async function initSchema(database: Db) {
       producto_nombre    TEXT NOT NULL,
       descripcion        TEXT,
       estado             TEXT NOT NULL DEFAULT 'recepcion',
-      descuento          REAL DEFAULT 0,
+      descuento          INTEGER DEFAULT 0,
       tipo_descuento     TEXT DEFAULT 'porcentaje',
-      precio             REAL NOT NULL,
-      total_final        REAL NOT NULL,
+      precio             INTEGER NOT NULL,
+      total_final        INTEGER NOT NULL,
       motivo_cancelacion TEXT,
       notas              TEXT,
       presupuesto_id     INTEGER,
@@ -438,9 +442,9 @@ async function initSchema(database: Db) {
       numero           INTEGER NOT NULL,
       empleado_id      INTEGER,
       empleado_nombre  TEXT,
-      subtotal         REAL NOT NULL,
-      descuento        REAL DEFAULT 0,
-      total_final      REAL NOT NULL,
+      subtotal         INTEGER NOT NULL,
+      descuento        INTEGER DEFAULT 0,
+      total_final      INTEGER NOT NULL,
       forma_pago       TEXT NOT NULL,
       fecha            TEXT NOT NULL,
       creado_en        TEXT NOT NULL
@@ -455,9 +459,10 @@ async function initSchema(database: Db) {
       tipo_item        TEXT NOT NULL,
       nombre           TEXT NOT NULL,
       cantidad         REAL NOT NULL,
-      precio_unitario  REAL NOT NULL,
-      descuento_item   REAL DEFAULT 0,
-      subtotal         REAL NOT NULL,
+      precio_unitario  INTEGER NOT NULL,
+      descuento_item   INTEGER DEFAULT 0,
+      subtotal         INTEGER NOT NULL,
+      tipo_descuento_item TEXT DEFAULT 'porcentaje',
       FOREIGN KEY (venta_id)    REFERENCES ventas_pos(id),
       FOREIGN KEY (producto_id) REFERENCES productos(id)
     )
@@ -467,7 +472,7 @@ async function initSchema(database: Db) {
     CREATE TABLE IF NOT EXISTS cobros_caja (
       id            INTEGER PRIMARY KEY AUTOINCREMENT,
       fecha         TEXT NOT NULL,
-      monto         REAL NOT NULL,
+      monto         INTEGER NOT NULL,
       forma_pago    TEXT NOT NULL,
       concepto      TEXT,
       ot_id         INTEGER,
@@ -481,7 +486,7 @@ async function initSchema(database: Db) {
     CREATE TABLE IF NOT EXISTS gastos_operativos (
       id           INTEGER PRIMARY KEY AUTOINCREMENT,
       fecha        TEXT NOT NULL,
-      monto        REAL NOT NULL,
+      monto        INTEGER NOT NULL,
       categoria    TEXT NOT NULL,
       descripcion  TEXT,
       comprobante  TEXT,
@@ -494,12 +499,12 @@ async function initSchema(database: Db) {
     CREATE TABLE IF NOT EXISTS cierres_caja (
       id                   INTEGER PRIMARY KEY AUTOINCREMENT,
       fecha                TEXT NOT NULL UNIQUE,
-      total_efectivo       REAL DEFAULT 0,
-      total_transferencia  REAL DEFAULT 0,
-      total_tarjeta        REAL DEFAULT 0,
-      total_ingresos       REAL DEFAULT 0,
-      total_gastos         REAL DEFAULT 0,
-      saldo_neto           REAL DEFAULT 0,
+      total_efectivo       INTEGER DEFAULT 0,
+      total_transferencia  INTEGER DEFAULT 0,
+      total_tarjeta        INTEGER DEFAULT 0,
+      total_ingresos       INTEGER DEFAULT 0,
+      total_gastos         INTEGER DEFAULT 0,
+      saldo_neto           INTEGER DEFAULT 0,
       cerrado_por          TEXT NOT NULL,
       notas                TEXT,
       creado_en            TEXT NOT NULL
@@ -511,9 +516,9 @@ async function initSchema(database: Db) {
       id                   INTEGER PRIMARY KEY AUTOINCREMENT,
       anio                 INTEGER NOT NULL,
       mes                  INTEGER NOT NULL,
-      total_ingresos       REAL DEFAULT 0,
-      total_gastos         REAL DEFAULT 0,
-      margen_operativo     REAL DEFAULT 0,
+      total_ingresos       INTEGER DEFAULT 0,
+      total_gastos         INTEGER DEFAULT 0,
+      margen_operativo     INTEGER DEFAULT 0,
       ots_completadas      INTEGER DEFAULT 0,
       ots_canceladas       INTEGER DEFAULT 0,
       producto_mas_vendido TEXT,
@@ -535,7 +540,7 @@ async function initSchema(database: Db) {
       cliente_nombre  TEXT,
       motivo          TEXT NOT NULL,
       observacion     TEXT,
-      total_devuelto  REAL DEFAULT 0,
+      total_devuelto  INTEGER DEFAULT 0,
       procesado_por   TEXT NOT NULL,
       fecha           TEXT NOT NULL,
       creado_en       TEXT NOT NULL
@@ -550,8 +555,8 @@ async function initSchema(database: Db) {
       nombre              TEXT NOT NULL,
       cantidad_original   INTEGER NOT NULL,
       cantidad_devuelta   INTEGER NOT NULL,
-      precio_unitario     REAL NOT NULL,
-      subtotal_devuelto   REAL NOT NULL,
+      precio_unitario     INTEGER NOT NULL,
+      subtotal_devuelto   INTEGER NOT NULL,
       FOREIGN KEY (devolucion_id) REFERENCES devoluciones(id),
       FOREIGN KEY (producto_id)   REFERENCES productos(id)
     )
@@ -631,6 +636,13 @@ async function initSchema(database: Db) {
   // SQLite calcula el DEFAULT constante para las filas existentes sin reescribir la tabla.
   try {
     await database.execute(`ALTER TABLE productos ADD COLUMN unidad_medida TEXT NOT NULL DEFAULT 'unidad'`)
+  } catch { /* la columna ya existe */ }
+
+  // Migración: tipo del descuento por ítem en ventas POS (antes no se guardaba: el número
+  // era % o $ según el tipo global del carrito). La migración 2026_12_centavos completa
+  // las filas viejas; desde ahora se guarda al vender.
+  try {
+    await database.execute(`ALTER TABLE items_venta_pos ADD COLUMN tipo_descuento_item TEXT DEFAULT 'porcentaje'`)
   } catch { /* la columna ya existe */ }
 
   // NOTA sobre productos.stock / movimientos_stock.cantidad / items_venta_pos.cantidad /

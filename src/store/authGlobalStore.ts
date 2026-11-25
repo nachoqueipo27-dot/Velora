@@ -54,6 +54,17 @@ export const useAuthGlobalStore = create<AuthGlobalStore>()(
       logout: () => set({ usuario: null }),
       clearError: () => set({ loginError: null }),
     }),
-    { name: 'velora-auth-global' }
+    {
+      name: 'velora-auth-global',
+      // Solo datos de identidad: nunca contraseñas ni hashes.
+      partialize: (s) => ({
+        usuario: s.usuario && {
+          nombre: s.usuario.nombre,
+          dni: s.usuario.dni,
+          rol: s.usuario.rol,
+          esAdminGeneral: s.usuario.esAdminGeneral,
+        },
+      }),
+    }
   )
 )

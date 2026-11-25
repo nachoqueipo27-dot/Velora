@@ -11,6 +11,7 @@ import { VigenciaIndicador } from './components/VigenciaIndicador'
 import { ModalPresupuesto } from './ModalPresupuesto'
 import { Search, Plus, Eye, Pencil, Send, Check, X, RefreshCw, ArrowRightCircle, Trash2, FileText } from 'lucide-react'
 import { format } from 'date-fns'
+import { formatearPesos } from '../../lib/dinero'
 
 interface ListadoPresupuestosProps {
   onVer: (p: Presupuesto) => void
@@ -19,7 +20,8 @@ interface ListadoPresupuestosProps {
   onNuevoAbierto?: () => void
 }
 
-const money = (n: number) => `$${Math.round(n).toLocaleString('es-AR')}`
+// Montos en centavos → "$ 1.234,56"
+const money = formatearPesos
 const numFmt = (n: number) => `#${String(n).padStart(3, '0')}`
 
 export const ListadoPresupuestos = ({ onVer, modo = 'todos', abrirNuevo, onNuevoAbierto }: ListadoPresupuestosProps) => {

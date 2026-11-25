@@ -5,8 +5,10 @@ import { PiePagina } from '../componentes/PiePagina'
 import type { Presupuesto, ItemPresupuesto } from '../../../types/presupuestos'
 import { UNIDADES_MEDIDA } from '../../../types/inventario'
 import { format } from 'date-fns'
+import { formatearPesos } from '../../dinero'
 
-const money = (n: number) => `$${Math.round(n).toLocaleString('es-AR')}`
+// Montos en centavos → "$ 1.234,56"
+const money = formatearPesos
 const LABEL_UNIDAD: Record<string, string> = Object.fromEntries(UNIDADES_MEDIDA.map(u => [u.value, u.label]))
 
 interface Props {

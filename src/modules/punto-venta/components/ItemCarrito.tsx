@@ -4,8 +4,10 @@ import type { ItemCarrito as TItemCarrito } from '../../../types/pos'
 import { UNIDAD_ABREVIADA, permiteDecimales } from '../../../types/inventario'
 import { cn } from '../../../lib/utils'
 import { Minus, Plus, X, ImageOff } from 'lucide-react'
+import { formatearPesos } from '../../../lib/dinero'
 
-const money = (n: number) => `$${Math.round(n).toLocaleString('es-AR')}`
+// Montos en centavos → "$ 1.234,56"
+const money = formatearPesos
 // Oculta las flechas nativas del <input type="number"> — el propio par +/- ya cumple esa función.
 const sinFlechas = '[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none'
 

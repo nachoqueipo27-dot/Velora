@@ -26,6 +26,9 @@ const TABLAS_CONFIG_BASE = [
   'configuracion_pdf',
   'motivos_cancelacion',
   'tipos_cambio',
+  // Registro de migraciones aplicadas: si se vaciara, al reiniciar se volverían a correr
+  // sobre datos que ya están en el formato nuevo (ej. montos ×100 dos veces).
+  '_migraciones',
 ]
 
 // Única clave de la tabla `configuracion` que crea seedConfiguracionBase. El resto

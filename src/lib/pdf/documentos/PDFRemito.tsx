@@ -3,8 +3,10 @@ import { estilosPDF as s } from '../estilos'
 import { Encabezado, type DatosNegocio } from '../componentes/Encabezado'
 import { PiePagina } from '../componentes/PiePagina'
 import type { OrdenTrabajo } from '../../../types/ordenesTrabajo'
+import { formatearPesos } from '../../dinero'
 
-const money = (n: number) => `$${Math.round(n).toLocaleString('es-AR')}`
+// Montos en centavos → "$ 1.234,56"
+const money = formatearPesos
 
 interface Props {
   ot: OrdenTrabajo

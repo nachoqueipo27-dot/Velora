@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { aplicarPorcentaje } from '../lib/dinero'
 import { getDb } from '../db'
 import { useSessionStore } from './sessionStore'
 import type { ItemListaPrecios, HistorialPrecio, SnapshotLista, ItemSnapshotPrecio } from '../types/listaPrecios'
@@ -57,11 +58,10 @@ export const useListaPreciosStore = create<ListaPreciosStore>((set, get) => ({
   },
 
   previsualizarAumento: (porcentaje, categoriaId) => {
-    const factor = 1 + porcentaje / 100
     const afectados = get().items
       .filter(i => categoriaId == null || i.categoriaId === categoriaId)
       .map(i => {
-        const precioNuevo = Math.round(i.precioActual * factor * 100) / 100
+        const precioNuevo = i.precioActual + aplicarPorcentaje(i.precioActual, porcentaje)
         return { ...i, precioNuevo, variacion: porcentaje }
       })
     set({ previsualizacion: afectados })
@@ -72,12 +72,11 @@ export const useListaPreciosStore = create<ListaPreciosStore>((set, get) => ({
   aplicarAumento: async (porcentaje, categoriaId, motivo) => {
     const db = await getDb()
     const now = new Date().toISOString()
-    const factor = 1 + porcentaje / 100
     const afectados = get().items.filter(i => categoriaId == null || i.categoriaId === categoriaId)
     const por = usuarioActual()
 
     for (const i of afectados) {
-      const precioNuevo = Math.round(i.precioActual * factor * 100) / 100
+      const precioNuevo = i.precioActual + aplicarPorcentaje(i.precioActual, porcentaje)
       if (precioNuevo === i.precioActual) continue
       await db.execute('UPDATE productos SET precio = ?, actualizado_en = ? WHERE id = ?', [precioNuevo, now, i.productoId])
       await db.execute(

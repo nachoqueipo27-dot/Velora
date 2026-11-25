@@ -6,8 +6,10 @@ import { BarraProgreso } from './components/BarraProgreso'
 import { ComparativoTabla } from './components/ComparativoTabla'
 import { Button } from '../../components/ui/Button'
 import { TrendingUp, TrendingDown, Wallet, CheckCircle2, XCircle, Receipt, Package, UserCheck, Star } from 'lucide-react'
+import { formatearPesos } from '../../lib/dinero'
 
-const money = (n: number) => `$${Math.round(n).toLocaleString('es-AR')}`
+// Montos en centavos → "$ 1.234,56"
+const money = formatearPesos
 
 const TABS: { id: PeriodoSalud; label: string }[] = [
   { id: 'mes_actual',    label: 'Mes actual' },

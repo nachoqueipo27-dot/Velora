@@ -4,8 +4,10 @@ import { Encabezado, type DatosNegocio } from '../componentes/Encabezado'
 import { PiePagina } from '../componentes/PiePagina'
 import { ESTADOS_OT, type OrdenTrabajo } from '../../../types/ordenesTrabajo'
 import { format } from 'date-fns'
+import { formatearPesos } from '../../dinero'
 
-const money = (n: number) => `$${Math.round(n).toLocaleString('es-AR')}`
+// Montos en centavos → "$ 1.234,56"
+const money = formatearPesos
 
 interface Props {
   ot: OrdenTrabajo

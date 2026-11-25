@@ -8,8 +8,10 @@ import { CardMetrica } from '../../dashboard/components/CardMetrica'
 import { Button } from '../../../components/ui/Button'
 import { PDFReporteClientes } from '../../../lib/pdf/documentos/PDFReporteClientes'
 import { UserPlus, DollarSign, UserX, Download, Check } from 'lucide-react'
+import { formatearPesos } from '../../../lib/dinero'
 
-const money = (n: number) => `$${Math.round(n).toLocaleString('es-AR')}`
+// Montos en centavos → "$ 1.234,56"
+const money = formatearPesos
 const hoyStr = () => format(new Date(), 'yyyy-MM-dd')
 
 type RangoId = 'hoy' | 'semana' | 'mes' | 'mesAnterior'

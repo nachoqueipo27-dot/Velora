@@ -11,6 +11,13 @@ import { useInventarioStore } from '../../store/inventarioStore'
 import { permiteDecimales } from '../../types/inventario'
 import type { Presupuesto } from '../../types/presupuestos'
 import { Search, Trash2 } from 'lucide-react'
+import { aCentavos, aPesos, formatearPesos } from '../../lib/dinero'
+
+// El form trabaja en pesos (lo que tipea el usuario); el store y la base, en centavos.
+const itemACentavos = (i: ItemPresupuestoInput): ItemPresupuestoInput =>
+  ({ ...i, precioUnitario: aCentavos(i.precioUnitario), descuentoItem: aCentavos(i.descuentoItem) })
+const descuentoACentavos = (valor: string, tipo: 'porcentaje' | 'monto') =>
+  tipo === 'monto' ? aCentavos(Number(valor) || 0) : (Number(valor) || 0)
 
 interface ModalPresupuestoProps {
   open: boolean
@@ -18,7 +25,8 @@ interface ModalPresupuestoProps {
   presupuesto?: Presupuesto | null
 }
 
-const money = (n: number) => `$${Math.round(n).toLocaleString('es-AR')}`
+// Montos en centavos → "$ 1.234,56"
+const money = formatearPesos
 
 export const ModalPresupuesto = ({ open, onClose, presupuesto }: ModalPresupuestoProps) => {
   const { crearPresupuesto, actualizarPresupuesto, cargarItems, items: itemsStore } = usePresupuestosStore()
@@ -44,7 +52,7 @@ export const ModalPresupuesto = ({ open, onClose, presupuesto }: ModalPresupuest
       setClienteId(presupuesto.clienteId)
       setDescripcion(presupuesto.descripcion)
       setVigenciaDias(String(presupuesto.vigenciaDias))
-      setDescuento(String(presupuesto.descuento))
+      setDescuento(String(presupuesto.tipoDescuento === 'monto' ? aPesos(presupuesto.descuento) : presupuesto.descuento))
       setTipoDescuento(presupuesto.tipoDescuento)
       cargarItems(presupuesto.id)
     } else {
@@ -59,7 +67,7 @@ export const ModalPresupuesto = ({ open, onClose, presupuesto }: ModalPresupuest
     if (open && presupuesto) {
       setItems(itemsStore.map(i => ({
         productoId: i.productoId, tipoItem: i.tipoItem, nombre: i.nombre,
-        cantidad: i.cantidad, precioUnitario: i.precioUnitario, descuentoItem: i.descuentoItem,
+        cantidad: i.cantidad, precioUnitario: aPesos(i.precioUnitario), descuentoItem: aPesos(i.descuentoItem),
       })))
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -78,12 +86,12 @@ export const ModalPresupuesto = ({ open, onClose, presupuesto }: ModalPresupuest
   }, [productos])
 
   const { subtotal, totalFinal } = useMemo(
-    () => calcularTotales(items, Number(descuento) || 0, tipoDescuento),
+    () => calcularTotales(items.map(itemACentavos), descuentoACentavos(descuento, tipoDescuento), tipoDescuento),
     [items, descuento, tipoDescuento]
   )
 
   const agregar = (id: number, nombre: string, precio: number) => {
-    setItems([...items, { productoId: id, tipoItem, nombre, cantidad: 1, precioUnitario: precio, descuentoItem: 0 }])
+    setItems([...items, { productoId: id, tipoItem, nombre, cantidad: 1, precioUnitario: aPesos(precio), descuentoItem: 0 }])
     setBusqueda('')
   }
   const setItem = (id: number, patch: Partial<ItemPresupuestoInput>) =>
@@ -98,7 +106,7 @@ export const ModalPresupuesto = ({ open, onClose, presupuesto }: ModalPresupuest
     try {
       const data = {
         clienteId: Number(clienteId), descripcion, vigenciaDias: Number(vigenciaDias) || 7,
-        descuento: Number(descuento) || 0, tipoDescuento, items,
+        descuento: descuentoACentavos(descuento, tipoDescuento), tipoDescuento, items: items.map(itemACentavos),
       }
       if (esEdicion && presupuesto) await actualizarPresupuesto(presupuesto.id, data)
       else await crearPresupuesto(data)
@@ -181,7 +189,7 @@ export const ModalPresupuesto = ({ open, onClose, presupuesto }: ModalPresupuest
                     className="px-2 py-1 text-[13px] text-center rounded-input border bg-transparent outline-none border-[#2A2A2A] text-white focus:border-white light:border-[#E4E4E4] light:text-[#0A0A0A]" />
                   <input type="number" min={0} value={it.descuentoItem} onChange={e => setItem(it.productoId, { descuentoItem: Number(e.target.value) })}
                     className="px-2 py-1 text-[13px] text-center rounded-input border bg-transparent outline-none border-[#2A2A2A] text-white focus:border-white light:border-[#E4E4E4] light:text-[#0A0A0A]" />
-                  <span className="text-[13px] text-right text-[#A0A0A0] light:text-[#404040]">{money(subtotalItem(it))}</span>
+                  <span className="text-[13px] text-right text-[#A0A0A0] light:text-[#404040]">{money(subtotalItem(itemACentavos(it)))}</span>
                   <button type="button" onClick={() => quitar(it.productoId)} className="w-6 h-6 rounded flex items-center justify-center text-[#606060] hover:text-[#C0392B] hover:bg-[#C0392B]/10"><Trash2 size={13} /></button>
                 </div>
                 )

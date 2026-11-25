@@ -11,6 +11,7 @@ import { UNIDADES_MEDIDA, type ComponenteConjunto } from '../../types/inventario
 import { StockBadge } from './components/StockBadge'
 import { ArrowLeft, Package, Boxes, ImageOff } from 'lucide-react'
 import { format } from 'date-fns'
+import { formatearPesos } from '../../lib/dinero'
 
 interface FichaProductoProps {
   onVolver: () => void
@@ -63,11 +64,11 @@ export const FichaProducto = ({ onVolver }: FichaProductoProps) => {
         <Card className="hover:border-[#2A2A2A]">
           <span className="text-[11px] font-semibold uppercase tracking-wider text-[#606060]">Precios</span>
           <div className="grid grid-cols-2 gap-y-2 mt-3 text-sm">
-            <span className="text-[#606060]">Venta</span><span className="text-white light:text-black text-right">${p.precio.toLocaleString('es-AR')}</span>
-            <span className="text-[#606060]">Costo</span><span className="text-white light:text-black text-right">${p.precioCosto.toLocaleString('es-AR')} {p.monedaCosto}</span>
+            <span className="text-[#606060]">Venta</span><span className="text-white light:text-black text-right">{formatearPesos(p.precio)}</span>
+            <span className="text-[#606060]">Costo</span><span className="text-white light:text-black text-right">{formatearPesos(p.precioCosto)} {p.monedaCosto}</span>
             <span className="text-[#606060]">Margen</span>
             <span className={cn('text-right font-medium', margen >= 0 ? 'text-[#4CAF7D]' : 'text-[#C0392B]')}>
-              ${margen.toLocaleString('es-AR')} ({margenPct.toFixed(0)}%)
+              {formatearPesos(margen)} ({margenPct.toFixed(0)}%)
             </span>
           </div>
         </Card>

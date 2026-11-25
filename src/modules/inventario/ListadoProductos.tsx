@@ -7,6 +7,7 @@ import { UNIDADES_MEDIDA, type Producto } from '../../types/inventario'
 import { StockBadge } from './components/StockBadge'
 import { ModalProducto } from './ModalProducto'
 import { Search, Plus, Eye, Pencil, Trash2, ImageOff, AlertTriangle, PackageX } from 'lucide-react'
+import { formatearPesos } from '../../lib/dinero'
 
 const LABEL_UNIDAD: Record<string, string> = Object.fromEntries(UNIDADES_MEDIDA.map(u => [u.value, u.label]))
 
@@ -118,7 +119,7 @@ export const ListadoProductos = ({ tipo, onVer }: ListadoProductosProps) => {
                     </div>
                   </td>
                   <td className="px-3 py-2.5 text-[#A0A0A0] light:text-[#404040]">{p.categoriaNombre || '—'}</td>
-                  <td className="px-3 py-2.5 text-right text-white light:text-black">${p.precio.toLocaleString('es-AR')}</td>
+                  <td className="px-3 py-2.5 text-right text-white light:text-black">{formatearPesos(p.precio)}</td>
                   <td className="px-3 py-2.5 text-right text-[#A0A0A0] light:text-[#404040]">
                     {p.tipo === 'conjunto' ? '—' : `${p.stock} ${LABEL_UNIDAD[p.unidadMedida] ?? ''}`}
                   </td>

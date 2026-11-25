@@ -7,8 +7,10 @@ import { useNegocio } from '../../hooks/useNegocio'
 import { PDFCierreMes } from '../../lib/pdf/documentos/PDFCierreMes'
 import { MESES } from '../../types/caja'
 import { FileDown, FileSpreadsheet } from 'lucide-react'
+import { formatearPesos } from '../../lib/dinero'
 
-const money = (n: number) => `$${Math.round(n).toLocaleString('es-AR')}`
+// Montos en centavos → "$ 1.234,56"
+const money = formatearPesos
 const fechaCorta = (iso: string) => new Date(iso + 'T00:00:00').toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' })
 
 type Tab = 'diarios' | 'mensuales'

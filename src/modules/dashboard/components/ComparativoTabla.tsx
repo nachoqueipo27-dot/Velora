@@ -1,8 +1,10 @@
 import { cn } from '../../../lib/utils'
 import { ArrowUp, ArrowDown, Minus } from 'lucide-react'
 import type { PuntoComparativo } from '../../../store/dashboardStore'
+import { formatearPesos } from '../../../lib/dinero'
 
-const money = (n: number) => `$${Math.round(n).toLocaleString('es-AR')}`
+// Montos en centavos → "$ 1.234,56"
+const money = formatearPesos
 
 interface ComparativoTablaProps {
   periodoActual: PuntoComparativo

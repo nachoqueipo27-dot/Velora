@@ -1,6 +1,8 @@
 import { sqliteTable, text, integer, real } from 'drizzle-orm/sqlite-core'
 
 // Schema base — se expandirá en cada paso de módulo
+// Montos en pesos: INTEGER en centavos desde la 1.3.0 (ver src/lib/dinero.ts y la
+// migración 2026_12_centavos en src/db/migraciones.ts). Cantidades/stock/horas/% siguen REAL.
 export const configuracion = sqliteTable('configuracion', {
   id:    integer('id').primaryKey(),
   clave: text('clave').notNull().unique(),
@@ -131,8 +133,8 @@ export const productos = sqliteTable('productos', {
   tipo:          text('tipo').notNull(), // 'simple' | 'conjunto'
   descripcion:   text('descripcion'),
   categoriaId:   integer('categoria_id'),
-  precio:        real('precio').notNull().default(0),
-  precioCosto:   real('precio_costo').default(0),
+  precio:        integer('precio').notNull().default(0),
+  precioCosto:   integer('precio_costo').default(0),
   monedaCosto:   text('moneda_costo').default('ARS'),
   codigoSku:     text('codigo_sku'),
   codigoBarras:  text('codigo_barras'),
@@ -190,7 +192,7 @@ export const ordenesCompra = sqliteTable('ordenes_compra', {
   estado:         text('estado').notNull().default('borrador'), // 'borrador'|'enviada'|'recibida'
   numero:         integer('numero').notNull(),
   notas:          text('notas'),
-  total:          real('total').default(0),
+  total:          integer('total').default(0),
   fechaEnvio:     text('fecha_envio'),
   fechaRecepcion: text('fecha_recepcion'),
   creadoEn:       text('creado_en').notNull(),
@@ -202,7 +204,7 @@ export const itemsOrdenCompra = sqliteTable('items_orden_compra', {
   ordenId:     integer('orden_id').notNull(),
   productoId:  integer('producto_id').notNull(),
   cantidad:    real('cantidad').notNull(), // real: producto puede ser fraccionable
-  precioCosto: real('precio_costo').default(0),
+  precioCosto: integer('precio_costo').default(0),
   recibido:    integer('recibido').default(0),
 })
 
@@ -211,8 +213,8 @@ export const itemsOrdenCompra = sqliteTable('items_orden_compra', {
 export const historialPrecios = sqliteTable('historial_precios', {
   id:             integer('id').primaryKey({ autoIncrement: true }),
   productoId:     integer('producto_id').notNull(),
-  precioAnterior: real('precio_anterior').notNull(),
-  precioNuevo:    real('precio_nuevo').notNull(),
+  precioAnterior: integer('precio_anterior').notNull(),
+  precioNuevo:    integer('precio_nuevo').notNull(),
   porcentaje:     real('porcentaje'),
   motivo:         text('motivo'),
   aplicadoPor:    text('aplicado_por').notNull(),
@@ -239,10 +241,10 @@ export const presupuestos = sqliteTable('presupuestos', {
   estado:        text('estado').notNull().default('borrador'),
   // 'borrador' | 'enviado' | 'aprobado' | 'rechazado' | 'convertido'
   descripcion:   text('descripcion'),
-  descuento:     real('descuento').default(0),
+  descuento:     integer('descuento').default(0), // centavos si tipo_descuento = 'monto'; % si 'porcentaje'
   tipoDescuento: text('tipo_descuento').default('porcentaje'), // 'porcentaje' | 'monto'
-  subtotal:      real('subtotal').default(0),
-  totalFinal:    real('total_final').default(0),
+  subtotal:      integer('subtotal').default(0),
+  totalFinal:    integer('total_final').default(0),
   motivoRechazo: text('motivo_rechazo'),
   vigenciaDias:  integer('vigencia_dias').default(7),
   fechaVigencia: text('fecha_vigencia'),
@@ -259,9 +261,9 @@ export const itemsPresupuesto = sqliteTable('items_presupuesto', {
   tipoItem:       text('tipo_item').notNull(), // 'simple' | 'conjunto'
   nombre:         text('nombre').notNull(),
   cantidad:       real('cantidad').notNull().default(1), // real: producto puede ser fraccionable
-  precioUnitario: real('precio_unitario').notNull(),
-  descuentoItem:  real('descuento_item').default(0),
-  subtotal:       real('subtotal').notNull(),
+  precioUnitario: integer('precio_unitario').notNull(),
+  descuentoItem:  integer('descuento_item').default(0),
+  subtotal:       integer('subtotal').notNull(),
 })
 
 // ─── Órdenes de trabajo ────────────────────────────────────────
@@ -292,10 +294,10 @@ export const ordenesTrabajo = sqliteTable('ordenes_trabajo', {
   productoNombre:    text('producto_nombre').notNull(),
   descripcion:       text('descripcion'),
   estado:            text('estado').notNull().default('recepcion'),
-  descuento:         real('descuento').default(0),
+  descuento:         integer('descuento').default(0), // centavos si tipo_descuento = 'monto'; % si 'porcentaje'
   tipoDescuento:     text('tipo_descuento').default('porcentaje'),
-  precio:            real('precio').notNull(),
-  totalFinal:        real('total_final').notNull(),
+  precio:            integer('precio').notNull(),
+  totalFinal:        integer('total_final').notNull(),
   motivoCancelacion: text('motivo_cancelacion'),
   notas:             text('notas'),
   presupuestoId:     integer('presupuesto_id'),
@@ -358,9 +360,9 @@ export const ventasPOS = sqliteTable('ventas_pos', {
   numero:         integer('numero').notNull(),
   empleadoId:     integer('empleado_id'),
   empleadoNombre: text('empleado_nombre'),
-  subtotal:       real('subtotal').notNull(),
-  descuento:      real('descuento').default(0),
-  totalFinal:     real('total_final').notNull(),
+  subtotal:       integer('subtotal').notNull(),
+  descuento:      integer('descuento').default(0),
+  totalFinal:     integer('total_final').notNull(),
   formaPago:      text('forma_pago').notNull(), // 'efectivo'|'transferencia'|'tarjeta'
   fecha:          text('fecha').notNull(),
   creadoEn:       text('creado_en').notNull(),
@@ -373,15 +375,17 @@ export const itemsVentaPOS = sqliteTable('items_venta_pos', {
   tipoItem:       text('tipo_item').notNull(), // 'simple'|'conjunto'
   nombre:         text('nombre').notNull(),
   cantidad:       real('cantidad').notNull(), // real: producto puede ser fraccionable
-  precioUnitario: real('precio_unitario').notNull(),
-  descuentoItem:  real('descuento_item').default(0),
-  subtotal:       real('subtotal').notNull(),
+  precioUnitario: integer('precio_unitario').notNull(),
+  // Centavos si tipo_descuento_item = 'monto'; porcentaje (puede tener decimales) si es 'porcentaje'.
+  descuentoItem:  integer('descuento_item').default(0),
+  subtotal:       integer('subtotal').notNull(),
+  tipoDescuentoItem: text('tipo_descuento_item').default('porcentaje'), // 'porcentaje' | 'monto'
 })
 
 export const cobrosCaja = sqliteTable('cobros_caja', {
   id:         integer('id').primaryKey({ autoIncrement: true }),
   fecha:      text('fecha').notNull(),
-  monto:      real('monto').notNull(),
+  monto:      integer('monto').notNull(),
   formaPago:  text('forma_pago').notNull(),
   concepto:   text('concepto'),
   otId:       integer('ot_id'),
@@ -395,7 +399,7 @@ export const cobrosCaja = sqliteTable('cobros_caja', {
 export const gastosOperativos = sqliteTable('gastos_operativos', {
   id:           integer('id').primaryKey({ autoIncrement: true }),
   fecha:        text('fecha').notNull(),
-  monto:        real('monto').notNull(),
+  monto:        integer('monto').notNull(),
   categoria:    text('categoria').notNull(),
   descripcion:  text('descripcion'),
   comprobante:  text('comprobante'), // nombre del archivo adjunto
@@ -406,12 +410,12 @@ export const gastosOperativos = sqliteTable('gastos_operativos', {
 export const cierresCaja = sqliteTable('cierres_caja', {
   id:                 integer('id').primaryKey({ autoIncrement: true }),
   fecha:              text('fecha').notNull().unique(),
-  totalEfectivo:      real('total_efectivo').default(0),
-  totalTransferencia: real('total_transferencia').default(0),
-  totalTarjeta:       real('total_tarjeta').default(0),
-  totalIngresos:      real('total_ingresos').default(0),
-  totalGastos:        real('total_gastos').default(0),
-  saldoNeto:          real('saldo_neto').default(0),
+  totalEfectivo:      integer('total_efectivo').default(0),
+  totalTransferencia: integer('total_transferencia').default(0),
+  totalTarjeta:       integer('total_tarjeta').default(0),
+  totalIngresos:      integer('total_ingresos').default(0),
+  totalGastos:        integer('total_gastos').default(0),
+  saldoNeto:          integer('saldo_neto').default(0),
   cerradoPor:         text('cerrado_por').notNull(),
   notas:              text('notas'),
   creadoEn:           text('creado_en').notNull(),
@@ -421,9 +425,9 @@ export const cierresMes = sqliteTable('cierres_mes', {
   id:                 integer('id').primaryKey({ autoIncrement: true }),
   anio:               integer('anio').notNull(),
   mes:                integer('mes').notNull(), // 1-12
-  totalIngresos:      real('total_ingresos').default(0),
-  totalGastos:        real('total_gastos').default(0),
-  margenOperativo:    real('margen_operativo').default(0),
+  totalIngresos:      integer('total_ingresos').default(0),
+  totalGastos:        integer('total_gastos').default(0),
+  margenOperativo:    integer('margen_operativo').default(0),
   otsCompletadas:     integer('ots_completadas').default(0),
   otsCanceladas:      integer('ots_canceladas').default(0),
   productoMasVendido: text('producto_mas_vendido'),
@@ -445,7 +449,7 @@ export const devoluciones = sqliteTable('devoluciones', {
   clienteNombre: text('cliente_nombre'),
   motivo:        text('motivo').notNull(),
   observacion:   text('observacion'),
-  totalDevuelto: real('total_devuelto').default(0),
+  totalDevuelto: integer('total_devuelto').default(0),
   procesadoPor:  text('procesado_por').notNull(),
   fecha:         text('fecha').notNull(),
   creadoEn:      text('creado_en').notNull(),
@@ -458,8 +462,8 @@ export const itemsDevolucion = sqliteTable('items_devolucion', {
   nombre:           text('nombre').notNull(),
   cantidadOriginal: integer('cantidad_original').notNull(),
   cantidadDevuelta: integer('cantidad_devuelta').notNull(),
-  precioUnitario:   real('precio_unitario').notNull(),
-  subtotalDevuelto: real('subtotal_devuelto').notNull(),
+  precioUnitario:   integer('precio_unitario').notNull(),
+  subtotalDevuelto: integer('subtotal_devuelto').notNull(),
 })
 
 // ─── Configuración ─────────────────────────────────────────────
@@ -515,4 +519,10 @@ export const tiposCambio = sqliteTable('tipos_cambio', {
   fecha:     text('fecha').notNull(),
   creadoPor: text('creado_por').notNull(),
   creadoEn:  text('creado_en').notNull(),
+})
+
+// Migraciones versionadas de velora.db (ver src/db/migraciones.ts). Una fila por migración aplicada.
+export const migraciones = sqliteTable('_migraciones', {
+  id:         text('id').primaryKey(),
+  aplicadaEn: text('aplicada_en'),
 })

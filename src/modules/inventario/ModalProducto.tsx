@@ -13,6 +13,7 @@ import {
 import { ImagenCropper } from './components/ImagenCropper'
 import { ComponentesList } from './components/ComponentesList'
 import { Plus } from 'lucide-react'
+import { aCentavos, aPesos } from '../../lib/dinero'
 
 interface ModalProductoProps {
   open: boolean
@@ -53,8 +54,9 @@ export const ModalProducto = ({ open, onClose, producto, tipoInicial = 'simple' 
       setTipo(producto.tipo)
       setNombre(producto.nombre)
       setDescripcion(producto.descripcion)
-      setPrecio(String(producto.precio))
-      setPrecioCosto(String(producto.precioCosto))
+      // El form muestra pesos; la base guarda centavos.
+      setPrecio(String(aPesos(producto.precio)))
+      setPrecioCosto(String(aPesos(producto.precioCosto)))
       setMonedaCosto(producto.monedaCosto)
       setCodigoSku(producto.codigoSku)
       setCategoriaId(producto.categoriaId ?? '')
@@ -112,8 +114,8 @@ export const ModalProducto = ({ open, onClose, producto, tipoInicial = 'simple' 
         tipo,
         descripcion: descripcion.trim(),
         categoriaId: categoriaId === '' ? null : Number(categoriaId),
-        precio: num(precio),
-        precioCosto: num(precioCosto),
+        precio: aCentavos(num(precio)),
+        precioCosto: aCentavos(num(precioCosto)),
         monedaCosto,
         codigoSku: codigoSku.trim(),
         stock: tipo === 'conjunto' ? 0 : num(stock),

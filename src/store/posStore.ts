@@ -1,9 +1,11 @@
 import { create } from 'zustand'
 import { getDb } from '../db'
+import { verificarClaveEmpleado } from '../db/claves'
 import { useSessionStore } from './sessionStore'
 import { useInventarioStore } from './inventarioStore'
 import { permiteDecimales } from '../types/inventario'
 import type { FormaPago, ItemCarrito, VentaPOS } from '../types/pos'
+import { aCentavos, aplicarPorcentaje, porCantidad } from '../lib/dinero'
 
 interface PosStore {
   carrito: ItemCarrito[]
@@ -12,6 +14,7 @@ interface PosStore {
   formaPago: FormaPago
   empleadoPOS: { id: number; nombre: string } | null
   procesando: boolean
+  errorPIN: string | null
   // productoId del ítem cuyo input de cantidad debe recibir foco — lo dispara
   // agregarProducto() al re-tocar un producto fraccionable ya en el carrito;
   // ItemCarrito.tsx lo consume y lo limpia después de enfocar.
@@ -36,13 +39,18 @@ interface PosStore {
 }
 
 // El "Desc" de cada item sigue el mismo tipo (%/$) que el descuento global del carrito.
+// En el carrito, descuentoItem y descuentoGlobal guardan el número tal como lo tipeó el
+// cajero (% o pesos según el tipo), así cambiar el tipo no lo reinterpreta en centavos.
+// Precios y subtotales: centavos.
+const descuentoEnCentavos = (bruto: number, valor: number, tipo: 'porcentaje' | 'monto') =>
+  tipo === 'porcentaje' ? aplicarPorcentaje(bruto, valor || 0) : aCentavos(valor || 0)
+
 const subtotalItem = (
   it: { precioUnitario: number; cantidad: number; descuentoItem: number },
   tipo: 'porcentaje' | 'monto',
 ) => {
-  const bruto = it.precioUnitario * it.cantidad
-  const descuento = tipo === 'porcentaje' ? bruto * ((it.descuentoItem || 0) / 100) : (it.descuentoItem || 0)
-  return Math.max(0, bruto - descuento)
+  const bruto = porCantidad(it.precioUnitario, it.cantidad)
+  return Math.max(0, bruto - descuentoEnCentavos(bruto, it.descuentoItem, tipo))
 }
 
 const recomputar = (items: ItemCarrito[], tipo: 'porcentaje' | 'monto'): ItemCarrito[] =>
@@ -76,6 +84,7 @@ export const usePosStore = create<PosStore>((set, get) => ({
   formaPago: 'efectivo',
   empleadoPOS: null,
   procesando: false,
+  errorPIN: null,
   itemEnEdicion: null,
 
   agregarProducto: async (productoId, tipoItem) => {
@@ -132,15 +141,18 @@ export const usePosStore = create<PosStore>((set, get) => ({
   calcularDescuentoGlobal: () => {
     const sub = get().calcularSubtotal()
     const { descuentoGlobal, tipoDescuentoGlobal } = get()
-    const d = tipoDescuentoGlobal === 'porcentaje' ? sub * (descuentoGlobal / 100) : descuentoGlobal
+    const d = descuentoEnCentavos(sub, descuentoGlobal, tipoDescuentoGlobal)
     return Math.min(sub, Math.max(0, d))
   },
 
-  calcularTotal: () => Math.max(0, Math.round((get().calcularSubtotal() - get().calcularDescuentoGlobal()) * 100) / 100),
+  calcularTotal: () => Math.max(0, get().calcularSubtotal() - get().calcularDescuentoGlobal()),
 
   confirmarVenta: async () => {
-    const { carrito } = get()
+    const { carrito, tipoDescuentoGlobal } = get()
     if (carrito.length === 0) return null
+    // En la base: centavos si el descuento del ítem es monto, el % tal cual si es porcentaje.
+    const descuentoItemGuardado = (valor: number) =>
+      tipoDescuentoGlobal === 'monto' ? aCentavos(valor || 0) : (valor || 0)
     set({ procesando: true })
     try {
       const db = await getDb()
@@ -166,9 +178,9 @@ export const usePosStore = create<PosStore>((set, get) => ({
 
       for (const it of carrito) {
         await db.execute(
-          `INSERT INTO items_venta_pos (venta_id, producto_id, tipo_item, nombre, cantidad, precio_unitario, descuento_item, subtotal)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-          [ventaId, it.productoId, it.tipoItem, it.nombre, it.cantidad, it.precioUnitario, it.descuentoItem, it.subtotal]
+          `INSERT INTO items_venta_pos (venta_id, producto_id, tipo_item, nombre, cantidad, precio_unitario, descuento_item, subtotal, tipo_descuento_item)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [ventaId, it.productoId, it.tipoItem, it.nombre, it.cantidad, it.precioUnitario, descuentoItemGuardado(it.descuentoItem), it.subtotal, tipoDescuentoGlobal]
         )
         await descontarStock(db, it.productoId, it.tipoItem, it.cantidad, numero, now)
       }
@@ -185,7 +197,8 @@ export const usePosStore = create<PosStore>((set, get) => ({
         subtotal, descuento, totalFinal, formaPago, fecha: now,
         items: carrito.map((it, idx) => ({
           id: idx, ventaId, productoId: it.productoId, tipoItem: it.tipoItem, nombre: it.nombre,
-          cantidad: it.cantidad, precioUnitario: it.precioUnitario, descuentoItem: it.descuentoItem, subtotal: it.subtotal,
+          cantidad: it.cantidad, precioUnitario: it.precioUnitario, descuentoItem: descuentoItemGuardado(it.descuentoItem),
+          tipoDescuentoItem: tipoDescuentoGlobal, subtotal: it.subtotal,
         })),
       }
 
@@ -201,18 +214,34 @@ export const usePosStore = create<PosStore>((set, get) => ({
   },
 
   verificarPIN: async (pin) => {
+    set({ errorPIN: null })
     try {
       const db = await getDb()
-      // El PIN se valida contra la contraseña del empleado (btoa) — reutiliza el esquema de empleados.
+      // El PIN se valida contra la contraseña del empleado (bcrypt) — reutiliza el esquema de empleados.
+      // Cada hash tiene su propia sal: hay que comparar uno por uno. Se recorren todos para
+      // detectar un PIN repetido.
       const rows = await db.select<any[]>(
         `SELECT id, nombre, password FROM empleados WHERE activo = 1`
       )
-      const enc = btoa(pin)
-      const match = rows.find(r => r.password === enc)
-      if (match) { get().setEmpleadoPOS({ id: match.id, nombre: match.nombre }); return true }
+      const coinciden: { id: number; nombre: string }[] = []
+      for (const r of rows) {
+        try {
+          if (await verificarClaveEmpleado(db, r, pin)) coinciden.push({ id: r.id, nombre: r.nombre })
+        } catch (e) {
+          // Un hash dañado no tiene que dejar sin PIN al resto.
+          console.error('verificarPIN: no se pudo verificar al empleado', r.id, e)
+        }
+      }
+      if (coinciden.length > 1) {
+        set({ errorPIN: 'PIN repetido: pedile al administrador que cambie uno' })
+        return false
+      }
+      if (coinciden.length === 1) { get().setEmpleadoPOS(coinciden[0]); return true }
+      set({ errorPIN: 'PIN incorrecto' })
       return false
     } catch (e) {
       console.error('verificarPIN', e)
+      set({ errorPIN: 'No se pudo verificar el PIN' })
       return false
     }
   },

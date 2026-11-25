@@ -9,8 +9,10 @@ import { Layout, ResumenRow, Placeholder } from './GenerarOT'
 import type { CobroCaja, FormaPago } from '../../types/caja'
 import { Download, Check } from 'lucide-react'
 import { format } from 'date-fns'
+import { formatearPesos } from '../../lib/dinero'
 
-const money = (n: number) => `$${Math.round(n).toLocaleString('es-AR')}`
+// Montos en centavos → "$ 1.234,56"
+const money = formatearPesos
 const FORMA_LABEL: Record<string, string> = { efectivo: 'Efectivo', transferencia: 'Transferencia', tarjeta: 'Tarjeta' }
 
 export const GenerarRecibo = () => {

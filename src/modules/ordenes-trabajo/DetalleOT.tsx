@@ -16,10 +16,12 @@ import { PDFOrdenTrabajo } from '../../lib/pdf/documentos/PDFOrdenTrabajo'
 import { toast } from '../../store/toastStore'
 import { ArrowLeft, User, ShieldCheck, Download, Copy, Play, Check, PackageCheck, X, RotateCcw } from 'lucide-react'
 import { format } from 'date-fns'
+import { formatearPesos } from '../../lib/dinero'
 
 interface DetalleOTProps { onVolver: () => void }
 
-const money = (n: number) => `$${Math.round(n).toLocaleString('es-AR')}`
+// Montos en centavos → "$ 1.234,56"
+const money = formatearPesos
 
 export const DetalleOT = ({ onVolver }: DetalleOTProps) => {
   const { otActiva: o, notas, cargarNotas, agregarNota, cambiarEstado, duplicarOT } = useOTStore()

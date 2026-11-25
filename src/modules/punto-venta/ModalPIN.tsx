@@ -13,23 +13,27 @@ interface ModalPINProps {
 const TECLAS = ['1', '2', '3', '4', '5', '6', '7', '8', '9']
 
 export const ModalPIN = ({ open, onClose, onOk }: ModalPINProps) => {
-  const { verificarPIN } = usePosStore()
+  const { verificarPIN, errorPIN } = usePosStore()
   const [pin, setPin] = useState('')
   const [error, setError] = useState(false)
+  // bcrypt tarda: mientras verifica no se aceptan teclas (evita dos verificaciones a la vez).
+  const [verificando, setVerificando] = useState(false)
 
   useEffect(() => { if (open) { setPin(''); setError(false) } }, [open])
 
   const presionar = (d: string) => {
-    if (pin.length >= 4) return
+    if (verificando || pin.length >= 4) return
     const next = pin + d
     setPin(next); setError(false)
     if (next.length === 4) verificar(next)
   }
 
   const verificar = async (codigo: string) => {
+    setVerificando(true)
     const ok = await verificarPIN(codigo)
+    setVerificando(false)
     if (ok) { onOk?.(); onClose() }
-    else { setError(true); setTimeout(() => { setPin(''); setError(false) }, 600) }
+    else { setError(true); setTimeout(() => setPin(''), 600) }
   }
 
   return (
@@ -45,7 +49,7 @@ export const ModalPIN = ({ open, onClose, onOk }: ModalPINProps) => {
               i < pin.length && (error ? 'bg-[#C0392B] border-[#C0392B]' : 'bg-white border-white light:bg-black light:border-black'))} />
           ))}
         </div>
-        {error && <span className="text-[12px] text-[#C0392B] -mt-2">PIN incorrecto</span>}
+        {error && <span className="text-[12px] text-[#C0392B] text-center -mt-2">{errorPIN}</span>}
 
         {/* Teclado */}
         <div className="grid grid-cols-3 gap-2">
@@ -62,7 +66,7 @@ export const ModalPIN = ({ open, onClose, onOk }: ModalPINProps) => {
             className={cn('w-16 h-14 rounded-input border text-lg font-medium transition-all',
               'border-[#2A2A2A] text-white hover:bg-white/[0.06] active:scale-95',
               'light:border-[#E4E4E4] light:text-black light:hover:bg-black/[0.04]')}>0</button>
-          <button onClick={() => setPin(p => p.slice(0, -1))}
+          <button onClick={() => setPin(p => p.slice(0, -1))} disabled={verificando}
             className={cn('w-16 h-14 rounded-input border flex items-center justify-center transition-all',
               'border-[#2A2A2A] text-[#A0A0A0] hover:bg-white/[0.06] active:scale-95',
               'light:border-[#E4E4E4] light:text-[#404040] light:hover:bg-black/[0.04]')}><Delete size={18} /></button>

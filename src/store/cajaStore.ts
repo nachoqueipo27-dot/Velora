@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { formatearPesos } from '../lib/dinero'
 import { getDb } from '../db'
 import { useSessionStore } from './sessionStore'
 import { registrarActividad } from '../lib/registrarActividad'
@@ -203,7 +204,7 @@ export const useCajaStore = create<CajaStore>((set, get) => ({
         [hoy, r.totalEfectivo, r.totalTransferencia, r.totalTarjeta, r.totalIngresos, r.totalGastos, r.saldoNeto, cerradoPor, notas || null, now]
       )
       set({ diaYaCerrado: true })
-      await registrarActividad({ modulo: 'Caja Diaria', accion: 'Cerró la caja del día', detalle: `${hoy} · neto ${Math.round(r.saldoNeto)}` })
+      await registrarActividad({ modulo: 'Caja Diaria', accion: 'Cerró la caja del día', detalle: `${hoy} · neto ${formatearPesos(r.saldoNeto)}` })
       return true
     } catch (e) {
       console.error('cerrarCaja', e)
@@ -287,7 +288,7 @@ export const useCajaStore = create<CajaStore>((set, get) => ({
         cerradoPor, creadoEn: now,
       }
       await get().cargarCierresMes()
-      await registrarActividad({ modulo: 'Caja Diaria', accion: 'Cerró el mes', detalle: `${mes}/${anio} · margen ${Math.round(r.margenOperativo)}` })
+      await registrarActividad({ modulo: 'Caja Diaria', accion: 'Cerró el mes', detalle: `${mes}/${anio} · margen ${formatearPesos(r.margenOperativo)}` })
       return cierre
     } catch (e) {
       console.error('cerrarMes', e)

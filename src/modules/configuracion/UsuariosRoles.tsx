@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { cn } from '../../lib/utils'
-import { useEmpleadosStore, type NuevoEmpleado } from '../../store/empleadosStore'
+import { useEmpleadosStore, ErrorFaltaClave, type NuevoEmpleado } from '../../store/empleadosStore'
 import { useSessionStore } from '../../store/sessionStore'
 import { MODULES } from '../../store/navigationStore'
 import { getDb } from '../../db'
@@ -44,6 +44,7 @@ export const UsuariosRoles = () => {
   const rolDe = (id: number) => roles.find(r => r.id === id)
   const adminRol = roles.find(r => r.esAdmin)
   const dniValido = /^\d{7,}$/.test(dni.trim())
+  const faltaClave = !editando && password.trim() === ''
 
   const abrirNuevo = () => {
     setEditando(null)
@@ -58,7 +59,7 @@ export const UsuariosRoles = () => {
   }
 
   const guardar = async () => {
-    if (!nombre.trim() || !rolId || !dniValido) return
+    if (!nombre.trim() || !rolId || !dniValido || faltaClave) return
     setGuardando(true)
     try {
       const payload: NuevoEmpleado = {
@@ -78,7 +79,7 @@ export const UsuariosRoles = () => {
       }
       setModalOpen(false)
     } catch (e) {
-      toast.error('No se pudo guardar el usuario')
+      toast.error(e instanceof ErrorFaltaClave ? e.message : 'No se pudo guardar el usuario')
       console.error(e)
     } finally {
       setGuardando(false)
@@ -189,7 +190,7 @@ export const UsuariosRoles = () => {
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editando ? 'Editar usuario' : 'Nuevo usuario'} maxWidth="max-w-sm"
         footer={<>
           <Button variant="ghost" onClick={() => setModalOpen(false)}>Cancelar</Button>
-          <Button onClick={guardar} disabled={!nombre.trim() || !rolId || !dniValido || guardando}>
+          <Button onClick={guardar} disabled={!nombre.trim() || !rolId || !dniValido || faltaClave || guardando}>
             {guardando ? 'Guardando…' : editando ? 'Guardar' : 'Crear'}
           </Button>
         </>}>
@@ -209,7 +210,7 @@ export const UsuariosRoles = () => {
             type="password"
             value={password}
             onChange={e => setPassword(e.target.value)}
-            hint={editando ? 'Dejá vacío para mantener la actual.' : "Si se deja vacío, queda 'cambiar'."}
+            hint={editando ? 'Dejá vacío para mantener la actual.' : 'Obligatoria. La usa para iniciar sesión.'}
           />
           <Select label="Rol" value={rolId ?? ''} onChange={e => setRolId(Number(e.target.value) || null)}>
             <option value="">Seleccionar rol…</option>

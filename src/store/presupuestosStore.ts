@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { aplicarPorcentaje, porCantidad } from '../lib/dinero'
 import { getDb } from '../db'
 import { useSessionStore } from './sessionStore'
 import { registrarActividad } from '../lib/registrarActividad'
@@ -42,8 +43,9 @@ interface PresupuestosStore {
 
 const usuarioActual = () => useSessionStore.getState().usuario?.nombre ?? 'Administrador'
 
+// Montos en centavos. descuentoItem es siempre monto (centavos).
 export function subtotalItem(it: { cantidad: number; precioUnitario: number; descuentoItem: number }) {
-  return Math.max(0, it.cantidad * it.precioUnitario - it.descuentoItem)
+  return Math.max(0, porCantidad(it.precioUnitario, it.cantidad) - (it.descuentoItem || 0))
 }
 
 export function calcularTotales(
@@ -51,11 +53,12 @@ export function calcularTotales(
   descuento: number,
   tipoDescuento: 'porcentaje' | 'monto',
 ) {
+  // descuento: % si tipoDescuento = 'porcentaje'; centavos si es 'monto'.
   const subtotal = items.reduce((s, i) => s + subtotalItem(i), 0)
   const totalFinal = tipoDescuento === 'porcentaje'
-    ? subtotal * (1 - (descuento || 0) / 100)
+    ? subtotal - aplicarPorcentaje(subtotal, descuento || 0)
     : subtotal - (descuento || 0)
-  return { subtotal, totalFinal: Math.max(0, Math.round(totalFinal * 100) / 100) }
+  return { subtotal, totalFinal: Math.max(0, totalFinal) }
 }
 
 const mapPresupuesto = (r: any): Presupuesto => {

@@ -7,6 +7,7 @@ import { Textarea } from '../../../components/ui/Textarea'
 import { useCajaStore } from '../../../store/cajaStore'
 import { CATEGORIAS_GASTO, type GastoOperativo } from '../../../types/caja'
 import { Paperclip } from 'lucide-react'
+import { aCentavos, aPesos } from '../../../lib/dinero'
 
 interface ModalGastoProps {
   open: boolean
@@ -30,7 +31,7 @@ export const ModalGasto = ({ open, onClose, gasto }: ModalGastoProps) => {
     if (gasto) {
       setCategoria(gasto.categoria)
       setDescripcion(gasto.descripcion ?? '')
-      setMonto(String(gasto.monto))
+      setMonto(String(aPesos(gasto.monto))) // el input muestra pesos
       setFecha(gasto.fecha.split('T')[0])
       setComprobante(gasto.comprobante ?? '')
     } else {
@@ -38,7 +39,7 @@ export const ModalGasto = ({ open, onClose, gasto }: ModalGastoProps) => {
     }
   }, [open, gasto])
 
-  const montoNum = Number(monto) || 0
+  const montoNum = aCentavos(Number(monto) || 0) // centavos
   const valido = montoNum > 0 && categoria
 
   const guardar = async () => {

@@ -8,6 +8,7 @@ import { CategoriaBadge } from './components/CategoriaBadge'
 import { HistorialDevoluciones } from '../devoluciones/HistorialDevoluciones'
 import { ArrowLeft, Phone, Mail, MapPin, DollarSign, ClipboardList, CalendarClock, Package, MessageSquare, RotateCcw } from 'lucide-react'
 import { format } from 'date-fns'
+import { formatearPesos } from '../../lib/dinero'
 
 interface FichaClienteProps {
   onVolver: () => void
@@ -89,7 +90,7 @@ export const FichaCliente = ({ onVolver, onIrLog }: FichaClienteProps) => {
       {/* Indicadores */}
       <span className="text-[11px] font-semibold uppercase tracking-wider text-[#606060] mb-2">Indicadores</span>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
-        <Indicador icon={<DollarSign size={13} />} label="Total gastado" value={`$${Math.round(ind?.totalGastado ?? 0).toLocaleString('es-AR')}`} />
+        <Indicador icon={<DollarSign size={13} />} label="Total gastado" value={formatearPesos(ind?.totalGastado ?? 0)} />
         <Indicador icon={<ClipboardList size={13} />} label="Cantidad de OTs" value={String(ind?.cantidadOTs ?? 0)} />
         <Indicador icon={<CalendarClock size={13} />} label="Última visita" value={ind?.ultimaVisita ? format(new Date(ind.ultimaVisita), 'dd/MM/yyyy') : '—'} />
         <Indicador icon={<Package size={13} />} label="Más comprados" value={ind?.productosMasComprados.length ? ind.productosMasComprados[0] : '—'} />

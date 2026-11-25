@@ -12,8 +12,10 @@ import {
   ClipboardList, DollarSign, PackageX, FileWarning, Clock, Users,
   AlertTriangle, ShieldAlert, X, CheckCircle2,
 } from 'lucide-react'
+import { formatearPesos } from '../../lib/dinero'
 
-const money = (n: number) => `$${Math.round(n).toLocaleString('es-AR')}`
+// Montos en centavos → "$ 1.234,56"
+const money = formatearPesos
 const NIVEL_COLOR = { libre: '#4CAF7D', moderado: '#D4921A', saturado: '#C0392B' }
 const NIVEL_VARIANT = { libre: 'success', moderado: 'warning', saturado: 'error' } as const
 

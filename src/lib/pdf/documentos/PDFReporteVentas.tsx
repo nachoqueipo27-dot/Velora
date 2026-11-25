@@ -5,8 +5,10 @@ import { PiePagina } from '../componentes/PiePagina'
 import type { ProductoTop, VentaResumen } from '../../../store/reporteVentasStore'
 import { UNIDAD_ABREVIADA } from '../../../types/inventario'
 import { format } from 'date-fns'
+import { formatearPesos } from '../../dinero'
 
-const money = (n: number) => `$${Math.round(n).toLocaleString('es-AR')}`
+// Montos en centavos → "$ 1.234,56"
+const money = formatearPesos
 
 interface Props {
   negocio: DatosNegocio

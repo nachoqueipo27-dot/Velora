@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { getDb } from '../db'
+import { verificarClaveEmpleado } from '../db/claves'
 import type { Usuario } from '../types'
 
 interface SessionStore {
@@ -35,7 +36,7 @@ export const useSessionStore = create<SessionStore>()(
             return false
           }
           const emp = rows[0]
-          if (emp.password !== btoa(password)) {
+          if (!(await verificarClaveEmpleado(db, emp, password))) {
             set({ loginError: 'Contraseña incorrecta' })
             return false
           }
@@ -58,6 +59,17 @@ export const useSessionStore = create<SessionStore>()(
       cerrarSesion: () => set({ usuario: null }),
       clearError: () => set({ loginError: null }),
     }),
-    { name: 'velora-session' }
+    {
+      name: 'velora-session',
+      // Solo datos de identidad: nunca contraseñas, PIN ni hashes.
+      partialize: (s) => ({
+        usuario: s.usuario && {
+          id: s.usuario.id,
+          nombre: s.usuario.nombre,
+          rol: s.usuario.rol,
+          avatar: s.usuario.avatar,
+        },
+      }),
+    }
   )
 )

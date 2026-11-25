@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { porCantidad } from '../lib/dinero'
 import { getDb } from '../db'
 import { registrarActividad } from '../lib/registrarActividad'
 import type {
@@ -272,7 +273,7 @@ export const useInventarioStore = create<InventarioStore>((set, get) => ({
         margenUnitario,
         margenPorcentaje,
         unidadesVendidas: unidades,
-        margenAcumulado: margenUnitario * unidades,
+        margenAcumulado: porCantidad(margenUnitario, unidades), // centavos (unidades puede ser kg/m)
       }
     })
     set({ informe })

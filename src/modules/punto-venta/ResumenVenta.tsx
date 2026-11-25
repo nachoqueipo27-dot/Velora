@@ -2,8 +2,10 @@ import { cn } from '../../lib/utils'
 import { Button } from '../../components/ui/Button'
 import { usePosStore } from '../../store/posStore'
 import { FORMAS_PAGO } from '../../types/pos'
+import { formatearPesos } from '../../lib/dinero'
 
-const money = (n: number) => `$${Math.round(n).toLocaleString('es-AR')}`
+// Montos en centavos → "$ 1.234,56"
+const money = formatearPesos
 
 interface ResumenVentaProps { onConfirmar: () => void }
 

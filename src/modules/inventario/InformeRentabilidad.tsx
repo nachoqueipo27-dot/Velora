@@ -4,10 +4,12 @@ import { Button } from '../../components/ui/Button'
 import { Select } from '../../components/ui/Select'
 import { useInventarioStore } from '../../store/inventarioStore'
 import { FileSpreadsheet, ArrowUpDown, BarChart3 } from 'lucide-react'
+import { formatearPesos } from '../../lib/dinero'
 
 type Col = 'productoNombre' | 'categoria' | 'precioCosto' | 'precioVenta' | 'margenUnitario' | 'margenPorcentaje' | 'unidadesVendidas' | 'margenAcumulado'
 
-const money = (n: number) => `$${Math.round(n).toLocaleString('es-AR')}`
+// Montos en centavos → "$ 1.234,56"
+const money = formatearPesos
 
 export const InformeRentabilidad = () => {
   const { informe, categorias, cargarInformeRentabilidad } = useInventarioStore()

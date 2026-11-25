@@ -8,12 +8,14 @@ import { useInventarioStore } from '../../store/inventarioStore'
 import { permiteDecimales } from '../../types/inventario'
 import { ArrowLeft, Send, PackageCheck, Search, Trash2, Plus } from 'lucide-react'
 import { format } from 'date-fns'
+import { formatearPesos, porCantidad } from '../../lib/dinero'
 
 interface RecepcionMercaderiaProps {
   onVolver: () => void
 }
 
-const money = (n: number) => `$${Math.round(n).toLocaleString('es-AR')}`
+// Montos en centavos → "$ 1.234,56"
+const money = formatearPesos
 const numFmt = (n: number) => `#${String(n).padStart(3, '0')}`
 
 export const RecepcionMercaderia = ({ onVolver }: RecepcionMercaderiaProps) => {
@@ -33,7 +35,7 @@ export const RecepcionMercaderia = ({ onVolver }: RecepcionMercaderiaProps) => {
     cargarProductos()
   }, [o, cargarItemsOrden, cargarProductos])
 
-  const total = useMemo(() => items.reduce((s, i) => s + i.cantidad * i.precioCosto, 0), [items])
+  const total = useMemo(() => items.reduce((s, i) => s + porCantidad(i.precioCosto, i.cantidad), 0), [items])
   const disponibles = useMemo(() => {
     const q = busqueda.trim().toLowerCase()
     const ya = new Set(items.map(i => i.productoId))
@@ -137,7 +139,7 @@ export const RecepcionMercaderia = ({ onVolver }: RecepcionMercaderiaProps) => {
                   ) : it.cantidad}
                 </td>
                 <td className="px-3 py-2.5 text-right text-[#A0A0A0] light:text-[#404040]">{money(it.precioCosto)}</td>
-                <td className="px-3 py-2.5 text-right text-[#A0A0A0] light:text-[#404040]">{money(it.cantidad * it.precioCosto)}</td>
+                <td className="px-3 py-2.5 text-right text-[#A0A0A0] light:text-[#404040]">{money(porCantidad(it.precioCosto, it.cantidad))}</td>
                 {esBorrador && (
                   <td className="px-3 py-2.5 text-right">
                     <button onClick={() => eliminarItemOrden(it.id)} className="w-6 h-6 rounded inline-flex items-center justify-center text-[#606060] hover:text-[#C0392B] hover:bg-[#C0392B]/10"><Trash2 size={13} /></button>

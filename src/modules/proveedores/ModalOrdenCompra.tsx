@@ -8,13 +8,18 @@ import { useProveedoresStore, type ItemOrdenInput } from '../../store/proveedore
 import { useInventarioStore } from '../../store/inventarioStore'
 import { permiteDecimales } from '../../types/inventario'
 import { Search, Trash2 } from 'lucide-react'
+import { aCentavos, aPesos, formatearPesos, porCantidad } from '../../lib/dinero'
+
+// El form trabaja el costo en pesos (editable); el store y la base, en centavos.
+const subtotalCentavos = (i: { cantidad: number; precioCosto: number }) => porCantidad(aCentavos(i.precioCosto), i.cantidad)
 
 interface ModalOrdenCompraProps {
   open: boolean
   onClose: () => void
 }
 
-const money = (n: number) => `$${Math.round(n).toLocaleString('es-AR')}`
+// Montos en centavos → "$ 1.234,56"
+const money = formatearPesos
 
 export const ModalOrdenCompra = ({ open, onClose }: ModalOrdenCompraProps) => {
   const { proveedores, crearOrden, cargarProveedores } = useProveedoresStore()
@@ -51,10 +56,10 @@ export const ModalOrdenCompra = ({ open, onClose }: ModalOrdenCompraProps) => {
     return productos.filter(p => p.tipo === 'simple' && !ya.has(p.id) && (q === '' || p.nombre.toLowerCase().includes(q))).slice(0, 6)
   }, [productos, items, busqueda])
 
-  const total = useMemo(() => items.reduce((s, i) => s + i.cantidad * i.precioCosto, 0), [items])
+  const total = useMemo(() => items.reduce((s, i) => s + subtotalCentavos(i), 0), [items])
 
   const agregar = (id: number, costo: number) => {
-    setItems([...items, { productoId: id, cantidad: 1, precioCosto: costo }])
+    setItems([...items, { productoId: id, cantidad: 1, precioCosto: aPesos(costo) }])
     setBusqueda('')
   }
   const setItem = (id: number, patch: Partial<ItemOrdenInput>) =>
@@ -67,7 +72,7 @@ export const ModalOrdenCompra = ({ open, onClose }: ModalOrdenCompraProps) => {
     if (invalido) { setTouched(true); return }
     setGuardando(true)
     try {
-      await crearOrden(Number(proveedorId), items, notas)
+      await crearOrden(Number(proveedorId), items.map(i => ({ ...i, precioCosto: aCentavos(i.precioCosto) })), notas)
       onClose()
     } finally {
       setGuardando(false)
@@ -142,7 +147,7 @@ export const ModalOrdenCompra = ({ open, onClose }: ModalOrdenCompraProps) => {
                     className="px-2 py-1 text-[13px] text-center rounded-input border bg-transparent outline-none border-[#2A2A2A] text-white focus:border-white light:border-[#E4E4E4] light:text-[#0A0A0A]" />
                   <input type="number" min={0} value={it.precioCosto} onChange={e => setItem(it.productoId, { precioCosto: Number(e.target.value) })}
                     className="px-2 py-1 text-[13px] text-center rounded-input border bg-transparent outline-none border-[#2A2A2A] text-white focus:border-white light:border-[#E4E4E4] light:text-[#0A0A0A]" />
-                  <span className="text-[13px] text-right text-[#A0A0A0] light:text-[#404040]">{money(it.cantidad * it.precioCosto)}</span>
+                  <span className="text-[13px] text-right text-[#A0A0A0] light:text-[#404040]">{money(subtotalCentavos(it))}</span>
                   <button type="button" onClick={() => quitar(it.productoId)} className="w-6 h-6 rounded flex items-center justify-center text-[#606060] hover:text-[#C0392B] hover:bg-[#C0392B]/10">
                     <Trash2 size={13} />
                   </button>

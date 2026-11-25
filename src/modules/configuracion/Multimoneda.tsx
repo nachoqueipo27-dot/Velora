@@ -4,8 +4,11 @@ import { Button } from '../../components/ui/Button'
 import { Modal } from '../../components/ui/Modal'
 import { DollarSign } from 'lucide-react'
 import { format } from 'date-fns'
+import { aCentavos, formatearPesos } from '../../lib/dinero'
 
-const money = (n: number) => `$${Math.round(n).toLocaleString('es-AR')}`
+// El tipo de cambio NO es plata guardada en centavos: es ARS por USD con decimales.
+// Se pasa a centavos solo para mostrarlo con el formato de pesos.
+const money = (tipoCambio: number) => formatearPesos(aCentavos(tipoCambio))
 
 export const Multimoneda = () => {
   const { tipoCambioActual, historialTC, actualizarTipoCambio } = useConfigStore()

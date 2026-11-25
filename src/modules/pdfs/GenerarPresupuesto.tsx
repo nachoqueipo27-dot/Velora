@@ -9,8 +9,10 @@ import { Layout, ResumenRow, Placeholder } from './GenerarOT'
 import type { Presupuesto } from '../../types/presupuestos'
 import { Download, Check } from 'lucide-react'
 import { format } from 'date-fns'
+import { formatearPesos } from '../../lib/dinero'
 
-const money = (n: number) => `$${Math.round(n).toLocaleString('es-AR')}`
+// Montos en centavos → "$ 1.234,56"
+const money = formatearPesos
 
 export const GenerarPresupuesto = () => {
   const { presupuestos, items, cargarPresupuestos, cargarItems } = usePresupuestosStore()
