@@ -15,7 +15,7 @@ import { exigirEditar } from '../../lib/permisos'
 import { AlertTriangle, Check, RotateCcw, Save } from 'lucide-react'
 
 const TABLAS = [
-  'clientes', 'log_comunicaciones', 'productos_codigos', 'roles', 'permisos', 'empleados', 'horarios_fijos', 'turnos',
+  'clientes', 'log_comunicaciones', 'productos_codigos', 'items_ingreso_stock', 'ingresos_stock', 'roles', 'permisos', 'empleados', 'horarios_fijos', 'turnos',
   'asignacion_turnos', 'fichajes', 'horas_extras', 'ausencias', 'categorias', 'productos',
   'conjunto_componentes', 'movimientos_stock', 'proveedores', 'ordenes_compra', 'items_orden_compra',
   'historial_precios', 'listas_precios_snapshot', 'presupuestos', 'items_presupuesto', 'etiquetas_ot',

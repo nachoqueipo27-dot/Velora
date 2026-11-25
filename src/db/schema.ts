@@ -174,6 +174,26 @@ export const conjuntoComponentes = sqliteTable('conjunto_componentes', {
   cantidad:     real('cantidad').notNull().default(1), // real: componente puede ser fraccionable
 })
 
+// Ingresos de stock por escaneo (desde 1.4.1). estado: 'abierto' | 'confirmado' | 'descartado'.
+export const ingresosStock = sqliteTable('ingresos_stock', {
+  id:             integer('id').primaryKey({ autoIncrement: true }),
+  numero:         integer('numero').notNull(), // correlativo propio: "Ingreso #0001"
+  estado:         text('estado').notNull().default('abierto'),
+  empleadoId:     integer('empleado_id'),       // null = el dueño
+  empleadoNombre: text('empleado_nombre'),
+  notas:          text('notas'),
+  creadoEn:       text('creado_en').notNull(),
+  confirmadoEn:   text('confirmado_en'),
+})
+
+export const itemsIngresoStock = sqliteTable('items_ingreso_stock', {
+  id:         integer('id').primaryKey({ autoIncrement: true }),
+  ingresoId:  integer('ingreso_id').notNull(),
+  productoId: integer('producto_id').notNull(),
+  cantidad:   real('cantidad').notNull(),  // admite kg / metros
+  stockAntes: real('stock_antes'),         // se guarda al confirmar
+})
+
 export const movimientosStock = sqliteTable('movimientos_stock', {
   id:           integer('id').primaryKey({ autoIncrement: true }),
   productoId:   integer('producto_id').notNull(),

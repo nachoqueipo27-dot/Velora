@@ -12,6 +12,8 @@ interface BarraCodigoDesconocidoProps {
   puedeDarAlta: boolean
   /** Acción que corre con Enter (Configuración → Punto de venta). 'opciones': ninguna. */
   accionEnter: AccionDesconocido
+  /** Agregar stock: solo Alta rápida y Borrador (no se vende nada). */
+  soloAlta?: boolean
   onElegir: (opcion: OpcionDesconocido) => void
   onCerrar: () => void
 }
@@ -22,8 +24,13 @@ const enFormulario = () => {
 }
 
 /** Barra sobre la venta cuando se escanea un código que no está en el inventario (Main.dc.html). */
-export const BarraCodigoDesconocido = ({ codigo, puedeDarAlta, accionEnter, onElegir, onCerrar }: BarraCodigoDesconocidoProps) => {
-  const opciones: Opcion[] = useMemo(() => puedeDarAlta
+export const BarraCodigoDesconocido = ({ codigo, puedeDarAlta, accionEnter, soloAlta, onElegir, onCerrar }: BarraCodigoDesconocidoProps) => {
+  const opciones: Opcion[] = useMemo(() => soloAlta
+    ? [
+        { id: 'alta', label: 'Alta rápida' },
+        { id: 'borrador', label: 'Borrador' },
+      ]
+    : puedeDarAlta
     ? [
         { id: 'alta', label: 'Alta rápida' },
         { id: 'borrador', label: 'Borrador' },
@@ -32,7 +39,7 @@ export const BarraCodigoDesconocido = ({ codigo, puedeDarAlta, accionEnter, onEl
     : [
         { id: 'producto_x', label: 'Vender como "Producto X"' },
         { id: 'avisar', label: 'Avisar al encargado' },
-      ], [puedeDarAlta])
+      ], [puedeDarAlta, soloAlta])
   const porDefecto = accionEnter !== 'opciones' && opciones.some(o => o.id === accionEnter)
     ? (accionEnter as OpcionDesconocido)
     : null

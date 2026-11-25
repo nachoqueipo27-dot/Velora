@@ -226,6 +226,34 @@ async function initSchema(database: Db) {
     )
   `)
 
+  // Ingresos de stock por escaneo ("Agregar stock"). Un ingreso abierto por usuario; el
+  // stock de los productos cambia recién al confirmarlo (movimientos_stock con
+  // motivo 'Ingreso #0001' y referencia_id = ingresos_stock.id).
+  await database.execute(`
+    CREATE TABLE IF NOT EXISTS ingresos_stock (
+      id              INTEGER PRIMARY KEY AUTOINCREMENT,
+      numero          INTEGER NOT NULL,
+      estado          TEXT NOT NULL DEFAULT 'abierto',
+      empleado_id     INTEGER,
+      empleado_nombre TEXT,
+      notas           TEXT,
+      creado_en       TEXT NOT NULL,
+      confirmado_en   TEXT
+    )
+  `)
+  await database.execute(`
+    CREATE TABLE IF NOT EXISTS items_ingreso_stock (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      ingreso_id  INTEGER NOT NULL,
+      producto_id INTEGER NOT NULL,
+      cantidad    REAL NOT NULL,
+      stock_antes REAL,
+      FOREIGN KEY (ingreso_id)  REFERENCES ingresos_stock(id),
+      FOREIGN KEY (producto_id) REFERENCES productos(id)
+    )
+  `)
+  await database.execute(`CREATE INDEX IF NOT EXISTS ix_items_ingreso_stock_ingreso ON items_ingreso_stock(ingreso_id)`)
+
   await database.execute(`
     CREATE TABLE IF NOT EXISTS movimientos_stock (
       id            INTEGER PRIMARY KEY AUTOINCREMENT,

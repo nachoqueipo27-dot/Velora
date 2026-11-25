@@ -9,8 +9,9 @@ import { cn } from '../../lib/utils'
 
 interface AltaRapidaProps {
   codigo: string
-  /** 'pos': el producto se suma a la venta actual. 'inventario': solo se crea. */
-  contexto: 'pos' | 'inventario'
+  /** 'pos': se suma a la venta. 'inventario': solo se crea. 'ingreso' (Agregar stock): después
+   *  se pide la cantidad que ingresa, así que no hay "Stock inicial". */
+  contexto: 'pos' | 'inventario' | 'ingreso'
   onCerrar: () => void
   /** `borrador`: se guardó con "Guardar como borrador" (no va al carrito). */
   onCreado: (producto: Producto, borrador: boolean) => void
@@ -65,7 +66,7 @@ export const AltaRapida = ({ codigo, contexto, onCerrar, onCreado }: AltaRapidaP
         precioCosto: costoC,
         categoriaId: categoriaId === '' ? null : categoriaId,
         unidadMedida: unidad,
-        stock: Math.max(0, stockNum),
+        stock: contexto === 'ingreso' ? 0 : Math.max(0, stockNum),
         borrador: comoBorrador,
       })
       const producto = await crearDesdeCodigo(datos)
@@ -123,9 +124,11 @@ export const AltaRapida = ({ codigo, contexto, onCerrar, onCreado }: AltaRapidaP
               {UNIDADES_MEDIDA.map(u => <option key={u.value} value={u.value}>{u.label}</option>)}
             </select>
           </label>
-          <label className={etiqueta}>Stock inicial
-            <input value={stock} onChange={e => setStock(e.target.value)} inputMode="decimal" placeholder="0" className={cn(campo, 'font-mono')} />
-          </label>
+          {contexto !== 'ingreso' && (
+            <label className={etiqueta}>Stock inicial
+              <input value={stock} onChange={e => setStock(e.target.value)} inputMode="decimal" placeholder="0" className={cn(campo, 'font-mono')} />
+            </label>
+          )}
           <div className="flex flex-col justify-end gap-1 pb-1">
             <span className="font-mono text-etiqueta uppercase text-texto-3">Margen</span>
             <span className="text-[20px] font-semibold tabular-nums">
@@ -138,7 +141,7 @@ export const AltaRapida = ({ codigo, contexto, onCerrar, onCreado }: AltaRapidaP
         <div className="flex flex-col gap-2">
           <button type="submit" disabled={guardando}
             className="h-12 rounded-pastilla bg-texto text-[15px] font-medium text-superficie hover:opacity-90 disabled:opacity-50">
-            {contexto === 'pos' ? 'Guardar y seguir escaneando' : 'Guardar'}{' '}
+            {contexto === 'pos' ? 'Guardar y seguir escaneando' : contexto === 'ingreso' ? 'Guardar y cargar cantidad' : 'Guardar'}{' '}
             <span className="font-mono text-[11px] text-borde-fuerte">Enter</span>
           </button>
           <button type="button" disabled={guardando} onClick={() => void guardar(true)}
@@ -148,6 +151,8 @@ export const AltaRapida = ({ codigo, contexto, onCerrar, onCreado }: AltaRapidaP
           <p className="mt-1 text-center text-[12px] text-texto-3">
             {contexto === 'pos'
               ? 'El producto se suma al carrito de la venta actual. El borrador no se vende hasta que lo completes.'
+              : contexto === 'ingreso'
+              ? 'Después te pregunta cuántas unidades ingresan. El borrador también se suma al ingreso.'
               : 'El borrador queda en "Productos por completar" hasta que tenga nombre y precio.'}
           </p>
         </div>

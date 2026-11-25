@@ -12,13 +12,17 @@ import { useEscaneoEnModulo } from '../../lib/escaneo'
 import { toast } from '../../store/toastStore'
 import { useEscaneoStore } from '../../store/escaneoStore'
 import { AltaRapida } from '../../components/escaneo/AltaRapida'
-import { Package, Boxes, TrendingUp, BarChart3 } from 'lucide-react'
+import { useIngresoStore, numeroIngreso, type ResumenIngresoAbierto } from '../../store/ingresoStore'
+import { SesionIngreso } from './ingreso/SesionIngreso'
+import { HistorialIngresos } from './ingreso/HistorialIngresos'
+import { Package, Boxes, TrendingUp, BarChart3, PackagePlus } from 'lucide-react'
 
-type Seccion = 'productos' | 'conjuntos' | 'rotacion' | 'rentabilidad'
+type Seccion = 'productos' | 'conjuntos' | 'ingresos' | 'rotacion' | 'rentabilidad'
 
 const SUBMENU: { id: Seccion; label: string; icon: React.ReactNode }[] = [
   { id: 'productos',    label: 'Productos',              icon: <Package size={15} /> },
   { id: 'conjuntos',    label: 'Conjuntos',              icon: <Boxes size={15} /> },
+  { id: 'ingresos',     label: 'Ingresos',               icon: <PackagePlus size={15} /> },
   { id: 'rotacion',     label: 'Reporte de rotación',    icon: <TrendingUp size={15} /> },
   { id: 'rentabilidad', label: 'Informe de rentabilidad', icon: <BarChart3 size={15} /> },
 ]
@@ -39,7 +43,28 @@ const Inventario = () => {
   // Lector: código conocido → abre la ficha; desconocido → Alta rápida (si puede editar).
   const puedeDarAlta = usePermiso('inventario') === 'editar'
   const [altaCodigo, setAltaCodigo] = useState<string | null>(null)
+
+  // ─── Agregar stock ────────────────────────────────────────────────────
+  const { abrir: abrirIngreso, buscarAbierto, descartar: descartarIngreso } = useIngresoStore()
+  const [enIngreso, setEnIngreso] = useState(false)
+  const [ingresoPendiente, setIngresoPendiente] = useState<ResumenIngresoAbierto | null>(null)
+  const revisarPendiente = () => {
+    if (!puedeDarAlta) { setIngresoPendiente(null); return }
+    buscarAbierto().then(setIngresoPendiente).catch(e => console.error('ingreso abierto', e))
+  }
+  useEffect(revisarPendiente, [puedeDarAlta]) // eslint-disable-line react-hooks/exhaustive-deps
+  const iniciarIngreso = async () => {
+    try { await abrirIngreso(); setIngresoPendiente(null); setEnIngreso(true) }
+    catch (e) { toast.error(e instanceof Error ? e.message : 'No se pudo abrir el ingreso') }
+  }
+  const descartarPendiente = async () => {
+    if (!ingresoPendiente) return
+    try { await descartarIngreso(ingresoPendiente.id); setIngresoPendiente(null); toast.info('Ingreso descartado: el stock no cambió') }
+    catch (e) { toast.error(e instanceof Error ? e.message : 'No se pudo descartar') }
+  }
+
   useEscaneoEnModulo('inventario', ({ codigo, resultado }) => {
+    if (enIngreso) return // con la sesión de Agregar stock abierta, el escaneo es de ella
     if (resultado) {
       setSeccion(resultado.producto.tipo === 'conjunto' ? 'conjuntos' : 'productos')
       seleccionarProducto(resultado.producto)
@@ -65,12 +90,16 @@ const Inventario = () => {
       return <FichaProducto onVolver={() => seleccionarProducto(null)} />
     }
     switch (seccion) {
-      case 'productos':    return <ListadoProductos tipo="simple" onVer={verFicha} />
+      case 'productos':    return <ListadoProductos tipo="simple" onVer={verFicha} onAgregarStock={puedeDarAlta ? () => void iniciarIngreso() : undefined} />
       case 'conjuntos':    return <ListadoProductos tipo="conjunto" onVer={verFicha} />
+      case 'ingresos':     return <HistorialIngresos />
       case 'rotacion':     return <ReporteRotacion />
       case 'rentabilidad': return verCostos ? <InformeRentabilidad /> : <AccesoRestringido />
     }
   }
+
+  // La sesión de ingreso ocupa todo el módulo (Stock.dc.html).
+  if (enIngreso) return <SesionIngreso onSalir={() => { setEnIngreso(false); revisarPendiente() }} />
 
   return (
     <div className="flex h-full overflow-hidden">
@@ -93,7 +122,21 @@ const Inventario = () => {
           })}
         </nav>
       </aside>
-      <section className="flex-1 overflow-hidden p-6">{renderContenido()}</section>
+      <section className="flex-1 overflow-hidden p-6 flex flex-col">
+        {ingresoPendiente && (
+          <div className="mb-4 flex flex-wrap items-center gap-3 rounded-tarjeta border border-acento/30 bg-superficie px-4 py-3 text-cuerpo text-texto">
+            <span className="flex-[1_1_260px] text-seccion">
+              <strong className="font-semibold">Tenés un ingreso sin confirmar</strong>{' '}
+              ({numeroIngreso(ingresoPendiente.numero)} · {ingresoPendiente.productos} producto{ingresoPendiente.productos === 1 ? '' : 's'}). El stock todavía no cambió.
+            </span>
+            <button type="button" onClick={() => void iniciarIngreso()}
+              className="h-[34px] rounded-pastilla bg-texto px-3.5 text-cuerpo font-medium text-superficie hover:opacity-90">Retomar</button>
+            <button type="button" onClick={() => void descartarPendiente()}
+              className="h-[34px] rounded-pastilla border border-borde-fuerte bg-superficie px-3.5 text-cuerpo hover:bg-superficie-suave">Descartar</button>
+          </div>
+        )}
+        <div className="flex-1 min-h-0">{renderContenido()}</div>
+      </section>
 
       {altaCodigo && (
         <AltaRapida codigo={altaCodigo} contexto="inventario" onCerrar={() => setAltaCodigo(null)}

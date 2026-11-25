@@ -6,7 +6,7 @@ import { useInventarioStore } from '../../store/inventarioStore'
 import { UNIDADES_MEDIDA, type Producto } from '../../types/inventario'
 import { StockBadge } from './components/StockBadge'
 import { ModalProducto } from './ModalProducto'
-import { Search, Plus, Eye, Pencil, Trash2, ImageOff, AlertTriangle, PackageX } from 'lucide-react'
+import { Search, Plus, Eye, Pencil, Trash2, ImageOff, AlertTriangle, PackageX, PackagePlus } from 'lucide-react'
 import { formatearPesos } from '../../lib/dinero'
 import { useEdicion } from '../../lib/permisos'
 
@@ -15,9 +15,11 @@ const LABEL_UNIDAD: Record<string, string> = Object.fromEntries(UNIDADES_MEDIDA.
 interface ListadoProductosProps {
   tipo: 'simple' | 'conjunto'
   onVer: (p: Producto) => void
+  /** "Agregar stock" por escaneo. Sin esto (sin editar en inventario) el botón no aparece. */
+  onAgregarStock?: () => void
 }
 
-export const ListadoProductos = ({ tipo, onVer }: ListadoProductosProps) => {
+export const ListadoProductos = ({ tipo, onVer, onAgregarStock }: ListadoProductosProps) => {
   const { productos, categorias, loading, cargarComponentes, eliminarProducto } = useInventarioStore()
   const ed = useEdicion('inventario')
   const [busqueda, setBusqueda] = useState('')
@@ -84,6 +86,11 @@ export const ListadoProductos = ({ tipo, onVer }: ListadoProductosProps) => {
           </Select>
         </div>
         <div className="flex-1" />
+        {onAgregarStock && (
+          <Button size="sm" variant="secondary" onClick={onAgregarStock}>
+            <PackagePlus size={14} className="mr-1.5" /> Agregar stock
+          </Button>
+        )}
         <Button size="sm" onClick={() => setModal({ open: true, producto: null })} {...ed}>
           <Plus size={14} className="mr-1.5" /> {tipo === 'conjunto' ? 'Nuevo conjunto' : 'Nuevo producto'}
         </Button>
