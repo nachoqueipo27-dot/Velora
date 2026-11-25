@@ -12,7 +12,9 @@ interface ThemeStore {
 export const useThemeStore = create<ThemeStore>()(
   persist(
     (set, get) => ({
-      theme: 'dark',
+      // Modo claro es el principal del rediseño. Solo aplica a instalaciones nuevas:
+      // quien ya eligió un tema (guardado en "velora-theme") lo conserva.
+      theme: 'light',
       toggleTheme: () => {
         const next = get().theme === 'dark' ? 'light' : 'dark'
         set({ theme: next })

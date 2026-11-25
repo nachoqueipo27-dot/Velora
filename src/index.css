@@ -1,7 +1,12 @@
-@import '@fontsource/plus-jakarta-sans/400.css';
-@import '@fontsource/plus-jakarta-sans/500.css';
-@import '@fontsource/plus-jakarta-sans/600.css';
-@import '@fontsource/plus-jakarta-sans/700.css';
+/* Tipografías del rediseño, empaquetadas con la app (sin depender de internet).
+   Solo el subconjunto latino: cubre español (á, ñ, ¿, ¡…). */
+@import '@fontsource/geist/latin-400.css';
+@import '@fontsource/geist/latin-500.css';
+@import '@fontsource/geist/latin-600.css';
+@import '@fontsource/geist/latin-700.css';
+@import '@fontsource/geist-mono/latin-400.css';
+@import '@fontsource/geist-mono/latin-500.css';
+@import '@fontsource/geist-mono/latin-600.css';
 
 @tailwind base;
 @tailwind components;
@@ -13,9 +18,14 @@
   box-sizing: border-box;
 }
 
+/* Texto general: 13px (en body, no en html, para no alterar la escala de rem). */
+body {
+  font-size: 13px;
+}
+
 html, body, #root {
   height: 100%;
-  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-family: 'Geist', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 

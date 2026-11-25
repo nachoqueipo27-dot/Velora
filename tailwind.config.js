@@ -9,44 +9,67 @@ export default {
   ],
   theme: {
     extend: {
+      // Sistema visual del rediseño — mismos valores que src/lib/tokens.ts (mantener sincronizado).
       fontFamily: {
-        sans: ['Plus Jakarta Sans', 'sans-serif'],
+        sans: ['Geist', 'system-ui', 'sans-serif'],
+        mono: ['"Geist Mono"', 'ui-monospace', 'monospace'],
+      },
+      fontSize: {
+        'cuerpo':   '13px',                                // texto general
+        'etiqueta': ['11px', { letterSpacing: '0.08em' }], // etiquetas en mayúscula
+        'seccion':  '14px',                                // títulos de sección
+        'titulo':   '16px',                                // títulos de sección destacados
       },
       colors: {
-        // DARK MODE
-        'dark-base':      '#0A0A0A',
-        'dark-surface':   '#141414',
-        'dark-elevated':  '#1C1C1C',
-        'dark-border':    '#2A2A2A',
+        // MODO CLARO (principal)
+        'fondo':            '#F7F5F1',
+        'superficie':       '#FFFFFF',
+        'superficie-suave': '#F2EFEA',
+        'borde':            '#E3E0D9',
+        'borde-fuerte':     '#D8D4CC',
+        // text-texto, text-texto-2, text-texto-3
+        'texto': {
+          DEFAULT: '#1A1915',
+          2:       '#55524B',
+          3:       '#6E6A62',
+        },
+        // bg-acento, hover:bg-acento-hover, text-acento-texto, bg-acento-suave
+        'acento': {
+          DEFAULT: '#D9572B',
+          hover:   '#C24A22',
+          texto:   '#8A3214',
+          suave:   '#FBEAE3',
+        },
+        'ok':     { DEFAULT: '#2F7D4F', suave: '#E5F2EA' },
+        'alerta': { DEFAULT: '#9A5B0B', suave: '#F8EDD8' },
+        'error':  '#9E1F3C',
+        'info':   '#24457A',
 
-        // LIGHT MODE
-        'light-base':     '#FAFAFA',
-        'light-surface':  '#FFFFFF',
-        'light-elevated': '#F4F4F4',
-        'light-border':   '#E4E4E4',
+        // MODO OSCURO (secundario) — valores del diseño anterior
+        'oscuro': {
+          fondo:      '#0A0A0A',
+          superficie: '#141414',
+          elevado:    '#1C1C1C',
+          borde:      '#2A2A2A',
+          texto:      '#FFFFFF',
+          'texto-2':  '#A0A0A0',
+          'texto-3':  '#606060',
+        },
 
-        // TEXTO
-        'text-primary-dark':    '#FFFFFF',
-        'text-secondary-dark':  '#A0A0A0',
-        'text-tertiary-dark':   '#606060',
-        'text-primary-light':   '#0A0A0A',
-        'text-secondary-light': '#404040',
-        'text-tertiary-light':  '#888888',
-
-        // ESTADOS
-        'state-success':  '#4CAF7D',
-        'state-warning':  '#D4921A',
-        'state-error':    '#C0392B',
-        'state-info':     '#4A7FA5',
-
-        // AVISOS DEL SISTEMA (terracota del rediseño) — ver tokens.colors.aviso
-        'aviso-fondo':    '#FBEAE3',
-        'aviso-texto':    '#8A3214',
+        // ALIAS VIEJOS → tokens nuevos (en uso en pantallas; no borrar hasta migrarlas)
+        'aviso-fondo': '#FBEAE3', // = acento-suave
+        'aviso-texto': '#8A3214', // = acento-texto
       },
       borderRadius: {
-        'card': '10px',
-        'input': '8px',
-        'modal': '14px',
+        // Tokens nuevos
+        'control':  '10px',  // inputs, botones
+        'tarjeta':  '14px',  // tarjetas chicas
+        'panel':    '16px',  // paneles
+        'pastilla': '999px', // pastillas
+        // ALIAS VIEJOS → tokens nuevos (muy usados en pantallas)
+        'input': '10px', // = control
+        'card':  '14px', // = tarjeta
+        'modal': '16px', // = panel
       },
       transitionDuration: {
         '120': '120ms',
