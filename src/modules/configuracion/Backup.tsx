@@ -9,6 +9,7 @@ import { Modal } from '../../components/ui/Modal'
 import { Badge } from '../../components/ui/Badge'
 import { toast } from '../../store/toastStore'
 import { exigirEditar } from '../../lib/permisos'
+import { useAuthGlobalStore } from '../../store/authGlobalStore'
 import { DatabaseBackup, Upload, Download, Check, Package } from 'lucide-react'
 import { format } from 'date-fns'
 
@@ -24,6 +25,8 @@ export const Backup = () => {
   const [ok, setOk] = useState(false)
   const [restaurar, setRestaurar] = useState<{ ruta: string } | null>(null)
   const [trabajando, setTrabajando] = useState(false)
+  const soyDueno = useAuthGlobalStore(s => s.usuario?.esAdminGeneral ?? false)
+  const exportar = soyDueno ? {} : { disabled: true, title: 'Solo el dueño puede exportar la base' }
 
   useEffect(() => { setCfg(backupCfg) }, [backupCfg])
   useEffect(() => { cargarBackups() }, [cargarBackups])
@@ -75,9 +78,9 @@ export const Backup = () => {
 
       {/* Acciones manuales */}
       <div className="flex gap-2">
-        <Button onClick={backupAhora} disabled={trabajando}><DatabaseBackup size={15} className="mr-1.5" />Hacer backup ahora</Button>
+        <Button onClick={backupAhora} disabled={trabajando} {...exportar}><DatabaseBackup size={15} className="mr-1.5" />Hacer backup ahora</Button>
         <Button variant="secondary" onClick={restaurarArchivo} disabled={trabajando}><Upload size={15} className="mr-1.5" />Restaurar desde archivo</Button>
-        <Button variant="secondary" onClick={backupAhora} disabled={trabajando}><Package size={15} className="mr-1.5" />Exportar paquete completo</Button>
+        <Button variant="secondary" onClick={backupAhora} disabled={trabajando} {...exportar}><Package size={15} className="mr-1.5" />Exportar paquete completo</Button>
       </div>
 
       {/* Configuración */}

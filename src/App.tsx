@@ -4,19 +4,32 @@ import { useAuthGlobalStore } from './store/authGlobalStore'
 import { useOnboardingStore } from './store/onboardingStore'
 import { useSessionStore } from './store/sessionStore'
 import { existeUsuarioMaster } from './db/master'
+import { hayDatosDelComercio } from './db/acceso'
+import { describirError, type ErrorInitDb } from './hooks/useInitDb'
 import { Layout } from './components/layout/Layout'
+import { PantallaErrorBase } from './components/layout/PantallaErrorBase'
 import { Onboarding } from './modules/onboarding/Onboarding'
 import LoginGlobal from './modules/login-global/LoginGlobal'
 import { CambiarClave } from './modules/login-global/CambiarClave'
 import { DevPanel } from './components/dev/DevPanel'
 import { VeloraLogo } from './components/ui/VeloraLogo'
 
+// limpia: sin usuarios y sin datos → onboarding. sin-usuarios: hay datos pero se perdió
+// velora_master.db → login (nadie se hace dueño de un comercio que ya existe).
+type Inicio = 'limpia' | 'lista' | 'sin-usuarios'
+
+async function determinarInicio(): Promise<Inicio> {
+  if (await existeUsuarioMaster()) return 'lista'
+  return (await hayDatosDelComercio()) ? 'sin-usuarios' : 'limpia'
+}
+
 function App() {
   const { theme } = useThemeStore()
   const { usuario: usuarioGlobal, pendienteClave, revalidar } = useAuthGlobalStore()
-  const { completado } = useOnboardingStore()
+  const { completado, relanzado } = useOnboardingStore()
   const { usuario: usuarioLocal, setUsuario, cerrarSesion } = useSessionStore()
-  const [hayUsuarioMaster, setHayUsuarioMaster] = useState<boolean | null>(null)
+  const [inicio, setInicio] = useState<Inicio | null>(null)
+  const [errorInicio, setErrorInicio] = useState<ErrorInitDb | null>(null)
   // La sesión queda guardada entre aperturas: antes de usarla se confirma que la persona
   // siga activa y con qué rol.
   const [sesionVerificada, setSesionVerificada] = useState(() => useAuthGlobalStore.getState().usuario === null)
@@ -34,8 +47,11 @@ function App() {
   // Se vuelve a chequear cuando el onboarding se completa: recién ahí nace el
   // primer usuario (Admin General) en master.db.
   useEffect(() => {
-    existeUsuarioMaster().then(setHayUsuarioMaster)
-  }, [completado])
+    determinarInicio().then(setInicio).catch(e => {
+      console.error('determinarInicio', e)
+      setErrorInicio(describirError(e))
+    })
+  }, [completado, usuarioGlobal?.dni])
 
   // Sesión única: la sesión operativa refleja al usuario global (login único por DNI).
   // El dueño es Admin; el resto lleva el rol de su empleado. Si el global cierra, se limpia.
@@ -53,7 +69,9 @@ function App() {
     }
   }, [sesionVerificada, usuarioGlobal, usuarioLocal, setUsuario, cerrarSesion])
 
-  if (hayUsuarioMaster === null || !sesionVerificada) {
+  if (errorInicio) return <PantallaErrorBase error={errorInicio} />
+
+  if (inicio === null || !sesionVerificada) {
     return (
       <div className="flex h-screen flex-col items-center justify-center gap-6 bg-[#0A0A0A] light:bg-[#FAFAFA]">
         <div className="animate-pulse">
@@ -63,18 +81,19 @@ function App() {
     )
   }
 
-  // NIVEL 1: ¿existe algún usuario? si no, Onboarding crea el primero (Admin General)
+  // NIVEL 1: instalación limpia → Onboarding crea el primer usuario (Admin General).
+  //          No depende de localStorage: si se borra, se va al login.
   // NIVEL 2: Auth global (login único del sistema)
   //          con la contraseña por defecto, antes de entrar tiene que elegir otra
-  // NIVEL 3: Onboarding del negocio (si por algún motivo no está completado)
+  // NIVEL 3: Onboarding de nuevo, solo si el dueño lo pidió desde Configuración
   // NIVEL 4: Sistema operativo (sesión = usuario global)
-  const pantalla = !hayUsuarioMaster
+  const pantalla = inicio === 'limpia'
     ? <Onboarding />
     : pendienteClave
       ? <CambiarClave />
     : !usuarioGlobal
-      ? <LoginGlobal />
-      : !completado
+      ? <LoginGlobal sinUsuarios={inicio === 'sin-usuarios'} />
+      : relanzado && usuarioGlobal.esAdminGeneral
         ? <Onboarding />
         : <Layout />
 

@@ -11,6 +11,7 @@ import { ToastContainer } from '../ui/ToastContainer'
 import { AccesoRestringido } from '../ui/AccesoRestringido'
 import { VeloraLogo } from '../ui/VeloraLogo'
 import { cn } from '../../lib/utils'
+import { TODOS_LOS_IDS } from '../../modules/onboarding/types'
 
 // Importar todos los módulos
 import Dashboard from '../../modules/dashboard'
@@ -56,7 +57,8 @@ export const Layout = () => {
 
   // Filtrar módulos visibles según funciones habilitadas en el onboarding/config y permisos del rol.
   useEffect(() => {
-    if (permisosListos) actualizarModulosVisibles(funcionesHabilitadas ?? [])
+    // Sin configurar (p. ej. se borraron los datos locales): todas, igual que en Funciones.
+    if (permisosListos) actualizarModulosVisibles(funcionesHabilitadas ?? TODOS_LOS_IDS)
   }, [funcionesHabilitadas, niveles, permisosListos, actualizarModulosVisibles])
 
   // Primero el error: si la base no abrió, `ready` nunca llega a true.

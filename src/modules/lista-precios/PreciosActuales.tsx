@@ -5,7 +5,7 @@ import { Select } from '../../components/ui/Select'
 import { useListaPreciosStore } from '../../store/listaPreciosStore'
 import { Search, FileSpreadsheet, Tag } from 'lucide-react'
 import { aCentavos, aPesos, formatearPesos } from '../../lib/dinero'
-import { useEdicion } from '../../lib/permisos'
+import { useEdicion, usePermiso } from '../../lib/permisos'
 
 // Montos en centavos → "$ 1.234,56"
 const money = formatearPesos
@@ -14,6 +14,8 @@ const margenPct = (costo: number, venta: number) => (costo > 0 ? ((venta - costo
 export const PreciosActuales = () => {
   const { items, loading, cargarItems, editarPrecioIndividual } = useListaPreciosStore()
   const ed = useEdicion('lista-precios')
+  // Costo y margen: solo quien edita Inventario (tampoco la fila en rojo, que delata el margen).
+  const verCostos = usePermiso('inventario') === 'editar'
   const [busqueda, setBusqueda] = useState('')
   const [filtroCat, setFiltroCat] = useState('Todas')
   const [editId, setEditId] = useState<number | null>(null)
@@ -82,14 +84,14 @@ export const PreciosActuales = () => {
               <th className="text-left font-medium px-3 py-2">Producto</th>
               <th className="text-left font-medium px-3 py-2">Categoría</th>
               <th className="text-left font-medium px-3 py-2">Tipo</th>
-              <th className="text-right font-medium px-3 py-2">Costo</th>
+              {verCostos && <th className="text-right font-medium px-3 py-2">Costo</th>}
               <th className="text-right font-medium px-3 py-2">Precio actual</th>
-              <th className="text-right font-medium px-3 py-2">Margen %</th>
+              {verCostos && <th className="text-right font-medium px-3 py-2">Margen %</th>}
             </tr></thead>
             <tbody>
               {filtrados.map(i => {
                 const m = margenPct(i.precioCosto, i.precioActual)
-                const negativo = m <= 0
+                const negativo = verCostos && m <= 0
                 return (
                   <tr key={i.productoId} className={cn('border-t transition-colors duration-700',
                     'border-[#2A2A2A] light:border-[#E4E4E4]',
@@ -98,7 +100,7 @@ export const PreciosActuales = () => {
                     <td className="px-3 py-2.5 font-medium text-white light:text-black">{i.nombre}</td>
                     <td className="px-3 py-2.5 text-[#A0A0A0] light:text-[#404040]">{i.categoria || '—'}</td>
                     <td className="px-3 py-2.5 text-[#A0A0A0] light:text-[#404040]">{i.tipo === 'conjunto' ? 'Conjunto' : 'Simple'}</td>
-                    <td className="px-3 py-2.5 text-right text-[#A0A0A0] light:text-[#404040]">{money(i.precioCosto)}</td>
+                    {verCostos && <td className="px-3 py-2.5 text-right text-[#A0A0A0] light:text-[#404040]">{money(i.precioCosto)}</td>}
                     <td className="px-3 py-2.5 text-right">
                       {editId === i.productoId ? (
                         <input
@@ -117,7 +119,7 @@ export const PreciosActuales = () => {
                         </button>
                       )}
                     </td>
-                    <td className={cn('px-3 py-2.5 text-right font-medium', negativo ? 'text-[#C0392B]' : 'text-[#4CAF7D]')}>{m.toFixed(1)}%</td>
+                    {verCostos && <td className={cn('px-3 py-2.5 text-right font-medium', negativo ? 'text-[#C0392B]' : 'text-[#4CAF7D]')}>{m.toFixed(1)}%</td>}
                   </tr>
                 )
               })}

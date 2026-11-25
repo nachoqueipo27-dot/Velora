@@ -42,7 +42,7 @@ export const DevPanel = () => {
 
   const { usuario: usuarioGlobal } = useAuthGlobalStore()
   const { usuario, cerrarSesion } = useSessionStore()
-  const { resetOnboarding, completado } = useOnboardingStore()
+  const { resetOnboarding, relanzarOnboarding, completado } = useOnboardingStore()
   const { activeModule, setModule } = useNavigationStore()
   const { theme } = useThemeStore()
   const { agregar: toast } = useToastStore()
@@ -151,6 +151,9 @@ export const DevPanel = () => {
   // NAVEGACIÓN
   const irAOnboarding = async () => {
     resetOnboarding()
+    // Con usuarios ya creados, el onboarding solo se muestra si lo relanza el dueño.
+    const actual = useAuthGlobalStore.getState().usuario
+    if (actual?.esAdminGeneral) relanzarOnboarding(actual)
     addLog('Reseteando onboarding')
     toast('Onboarding reseteado — recargando', 'info')
     setTimeout(() => window.location.reload(), 500)

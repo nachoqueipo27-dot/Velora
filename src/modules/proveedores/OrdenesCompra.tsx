@@ -10,7 +10,7 @@ import { ModalOrdenCompra } from './ModalOrdenCompra'
 import { Plus, Eye, Send, PackageCheck, Trash2, FileText } from 'lucide-react'
 import { format } from 'date-fns'
 import { formatearPesos } from '../../lib/dinero'
-import { useEdicion } from '../../lib/permisos'
+import { useEdicion, usePermiso } from '../../lib/permisos'
 
 interface OrdenesCompraProps {
   onVerDetalle: (o: OrdenCompra) => void
@@ -29,6 +29,7 @@ const estadoBadge = (e: EstadoOrdenCompra) => {
 export const OrdenesCompra = ({ onVerDetalle }: OrdenesCompraProps) => {
   const { ordenes, proveedores, loading, cargarOrdenes, cargarProveedores, actualizarEstadoOrden, eliminarOrden } = useProveedoresStore()
   const ed = useEdicion('proveedores')
+  const verCostos = usePermiso('proveedores') === 'editar'
   const [filtroEstado, setFiltroEstado] = useState('Todos')
   const [filtroProv, setFiltroProv] = useState('Todos')
   const [modalNueva, setModalNueva] = useState(false)
@@ -74,7 +75,7 @@ export const OrdenesCompra = ({ onVerDetalle }: OrdenesCompraProps) => {
               <th className="text-left font-medium px-3 py-2">N°</th>
               <th className="text-left font-medium px-3 py-2">Proveedor</th>
               <th className="text-left font-medium px-3 py-2">Estado</th>
-              <th className="text-right font-medium px-3 py-2">Total</th>
+              {verCostos && <th className="text-right font-medium px-3 py-2">Total</th>}
               <th className="text-left font-medium px-3 py-2">Creación</th>
               <th className="text-right font-medium px-3 py-2">Acciones</th>
             </tr></thead>
@@ -84,7 +85,7 @@ export const OrdenesCompra = ({ onVerDetalle }: OrdenesCompraProps) => {
                   <td className="px-3 py-2.5 font-medium text-white light:text-black">{numFmt(o.numero)}</td>
                   <td className="px-3 py-2.5 text-[#A0A0A0] light:text-[#404040]">{o.proveedorNombre}</td>
                   <td className="px-3 py-2.5">{estadoBadge(o.estado)}</td>
-                  <td className="px-3 py-2.5 text-right text-white light:text-black">{money(o.total)}</td>
+                  {verCostos && <td className="px-3 py-2.5 text-right text-white light:text-black">{money(o.total)}</td>}
                   <td className="px-3 py-2.5 text-[#A0A0A0] light:text-[#404040]">{format(new Date(o.creadoEn), 'dd/MM/yyyy')}</td>
                   <td className="px-3 py-2.5">
                     {confirmEliminar === o.id ? (

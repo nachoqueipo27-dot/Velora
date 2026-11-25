@@ -10,7 +10,7 @@ import { ResumenFinal } from './ResumenFinal'
 const TOTAL_PASOS = 4
 
 export const Onboarding = () => {
-  const { paso, setPaso } = useOnboardingStore()
+  const { paso, setPaso, relanzado, salirDeRelanzado } = useOnboardingStore()
 
   const goNext = () => setPaso(Math.min(paso + 1, TOTAL_PASOS + 1))
   const goBack = () => setPaso(Math.max(paso - 1, 1))
@@ -71,6 +71,16 @@ export const Onboarding = () => {
         >
           {renderPaso()}
         </div>
+
+        {relanzado && (
+          <button
+            type="button"
+            onClick={salirDeRelanzado}
+            className="self-center text-cuerpo text-texto-3 hover:text-texto dark:text-oscuro-texto-2 dark:hover:text-oscuro-texto transition-colors duration-150"
+          >
+            Salir y volver a Velora
+          </button>
+        )}
       </div>
     </div>
   )

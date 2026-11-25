@@ -9,7 +9,7 @@ import { Save, LogOut } from 'lucide-react'
 
 export const StatusBar = () => {
   const { usuario } = useSessionStore()
-  const { logout: logoutGlobal } = useAuthGlobalStore()
+  const { logout: logoutGlobal, usuario: usuarioGlobal } = useAuthGlobalStore()
   const { activeModule } = useNavigationStore()
 
   const activeIndex = MODULES.findIndex(m => m.id === activeModule) + 1
@@ -72,18 +72,20 @@ export const StatusBar = () => {
 
       {/* Derecha — backup y posición */}
       <div className="flex items-center gap-3">
-        <button
-          onClick={handleBackup}
-          className={cn(
-            'flex items-center gap-1.5 text-[11px] transition-all duration-150',
-            'text-[#808080] hover:text-white',
-            'light:text-[#707070] light:hover:text-black',
-          )}
-          title="Backup inmediato"
-        >
-          <Save size={12} />
-          <span>Backup</span>
-        </button>
+        {usuarioGlobal?.esAdminGeneral && (
+          <button
+            onClick={handleBackup}
+            className={cn(
+              'flex items-center gap-1.5 text-[11px] transition-all duration-150',
+              'text-[#808080] hover:text-white',
+              'light:text-[#707070] light:hover:text-black',
+            )}
+            title="Backup inmediato"
+          >
+            <Save size={12} />
+            <span>Backup</span>
+          </button>
+        )}
 
         <span className={cn(
           'text-[11px]',

@@ -1,5 +1,5 @@
 import { getDb } from './index'
-import { esDueno, contarDuenos, cambiarPassword } from './master'
+import { esDueno, contarDuenos, cambiarPassword, loginLocal } from './master'
 import { hashPassword } from '../lib/crypto'
 
 // Quién puede entrar y con qué rol. La contraseña se verifica en master.db (loginLocal);
@@ -68,6 +68,25 @@ export async function resolverAcceso({ nombre, dni }: { nombre: string; dni: str
     usuario: { ...base, rol, empleadoId: empleado.id },
     debeCambiarClave: empleado.debe_cambiar_clave === 1,
   }
+}
+
+// ¿velora.db tiene datos de un comercio? (Lo que siembra initSchema no cuenta.) Junto con
+// existeUsuarioMaster decide si la instalación está limpia y corresponde el onboarding.
+export async function hayDatosDelComercio(): Promise<boolean> {
+  const db = await getDb()
+  const tablas = [
+    'empleados', 'clientes', 'productos', 'proveedores', 'ventas_pos', 'ordenes_trabajo',
+    'presupuestos', 'cobros_caja', 'gastos_operativos', 'cierres_caja', 'citas',
+  ]
+  const filas = await db.select<{ hay: number }[]>(
+    `SELECT (${tablas.map(t => `EXISTS (SELECT 1 FROM ${t})`).join(' OR ')}) AS hay`
+  )
+  return filas[0]?.hay === 1
+}
+
+/** Para acciones que piden confirmar con la contraseña: ¿es la del dueño que ingresó? */
+export async function esClaveDelDueno(dni: string | null, clave: string): Promise<boolean> {
+  return dni !== null && (await esDueno(dni)) && (await loginLocal(dni, clave)) !== null
 }
 
 // Al dar de baja se borra la fila de master.db, así que loginLocal solo puede responder

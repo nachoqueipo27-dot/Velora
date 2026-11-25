@@ -1,8 +1,9 @@
+import { useState } from 'react'
 import { useOnboardingStore } from '../../store/onboardingStore'
 import { useSessionStore } from '../../store/sessionStore'
 import { useAuthGlobalStore } from '../../store/authGlobalStore'
 import { getDb } from '../../db'
-import { guardarUsuarioLocal, guardarPreguntaSeguridad } from '../../db/master'
+import { guardarUsuarioLocal, guardarPreguntaSeguridad, existeUsuarioMaster, esDueno } from '../../db/master'
 import { hashPassword } from '../../lib/crypto'
 import { labelPreguntaSeguridad } from '../../lib/preguntasSeguridad'
 import { Button } from '../../components/ui/Button'
@@ -12,6 +13,8 @@ import { FUNCIONES_DISPONIBLES } from './types'
 // Guarda el Admin General nacido del onboarding: empleado en la DB del negocio
 // (acceso operativo) + usuario en master.db por DNI, rol admin_master (login del
 // sistema) + pregunta de seguridad para recuperación de contraseña. 100% local.
+// Primero el usuario: si eso falla no se guarda nada y se puede reintentar (si quedara un
+// empleado sin usuario, la instalación ya no estaría limpia y nadie podría ingresar).
 async function guardarAdminEnDB(
   nombre: string,
   dni: string,
@@ -19,12 +22,20 @@ async function guardarAdminEnDB(
   preguntaId: string,
   respuestaSeguridad: string,
 ) {
+  const passwordHash = await hashPassword(password)
+  const respuestaHash = await hashPassword(respuestaSeguridad)
+
+  // 1. Usuario en master.db por DNI, como Admin General de esta instalación.
+  await guardarUsuarioLocal({ nombre, dni, rol: 'admin_master' }, password)
+
+  // Desde acá el dueño ya puede ingresar: un fallo no impide terminar.
   try {
+    // 2. Pregunta de seguridad (respuesta cifrada con bcrypt, mismo mecanismo que la password).
+    await guardarPreguntaSeguridad(dni, preguntaId, respuestaHash)
+
+    // 3. Empleado en la DB del negocio (rol Admin).
     const db = await getDb()
     const now = new Date().toISOString()
-    const passwordHash = await hashPassword(password)
-
-    // 1. Empleado en la DB del negocio (rol Admin).
     const roles = await db.select<{ id: number }[]>(`SELECT id FROM roles WHERE nombre = 'Admin' LIMIT 1`)
     let rolId: number
     if (roles.length === 0) {
@@ -35,8 +46,8 @@ async function guardarAdminEnDB(
       rolId = roles[0].id
     }
     const admins = await db.select<{ count: number }[]>(
-      `SELECT COUNT(*) as count FROM empleados WHERE nombre = ? LIMIT 1`,
-      [nombre]
+      `SELECT COUNT(*) as count FROM empleados WHERE nombre = ? OR dni = ? LIMIT 1`,
+      [nombre, dni]
     )
     if (admins[0].count === 0) {
       await db.execute(
@@ -46,14 +57,7 @@ async function guardarAdminEnDB(
       )
     }
 
-    // 2. Usuario en master.db por DNI, como Admin General de esta instalación.
-    await guardarUsuarioLocal({ nombre, dni, rol: 'admin_master' }, password)
-
-    // 3. Pregunta de seguridad (respuesta cifrada con bcrypt, mismo mecanismo que la password).
-    const respuestaHash = await hashPassword(respuestaSeguridad)
-    await guardarPreguntaSeguridad(dni, preguntaId, respuestaHash)
-
-    console.log('[onboarding] Admin General guardado (local + master) DNI:', dni)
+    console.log('[onboarding] Admin General guardado (local + master)')
   } catch (e) {
     console.error('[onboarding] Error guardando admin en DB:', e)
   }
@@ -84,7 +88,9 @@ const Section = ({ title, children }: { title: string; children: React.ReactNode
 )
 
 export const ResumenFinal = ({ onBack }: ResumenFinalProps) => {
-  const { data, setPaso, completarOnboarding } = useOnboardingStore()
+  const { data, relanzado, setPaso, completarOnboarding } = useOnboardingStore()
+  const [error, setError] = useState<string | null>(null)
+  const [guardando, setGuardando] = useState(false)
   const { setUsuario } = useSessionStore()
 
   const habilitadas = data.funcionesHabilitadas ?? []
@@ -97,14 +103,31 @@ export const ResumenFinal = ({ onBack }: ResumenFinalProps) => {
       setPaso(2)
       return
     }
-    // Guardar el Admin General del onboarding (local + master) antes de completar.
-    await guardarAdminEnDB(
-      data.adminNombre,
-      data.adminDni,
-      data.adminPassword,
-      data.adminPreguntaId,
-      data.adminRespuestaSeguridad,
-    )
+    setError(null)
+    setGuardando(true)
+    // Al volver a correrlo, la cuenta es siempre la del dueño que ingresó.
+    const actual = useAuthGlobalStore.getState().usuario
+    const dni = relanzado && actual ? actual.dni : data.adminDni
+    try {
+      if ((await existeUsuarioMaster()) && !(relanzado && actual && (await esDueno(actual.dni)))) {
+        setError('Velora ya está configurado en esta PC. Cerralo y volvé a abrirlo para iniciar sesión.')
+        setGuardando(false)
+        return
+      }
+      // Guardar el Admin General del onboarding (local + master) antes de completar.
+      await guardarAdminEnDB(
+        data.adminNombre,
+        dni,
+        data.adminPassword,
+        data.adminPreguntaId,
+        data.adminRespuestaSeguridad,
+      )
+    } catch (e) {
+      console.error('[onboarding] No se pudo crear el Admin General:', e)
+      setError('No se pudo guardar el usuario administrador. Probá de nuevo.')
+      setGuardando(false)
+      return
+    }
     setUsuario({
       id: 1,
       nombre: data.adminNombre ?? 'Administrador',
@@ -115,7 +138,7 @@ export const ResumenFinal = ({ onBack }: ResumenFinalProps) => {
     useAuthGlobalStore.setState({
       usuario: {
         nombre: data.adminNombre ?? 'Administrador',
-        dni: data.adminDni ?? '',
+        dni,
         rol: 'admin_master',
         esAdminGeneral: true,
         empleadoId: null,
@@ -161,9 +184,11 @@ export const ResumenFinal = ({ onBack }: ResumenFinalProps) => {
         </Section>
       </div>
 
+      {error && <p role="alert" className="text-cuerpo text-error dark:text-acento">{error}</p>}
+
       <div className="flex justify-between pt-1">
-        <Button variant="ghost" onClick={onBack}>Volver</Button>
-        <Button onClick={handleConfirm}>Confirmar y comenzar</Button>
+        <Button variant="ghost" onClick={onBack} disabled={guardando}>Volver</Button>
+        <Button onClick={handleConfirm} disabled={guardando}>{guardando ? 'Guardando…' : 'Confirmar y comenzar'}</Button>
       </div>
     </div>
   )

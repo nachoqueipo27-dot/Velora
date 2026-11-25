@@ -12,7 +12,7 @@ import { StockBadge } from './components/StockBadge'
 import { ArrowLeft, Package, Boxes, ImageOff } from 'lucide-react'
 import { format } from 'date-fns'
 import { formatearPesos } from '../../lib/dinero'
-import { useEdicion } from '../../lib/permisos'
+import { useEdicion, usePermiso } from '../../lib/permisos'
 
 interface FichaProductoProps {
   onVolver: () => void
@@ -24,6 +24,7 @@ const LABEL_UNIDAD: Record<string, string> = Object.fromEntries(UNIDADES_MEDIDA.
 export const FichaProducto = ({ onVolver }: FichaProductoProps) => {
   const { productoSeleccionado, movimientos, cargarMovimientos, cargarComponentes, ajustarStock } = useInventarioStore()
   const ed = useEdicion('inventario')
+  const verCostos = usePermiso('inventario') === 'editar'
   const [comps, setComps] = useState<ComponenteConjunto[]>([])
   const [ajuste, setAjuste] = useState(false)
 
@@ -67,11 +68,13 @@ export const FichaProducto = ({ onVolver }: FichaProductoProps) => {
           <span className="text-[11px] font-semibold uppercase tracking-wider text-[#606060]">Precios</span>
           <div className="grid grid-cols-2 gap-y-2 mt-3 text-sm">
             <span className="text-[#606060]">Venta</span><span className="text-white light:text-black text-right">{formatearPesos(p.precio)}</span>
-            <span className="text-[#606060]">Costo</span><span className="text-white light:text-black text-right">{formatearPesos(p.precioCosto)} {p.monedaCosto}</span>
-            <span className="text-[#606060]">Margen</span>
-            <span className={cn('text-right font-medium', margen >= 0 ? 'text-[#4CAF7D]' : 'text-[#C0392B]')}>
-              {formatearPesos(margen)} ({margenPct.toFixed(0)}%)
-            </span>
+            {verCostos && <>
+              <span className="text-[#606060]">Costo</span><span className="text-white light:text-black text-right">{formatearPesos(p.precioCosto)} {p.monedaCosto}</span>
+              <span className="text-[#606060]">Margen</span>
+              <span className={cn('text-right font-medium', margen >= 0 ? 'text-[#4CAF7D]' : 'text-[#C0392B]')}>
+                {formatearPesos(margen)} ({margenPct.toFixed(0)}%)
+              </span>
+            </>}
           </div>
         </Card>
         <Card className="hover:border-[#2A2A2A]">

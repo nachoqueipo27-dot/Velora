@@ -6,6 +6,8 @@ import { ListadoProductos } from './ListadoProductos'
 import { FichaProducto } from './FichaProducto'
 import { ReporteRotacion } from './ReporteRotacion'
 import { InformeRentabilidad } from './InformeRentabilidad'
+import { AccesoRestringido } from '../../components/ui/AccesoRestringido'
+import { usePermiso } from '../../lib/permisos'
 import { Package, Boxes, TrendingUp, BarChart3 } from 'lucide-react'
 
 type Seccion = 'productos' | 'conjuntos' | 'rotacion' | 'rentabilidad'
@@ -20,6 +22,8 @@ const SUBMENU: { id: Seccion; label: string; icon: React.ReactNode }[] = [
 const Inventario = () => {
   const { cargarProductos, cargarCategorias, productoSeleccionado, seleccionarProducto } = useInventarioStore()
   const [seccion, setSeccion] = useState<Seccion>('productos')
+  // Costos, márgenes y rentabilidad: solo quien edita Inventario.
+  const verCostos = usePermiso('inventario') === 'editar'
 
   useEffect(() => {
     cargarProductos()
@@ -41,7 +45,7 @@ const Inventario = () => {
       case 'productos':    return <ListadoProductos tipo="simple" onVer={verFicha} />
       case 'conjuntos':    return <ListadoProductos tipo="conjunto" onVer={verFicha} />
       case 'rotacion':     return <ReporteRotacion />
-      case 'rentabilidad': return <InformeRentabilidad />
+      case 'rentabilidad': return verCostos ? <InformeRentabilidad /> : <AccesoRestringido />
     }
   }
 
@@ -50,7 +54,7 @@ const Inventario = () => {
       <aside className={cn('w-48 shrink-0 border-r flex flex-col py-4', 'border-[#2A2A2A] light:border-[#E4E4E4]')}>
         <span className="px-4 mb-3 text-[11px] font-semibold uppercase tracking-wider text-[#606060]">Inventario</span>
         <nav className="flex flex-col">
-          {SUBMENU.map(item => {
+          {SUBMENU.filter(item => verCostos || item.id !== 'rentabilidad').map(item => {
             const activo = seccion === item.id
             return (
               <button key={item.id} onClick={() => irA(item.id)}

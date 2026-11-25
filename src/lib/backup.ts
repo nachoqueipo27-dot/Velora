@@ -2,10 +2,17 @@ import { save, open } from '@tauri-apps/plugin-dialog'
 import { copyFile, readFile, writeFile, mkdir, exists } from '@tauri-apps/plugin-fs'
 import { appDataDir, join } from '@tauri-apps/api/path'
 import { getDb } from '../db'
+import { exigirDueno } from '../db/acceso'
+import { useAuthGlobalStore } from '../store/authGlobalStore'
 
 export type TipoBackup = 'manual' | 'automatico' | 'pre_operacion'
 
 export async function realizarBackup(tipo: TipoBackup): Promise<boolean> {
+  // Exportar la base completa a cualquier carpeta: solo el dueño. Las copias internas
+  // (backups/ dentro de los datos de la app) no cambian.
+  if (tipo === 'manual') {
+    await exigirDueno(useAuthGlobalStore.getState().usuario?.dni ?? null, 'Solo el dueño puede exportar la base.')
+  }
   try {
     const dataDir = await appDataDir()
     const origen = await join(dataDir, 'velora.db')

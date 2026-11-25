@@ -116,7 +116,7 @@ const RecuperarPassword = ({ open, onClose }: { open: boolean; onClose: () => vo
   )
 }
 
-const LoginGlobal = () => {
+const LoginGlobal = ({ sinUsuarios = false }: { sinUsuarios?: boolean }) => {
   const { login, loginError, clearError } = useAuthGlobalStore()
   const [dni, setDni] = useState('')
   const [password, setPassword] = useState('')
@@ -173,6 +173,12 @@ const LoginGlobal = () => {
             value={password}
             onChange={e => { setPassword(e.target.value); if (loginError) clearError() }}
           />
+
+          {sinUsuarios && (
+            <div className="text-xs text-alerta bg-alerta-suave rounded-control px-3 py-2">
+              Esta PC tiene los datos de un comercio pero ningún usuario para ingresar. Contactá a soporte.
+            </div>
+          )}
 
           {loginError && (
             <div className="text-xs text-[#C0392B] bg-[#C0392B]/10 rounded-input px-3 py-2">

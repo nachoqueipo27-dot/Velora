@@ -9,7 +9,7 @@ import { useInventarioStore } from '../../store/inventarioStore'
 import { permiteDecimales } from '../../types/inventario'
 import { Search, Trash2 } from 'lucide-react'
 import { aCentavos, aPesos, formatearPesos, porCantidad } from '../../lib/dinero'
-import { useEdicion } from '../../lib/permisos'
+import { useEdicion, usePermiso } from '../../lib/permisos'
 
 // El form trabaja el costo en pesos (editable); el store y la base, en centavos.
 const subtotalCentavos = (i: { cantidad: number; precioCosto: number }) => porCantidad(aCentavos(i.precioCosto), i.cantidad)
@@ -25,6 +25,7 @@ const money = formatearPesos
 export const ModalOrdenCompra = ({ open, onClose }: ModalOrdenCompraProps) => {
   const { proveedores, crearOrden, cargarProveedores } = useProveedoresStore()
   const ed = useEdicion('proveedores')
+  const verCostos = usePermiso('proveedores') === 'editar'
   const { productos, cargarProductos } = useInventarioStore()
 
   const [proveedorId, setProveedorId] = useState<number | ''>('')
@@ -67,6 +68,8 @@ export const ModalOrdenCompra = ({ open, onClose }: ModalOrdenCompraProps) => {
   const setItem = (id: number, patch: Partial<ItemOrdenInput>) =>
     setItems(items.map(i => i.productoId === id ? { ...i, ...patch } : i))
   const quitar = (id: number) => setItems(items.filter(i => i.productoId !== id))
+
+  const columnas = verCostos ? 'grid-cols-[1fr_80px_110px_90px_32px]' : 'grid-cols-[1fr_80px_32px]'
 
   const invalido = proveedorId === '' || items.length === 0
 
@@ -119,7 +122,7 @@ export const ModalOrdenCompra = ({ open, onClose }: ModalOrdenCompraProps) => {
                 {disponibles.map(p => (
                   <button key={p.id} type="button" onClick={() => agregar(p.id, p.precioCosto)}
                     className="w-full text-left px-3 py-2 text-[13px] text-[#A0A0A0] hover:text-white hover:bg-white/[0.06] light:text-[#404040] light:hover:text-black light:hover:bg-black/[0.04] transition-colors">
-                    {p.nombre} <span className="text-[11px] text-[#606060]">· costo {money(p.precioCosto)}</span>
+                    {p.nombre} {verCostos && <span className="text-[11px] text-[#606060]">· costo {money(p.precioCosto)}</span>}
                   </button>
                 ))}
               </div>
@@ -132,13 +135,15 @@ export const ModalOrdenCompra = ({ open, onClose }: ModalOrdenCompraProps) => {
           <p className="text-[11px] text-[#606060]">{touched ? <span className="text-[#C0392B]">Agregá al menos un producto</span> : 'Todavía no agregaste productos.'}</p>
         ) : (
           <div className="flex flex-col gap-1.5">
-            <div className="grid grid-cols-[1fr_80px_110px_90px_32px] gap-2 text-[11px] uppercase tracking-wider text-[#606060] px-1">
-              <span>Producto</span><span className="text-center">Cant.</span><span className="text-center">Costo u.</span><span className="text-right">Subtotal</span><span />
+            <div className={cn('grid gap-2 text-[11px] uppercase tracking-wider text-[#606060] px-1', columnas)}>
+              <span>Producto</span><span className="text-center">Cant.</span>
+              {verCostos && <><span className="text-center">Costo u.</span><span className="text-right">Subtotal</span></>}
+              <span />
             </div>
             {items.map(it => {
               const permite = permiteDecimales(prodPorId.get(it.productoId)?.unidadMedida ?? 'unidad')
               return (
-                <div key={it.productoId} className="grid grid-cols-[1fr_80px_110px_90px_32px] gap-2 items-center">
+                <div key={it.productoId} className={cn('grid gap-2 items-center', columnas)}>
                   <span className="text-[13px] text-white light:text-black truncate">{prodMap.get(it.productoId)}</span>
                   <input
                     type="number" min={permite ? 0.01 : 1} step={permite ? '0.01' : '1'} value={it.cantidad}
@@ -147,19 +152,23 @@ export const ModalOrdenCompra = ({ open, onClose }: ModalOrdenCompraProps) => {
                       setItem(it.productoId, { cantidad: permite ? Math.max(0.01, val) : Math.max(1, Math.round(val)) })
                     }}
                     className="px-2 py-1 text-[13px] text-center rounded-input border bg-transparent outline-none border-[#2A2A2A] text-white focus:border-white light:border-[#E4E4E4] light:text-[#0A0A0A]" />
-                  <input type="number" min={0} value={it.precioCosto} onChange={e => setItem(it.productoId, { precioCosto: Number(e.target.value) })}
-                    className="px-2 py-1 text-[13px] text-center rounded-input border bg-transparent outline-none border-[#2A2A2A] text-white focus:border-white light:border-[#E4E4E4] light:text-[#0A0A0A]" />
-                  <span className="text-[13px] text-right text-[#A0A0A0] light:text-[#404040]">{money(subtotalCentavos(it))}</span>
+                  {verCostos && <>
+                    <input type="number" min={0} value={it.precioCosto} onChange={e => setItem(it.productoId, { precioCosto: Number(e.target.value) })}
+                      className="px-2 py-1 text-[13px] text-center rounded-input border bg-transparent outline-none border-[#2A2A2A] text-white focus:border-white light:border-[#E4E4E4] light:text-[#0A0A0A]" />
+                    <span className="text-[13px] text-right text-[#A0A0A0] light:text-[#404040]">{money(subtotalCentavos(it))}</span>
+                  </>}
                   <button type="button" onClick={() => quitar(it.productoId)} className="w-6 h-6 rounded flex items-center justify-center text-[#606060] hover:text-[#C0392B] hover:bg-[#C0392B]/10">
                     <Trash2 size={13} />
                   </button>
                 </div>
               )
             })}
-            <div className="flex justify-end gap-3 mt-2 pt-2 border-t border-[#2A2A2A] light:border-[#E4E4E4]">
-              <span className="text-[11px] text-[#606060] uppercase tracking-wider">Total</span>
-              <span className="text-sm font-semibold text-white light:text-black">{money(total)}</span>
-            </div>
+            {verCostos && (
+              <div className="flex justify-end gap-3 mt-2 pt-2 border-t border-[#2A2A2A] light:border-[#E4E4E4]">
+                <span className="text-[11px] text-[#606060] uppercase tracking-wider">Total</span>
+                <span className="text-sm font-semibold text-white light:text-black">{money(total)}</span>
+              </div>
+            )}
           </div>
         )}
 

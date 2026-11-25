@@ -7,7 +7,7 @@ import { PREGUNTAS_SEGURIDAD } from '../../lib/preguntasSeguridad'
 import type { PasoProps } from './types'
 
 export const Paso2 = ({ onNext, onBack }: PasoProps) => {
-  const { data, updateData } = useOnboardingStore()
+  const { data, updateData, relanzado } = useOnboardingStore()
   const [confirm, setConfirm] = useState('')
   const [touched, setTouched] = useState(false)
 
@@ -44,6 +44,8 @@ export const Paso2 = ({ onNext, onBack }: PasoProps) => {
           placeholder="Solo números (mín. 7 dígitos)"
           inputMode="numeric"
           value={dni}
+          disabled={relanzado}
+          hint={relanzado ? 'Es el DNI con el que ingresás. Se cambia desde Usuarios y roles.' : undefined}
           onChange={e => updateData({ adminDni: e.target.value.replace(/\D/g, '') })}
           error={dni !== '' && !dniValido ? 'DNI inválido (mínimo 7 dígitos)' : undefined}
         />

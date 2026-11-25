@@ -9,7 +9,7 @@ import { permiteDecimales } from '../../types/inventario'
 import { ArrowLeft, Send, PackageCheck, Search, Trash2, Plus } from 'lucide-react'
 import { format } from 'date-fns'
 import { formatearPesos, porCantidad } from '../../lib/dinero'
-import { useEdicion } from '../../lib/permisos'
+import { useEdicion, usePermiso } from '../../lib/permisos'
 
 interface RecepcionMercaderiaProps {
   onVolver: () => void
@@ -22,6 +22,7 @@ const numFmt = (n: number) => `#${String(n).padStart(3, '0')}`
 export const RecepcionMercaderia = ({ onVolver }: RecepcionMercaderiaProps) => {
   const { ordenSeleccionada, items, cargarItemsOrden, actualizarEstadoOrden, agregarItemOrden, actualizarCantidadItem, eliminarItemOrden } = useProveedoresStore()
   const ed = useEdicion('proveedores')
+  const verCostos = usePermiso('proveedores') === 'editar'
   const { productos, cargarProductos } = useInventarioStore()
   const [confirmRecibir, setConfirmRecibir] = useState(false)
   const [busqueda, setBusqueda] = useState('')
@@ -119,8 +120,10 @@ export const RecepcionMercaderia = ({ onVolver }: RecepcionMercaderiaProps) => {
         <thead><tr className="text-[11px] uppercase tracking-wider text-[#606060]">
           <th className="text-left font-medium px-3 py-2">Producto</th>
           <th className="text-right font-medium px-3 py-2">Cantidad</th>
-          <th className="text-right font-medium px-3 py-2">Precio costo</th>
-          <th className="text-right font-medium px-3 py-2">Subtotal</th>
+          {verCostos && <>
+            <th className="text-right font-medium px-3 py-2">Precio costo</th>
+            <th className="text-right font-medium px-3 py-2">Subtotal</th>
+          </>}
           {esBorrador && <th className="text-right font-medium px-3 py-2" />}
         </tr></thead>
         <tbody>
@@ -140,8 +143,10 @@ export const RecepcionMercaderia = ({ onVolver }: RecepcionMercaderiaProps) => {
                     />
                   ) : it.cantidad}
                 </td>
-                <td className="px-3 py-2.5 text-right text-[#A0A0A0] light:text-[#404040]">{money(it.precioCosto)}</td>
-                <td className="px-3 py-2.5 text-right text-[#A0A0A0] light:text-[#404040]">{money(porCantidad(it.precioCosto, it.cantidad))}</td>
+                {verCostos && <>
+                  <td className="px-3 py-2.5 text-right text-[#A0A0A0] light:text-[#404040]">{money(it.precioCosto)}</td>
+                  <td className="px-3 py-2.5 text-right text-[#A0A0A0] light:text-[#404040]">{money(porCantidad(it.precioCosto, it.cantidad))}</td>
+                </>}
                 {esBorrador && (
                   <td className="px-3 py-2.5 text-right">
                     <button onClick={() => eliminarItemOrden(it.id)} {...ed} className="disabled:opacity-40 disabled:cursor-not-allowed w-6 h-6 rounded inline-flex items-center justify-center text-[#606060] hover:text-[#C0392B] hover:bg-[#C0392B]/10"><Trash2 size={13} /></button>
@@ -151,13 +156,13 @@ export const RecepcionMercaderia = ({ onVolver }: RecepcionMercaderiaProps) => {
             )
           })}
         </tbody>
-        <tfoot>
+        {verCostos && <tfoot>
           <tr className="border-t-2 border-[#2A2A2A] light:border-[#E4E4E4]">
             <td className="px-3 py-2.5 font-semibold text-white light:text-black" colSpan={3}>Total</td>
             <td className="px-3 py-2.5 text-right font-semibold text-white light:text-black">{money(total)}</td>
             {esBorrador && <td />}
           </tr>
-        </tfoot>
+        </tfoot>}
       </table>
 
       {o.notas && <p className="mt-4 text-[13px] text-[#A0A0A0] light:text-[#404040]"><span className="text-[#606060]">Notas: </span>{o.notas}</p>}

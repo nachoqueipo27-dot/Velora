@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useOnboardingStore } from '../../store/onboardingStore'
 import { useSessionStore } from '../../store/sessionStore'
+import { useAuthGlobalStore } from '../../store/authGlobalStore'
+import { esClaveDelDueno } from '../../db/acceso'
 import { Input } from '../../components/ui/Input'
 import { Button } from '../../components/ui/Button'
 import { Modal } from '../../components/ui/Modal'
@@ -9,7 +11,7 @@ import { registrarActividad } from '../../lib/registrarActividad'
 import { realizarBackup } from '../../lib/backup'
 import { getDb } from '../../db'
 import { exigirEditar } from '../../lib/permisos'
-import { AlertTriangle, Check, Save } from 'lucide-react'
+import { AlertTriangle, Check, RotateCcw, Save } from 'lucide-react'
 
 const TABLAS = [
   'clientes', 'log_comunicaciones', 'roles', 'permisos', 'empleados', 'horarios_fijos', 'turnos',
@@ -23,7 +25,8 @@ const TABLAS = [
 ]
 
 export const DatosNegocio = () => {
-  const { data, updateData, resetOnboarding } = useOnboardingStore()
+  const { data, updateData, resetOnboarding, relanzarOnboarding } = useOnboardingStore()
+  const dueno = useAuthGlobalStore(s => s.usuario?.esAdminGeneral ? s.usuario : null)
   const { cerrarSesion } = useSessionStore()
   const [form, setForm] = useState({
     nombreNegocio: data.nombreNegocio ?? '', rubro: data.rubro ?? '', direccion: data.direccion ?? '',
@@ -34,6 +37,10 @@ export const DatosNegocio = () => {
   const [resetOpen, setResetOpen] = useState(false)
   const [confirmTexto, setConfirmTexto] = useState('')
   const [reseteando, setReseteando] = useState(false)
+  // Resetear y volver a correr la configuración inicial: solo el dueño, con su contraseña.
+  const [relanzarOpen, setRelanzarOpen] = useState(false)
+  const [clave, setClave] = useState('')
+  const [errorClave, setErrorClave] = useState<string | undefined>()
 
   const set = (k: keyof typeof form, v: string) => setForm(f => ({ ...f, [k]: v }))
 
@@ -44,16 +51,30 @@ export const DatosNegocio = () => {
     setGuardado(true); setTimeout(() => setGuardado(false), 2200)
   }
 
+  const claveCorrecta = async () => {
+    const ok = await esClaveDelDueno(dueno?.dni ?? null, clave)
+    setErrorClave(ok ? undefined : 'Contraseña incorrecta')
+    return ok
+  }
+
+  const relanzar = async () => {
+    if (!dueno || !(await claveCorrecta())) return
+    await registrarActividad({ modulo: 'Configuración', accion: 'Volvió a correr la configuración inicial' })
+    relanzarOnboarding(dueno)
+  }
+
   const ejecutarReset = async () => {
     exigirEditar('configuracion')
-    if (confirmTexto !== 'RESETEAR') return
+    if (confirmTexto !== 'RESETEAR' || !dueno) return
     setReseteando(true)
     try {
+      if (!(await claveCorrecta())) { setReseteando(false); return }
       const db = await getDb()
       for (const t of TABLAS) {
         try { await db.execute(`DROP TABLE IF EXISTS ${t}`) } catch (e) { console.warn('drop', t, e) }
       }
       resetOnboarding()
+      relanzarOnboarding(dueno)
       cerrarSesion()
       window.location.reload()
     } catch (e) {
@@ -86,6 +107,29 @@ export const DatosNegocio = () => {
         <Button onClick={guardar}>{guardado ? <><Check size={15} className="mr-1.5" />Guardado</> : <><Save size={15} className="mr-1.5" />Guardar cambios</>}</Button>
       </div>
 
+      {dueno && <>
+      {/* Volver a correr el onboarding, sin borrar nada */}
+      <div className="mt-4 rounded-tarjeta border border-borde bg-superficie p-4 flex flex-col gap-3 dark:border-oscuro-borde dark:bg-oscuro-superficie">
+        <p className="text-seccion font-semibold text-texto dark:text-oscuro-texto">Configuración inicial</p>
+        <p className="text-cuerpo text-texto-3 dark:text-oscuro-texto-2">
+          Vuelve a mostrar los pasos del primer uso (negocio, tu cuenta, preferencias y funciones). No borra ningún dato.
+        </p>
+        <Button variant="secondary" className="self-start" onClick={() => { setClave(''); setErrorClave(undefined); setRelanzarOpen(true) }}>
+          <RotateCcw size={15} className="mr-1.5" />Volver a correrla
+        </Button>
+      </div>
+
+      <Modal open={relanzarOpen} onClose={() => setRelanzarOpen(false)} title="Volver a correr la configuración inicial" maxWidth="max-w-sm"
+        footer={<>
+          <Button variant="ghost" onClick={() => setRelanzarOpen(false)}>Cancelar</Button>
+          <Button onClick={relanzar} disabled={clave === ''}>Continuar</Button>
+        </>}>
+        <div className="pb-1">
+          <Input label="Tu contraseña" type="password" value={clave} autoFocus error={errorClave}
+            hint="Solo el dueño puede hacerlo." onChange={e => { setClave(e.target.value); setErrorClave(undefined) }} />
+        </div>
+      </Modal>
+
       {/* Zona de peligro */}
       <div className="mt-4 rounded-card border border-[#C0392B]/40 bg-[#C0392B]/[0.05] p-4 flex flex-col gap-3">
         <div className="flex items-center gap-2 text-[#C0392B]">
@@ -94,13 +138,13 @@ export const DatosNegocio = () => {
         <p className="text-[12px] text-[#A0A0A0] light:text-[#404040]">
           Resetear Velora elimina todos los datos (clientes, productos, OTs, ventas, caja, configuración) y vuelve al onboarding inicial.
         </p>
-        <Button variant="danger" className="self-start" onClick={() => { setConfirmTexto(''); setResetOpen(true) }}>Resetear Velora</Button>
+        <Button variant="danger" className="self-start" onClick={() => { setConfirmTexto(''); setClave(''); setErrorClave(undefined); setResetOpen(true) }}>Resetear Velora</Button>
       </div>
 
       <Modal open={resetOpen} onClose={() => setResetOpen(false)} title="Resetear Velora" maxWidth="max-w-md"
         footer={<>
           <Button variant="ghost" onClick={() => setResetOpen(false)} disabled={reseteando}>Cancelar</Button>
-          <Button variant="danger" onClick={ejecutarReset} disabled={confirmTexto !== 'RESETEAR' || reseteando}>{reseteando ? 'Reseteando...' : 'Resetear todo'}</Button>
+          <Button variant="danger" onClick={ejecutarReset} disabled={confirmTexto !== 'RESETEAR' || clave === '' || reseteando}>{reseteando ? 'Reseteando...' : 'Resetear todo'}</Button>
         </>}>
         <div className="flex flex-col gap-3 pb-1">
           <p className="text-[13px] text-[#A0A0A0] light:text-[#404040]">Se eliminará de forma permanente:</p>
@@ -117,8 +161,11 @@ export const DatosNegocio = () => {
             <input value={confirmTexto} onChange={e => setConfirmTexto(e.target.value)} placeholder="RESETEAR"
               className="px-3 py-2 text-sm rounded-input border bg-transparent outline-none border-[#2A2A2A] text-white focus:border-[#C0392B] light:border-[#E4E4E4] light:text-black" />
           </div>
+          <Input label="Tu contraseña" type="password" value={clave} error={errorClave}
+            hint="Solo el dueño puede resetear Velora." onChange={e => { setClave(e.target.value); setErrorClave(undefined) }} />
         </div>
       </Modal>
+      </>}
     </div>
   )
 }

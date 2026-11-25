@@ -10,7 +10,7 @@ export interface ErrorInitDb {
   fecha: string
 }
 
-function describirError(e: unknown): ErrorInitDb {
+export function describirError(e: unknown): ErrorInitDb {
   const fecha = new Date().toISOString()
   if (e instanceof ErrorMigracion) {
     return { mensaje: e.message, detalle: `Migración: ${e.migracion}\n${String(e.causa)}`, fecha }
